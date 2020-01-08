@@ -2,4 +2,4 @@
 
 require 'porkadot'
 
-puts Porkadot::VERSION
+puts Porkadot::Cli.start(ARGV)
