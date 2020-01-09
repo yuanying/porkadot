@@ -1,18 +1,45 @@
 require 'yaml'
 require 'hashie'
+require 'logger'
 
 module Porkadot
   class Config
     attr_reader :raw
+    attr_reader :logger
 
     def initialize path
       open(File.expand_path(path)) do |io|
         @raw = ::Hashie::Mash.new(YAML.load(io))
       end
+      @logger = Logger.new(STDOUT)
     end
 
     def assets_dir
       File.expand_path(raw.assets_dir)
+    end
+
+    def certs_dir
+      File.join(self.assets_dir, 'certs')
+    end
+
+    def etcd_certs_dir
+      File.join(self.certs_dir, 'etcd')
+    end
+
+    def etcd_ca_key_path
+      File.join(self.etcd_certs_dir, 'ca.key')
+    end
+
+    def etcd_ca_cert_path
+      File.join(self.etcd_certs_dir, 'ca.crt')
+    end
+
+    def etcd_client_key_path
+      File.join(self.etcd_certs_dir, 'etcd-client.key')
+    end
+
+    def etcd_client_cert_path
+      File.join(self.etcd_certs_dir, 'etcd-client.crt')
     end
   end
 end
