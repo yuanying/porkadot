@@ -100,4 +100,23 @@ module Porkadot::Certs
 
     return cert
   end
+
+  def apiserver_cert(path, name, client_key, ca_cert, ca_key)
+    cert = unsigned_cert(name, ca_key, ca_cert, 1 * 365 * 24 * 60 * 60)
+
+    ef = OpenSSL::X509::ExtensionFactory.new
+    ef.subject_certificate = cert
+    ef.issuer_certificate = ca_cert
+    cert.add_extension(ef.create_extension("basicConstraints","CA:FALSE",true))
+    cert.add_extension(ef.create_extension("keyUsage","nonRepudiation, digitalSignature, keyEncipherment", true))
+    cert.add_extension(ef.create_extension("extendedKeyUsage","clientAuth, serverAuth",true))
+
+    sans = %W(
+      DNS:kubernetes
+      DNS:kubernetes.default
+      DNS:kubernetes.default.svc
+      DNS:kubernetes.default.svc.cluster.local
+      IP:127.0.0.1
+    )
+  end
 end

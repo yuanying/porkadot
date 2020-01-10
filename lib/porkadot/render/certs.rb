@@ -24,7 +24,11 @@ module Porkadot; module Render; module Certs
 
     desc 'kubernetes', "Render certificates to deploy Kubernetes"
     def kubernetes
-      puts 'kubernetes'
+      logger.info "Generating kubernetes certificates"
+      logger.info "--> CA key and certs"
+      ca_key = self.private_key(self.config.k8s_ca_key_path)
+      ca_cert = self.ca_cert(self.config.k8s_ca_cert_path, 'kube-ca', ca_key)
+      ''
     end
 
     def self.subcommand_prefix

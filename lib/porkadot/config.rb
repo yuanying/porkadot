@@ -41,5 +41,25 @@ module Porkadot
     def etcd_client_cert_path
       File.join(self.etcd_certs_dir, 'etcd-client.crt')
     end
+
+    def k8s_certs_dir
+      File.join(self.certs_dir, 'kubernetes')
+    end
+
+    def k8s_ca_key_path
+      File.join(self.k8s_certs_dir, 'ca.key')
+    end
+
+    def k8s_ca_cert_path
+      File.join(self.k8s_certs_dir, 'ca.crt')
+    end
+
+    def k8s_apiserver_key_path
+      File.join(self.k8s_certs_dir, 'apiserver.key')
+    end
+
+    def k8s_apiserver_cert_path
+      File.join(self.k8s_certs_dir, 'apiserver.crt')
+    end
   end
 end
