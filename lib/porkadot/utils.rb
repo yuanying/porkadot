@@ -43,16 +43,30 @@ module Porkadot::Certs
     return key
   end
 
-  def ca_cert(path, name, root_key)
-    root_ca = OpenSSL::X509::Certificate.new
+  def random_number
+    return (0...8).map{ (0 + rand(10)) }.join.to_i
+  end
 
-    root_ca.version = 2 # cf. RFC 5280 - to make it a "v3" certificate
-    root_ca.serial = 1
-    root_ca.subject = OpenSSL::X509::Name.parse "/CN=#{name}"
-    root_ca.issuer = root_ca.subject # root CA's are "self-signed"
-    root_ca.public_key = root_key.public_key
-    root_ca.not_before = Time.now
-    root_ca.not_after = root_ca.not_before + 2 * 365 * 24 * 60 * 60 # 2 years validity
+  def unsigned_cert(name, key, ca_cert=nil, expire=(1 * 365 * 24 * 60 * 60))
+    cert = OpenSSL::X509::Certificate.new
+
+    cert.version = 2 # cf. RFC 5280 - to make it a "v3" certificate
+    cert.serial = self.random_number
+    cert.subject = OpenSSL::X509::Name.parse "/CN=#{name}"
+    if ca_cert
+      cert.issuer = ca_cert.subject
+    else
+      cert.issuer = cert.subject # root CA's are "self-signed"
+    end
+    cert.public_key = key.public_key
+    cert.not_before = Time.now
+    cert.not_after = cert.not_before + expire
+    return cert
+  end
+
+  def ca_cert(path, name, root_key)
+    root_ca = unsigned_cert(name, root_key, nil, 2 * 365 * 24 * 60 * 60)
+
     ef = OpenSSL::X509::ExtensionFactory.new
     ef.subject_certificate = root_ca
     ef.issuer_certificate = root_ca
@@ -70,14 +84,8 @@ module Porkadot::Certs
   end
 
   def client_cert(path, name, client_key, ca_cert, ca_key)
-    cert = OpenSSL::X509::Certificate.new
-    cert.version = 2
-    cert.serial = 2
-    cert.subject = OpenSSL::X509::Name.parse "/CN=#{name}"
-    cert.issuer = ca_cert.subject # root CA is the issuer
-    cert.public_key = client_key.public_key
-    cert.not_before = Time.now
-    cert.not_after = cert.not_before + 1 * 365 * 24 * 60 * 60 # 1 years validity
+    cert = unsigned_cert(name, ca_key, ca_cert, 1 * 365 * 24 * 60 * 60)
+
     ef = OpenSSL::X509::ExtensionFactory.new
     ef.subject_certificate = cert
     ef.issuer_certificate = ca_cert
