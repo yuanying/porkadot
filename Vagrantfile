@@ -18,6 +18,9 @@ end
 
 SCRIPT = <<-EOF
 echo "#{public_key}" >> ~vagrant/.ssh/authorized_keys
+
+apt update
+apt install -y socat conntrack ipset
 EOF
 
 CNI_INSTALL = <<-EOF
