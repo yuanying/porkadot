@@ -25,6 +25,7 @@ end
 
 require 'openssl'
 require 'fileutils'
+require 'ipaddr'
 OpenSSL::Random.seed File.read('/dev/random', 16)
 
 module Porkadot::Certs
@@ -111,12 +112,55 @@ module Porkadot::Certs
     cert.add_extension(ef.create_extension("keyUsage","nonRepudiation, digitalSignature, keyEncipherment", true))
     cert.add_extension(ef.create_extension("extendedKeyUsage","clientAuth, serverAuth",true))
 
-    sans = %W(
+    default_sans = %W(
       DNS:kubernetes
       DNS:kubernetes.default
       DNS:kubernetes.default.svc
-      DNS:kubernetes.default.svc.cluster.local
+      DNS:kubernetes.default.svc.#{self.config.k8s.networking.dns_domain}
       IP:127.0.0.1
     )
+    sans = self.additional_sans
+    sans = sans + default_sans
+    cert.add_extension(ef.create_extension("subjectAltName", sans.join(','), true))
+    cert.sign(ca_key, OpenSSL::Digest::SHA256.new)
+
+    File.open path, 'wb' do |f|
+      f.write cert.to_pem
+    end
+
+    return cert
+  end
+
+  def additional_sans
+    dns_names = []
+    ips = []
+    if self.config.k8s.control_plane_endpoint
+      host = self.config.k8s.control_plane_endpoint.split(':')[0]
+      begin
+        IPAddr.new(host)
+        ips << host
+      rescue IPAddr::InvalidAddressError
+        dns_names << host
+      end
+    end
+    self.config.nodes.each do |k, v|
+      begin
+        IPAddr.new(k)
+        ips << k
+      rescue IPAddr::InvalidAddressError
+        dns_names << k
+      end
+      if v.address
+        begin
+          IPAddr.new(v.address)
+          ips << v.address
+        rescue IPAddr::InvalidAddressError
+          dns_names << v.address
+        end
+      end
+    end
+
+    sans = dns_names.map {|v| "DNS:#{v}"} + ips.map {|v| "IP:#{v}"}
+    return sans
   end
 end

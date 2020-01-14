@@ -7,8 +7,7 @@ nodes:
     - "node-role.kubernetes.io/master"
     taints:
     - "node-role.kubernetes.io/master=:NoSchedule"
-  node02:
-    address: 192.168.33.112
+  '192.168.33.112':
     labels:
     - "node-role.kubernetes.io/master"
     taints:

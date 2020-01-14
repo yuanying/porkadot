@@ -28,6 +28,8 @@ module Porkadot; module Render; module Certs
       logger.info "--> CA key and certs"
       ca_key = self.private_key(self.config.k8s_ca_key_path)
       ca_cert = self.ca_cert(self.config.k8s_ca_cert_path, 'kube-ca', ca_key)
+      apiserver_key = self.private_key(self.config.k8s_apiserver_key_path)
+      apiserver_cert = self.apiserver_cert(self.config.k8s_apiserver_cert_path, 'apiserver', apiserver_key, ca_cert, ca_key)
       ''
     end
 

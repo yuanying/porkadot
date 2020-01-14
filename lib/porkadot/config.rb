@@ -14,6 +14,15 @@ module Porkadot
       @logger = Logger.new(STDOUT)
     end
 
+    def kubernetes
+      @raw.kubernetes
+    end
+    alias k8s kubernetes
+
+    def nodes
+      @raw.nodes
+    end
+
     def assets_dir
       File.expand_path(raw.assets_dir)
     end
