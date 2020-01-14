@@ -126,16 +126,7 @@ module Porkadot::Certs
     cert.add_extension(ef.create_extension("keyUsage","nonRepudiation, digitalSignature, keyEncipherment", true))
     cert.add_extension(ef.create_extension("extendedKeyUsage","clientAuth, serverAuth",true))
 
-    default_sans = %W(
-      DNS:kubernetes
-      DNS:kubernetes.default
-      DNS:kubernetes.default.svc
-      DNS:kubernetes.default.svc.#{self.config.k8s.networking.dns_domain}
-      IP:127.0.0.1
-    )
-    sans = self.additional_sans
-    sans = sans + default_sans
-    cert.add_extension(ef.create_extension("subjectAltName", sans.join(','), true))
+    cert.add_extension(ef.create_extension("subjectAltName", self.additional_sans.join(','), true))
     cert.sign(ca_key, OpenSSL::Digest::SHA256.new)
 
     File.open path, 'wb' do |f|
@@ -161,7 +152,14 @@ module Porkadot::Certs
     end
 
     sans = dns_names.map {|v| "DNS:#{v}"} + ips.map {|v| "IP:#{v}"}
-    return sans.uniq
+    default_sans = %W(
+      DNS:kubernetes
+      DNS:kubernetes.default
+      DNS:kubernetes.default.svc
+      DNS:kubernetes.default.svc.#{self.config.k8s.networking.dns_domain}
+      IP:127.0.0.1
+    )
+    return default_sans + sans.uniq
   end
 
   def ipaddr?(addr)
