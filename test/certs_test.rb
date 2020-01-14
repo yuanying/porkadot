@@ -21,6 +21,6 @@ class CertsTest < Minitest::Test
 
   def test_additional_sans
     sans = @cert_utils.additional_sans
-    assert_equal ["DNS:node01", "DNS:node03", "DNS:node04", "IP:192.168.33.101", "IP:192.168.33.111", "IP:192.168.33.112", "IP:192.168.33.113", "IP:192.168.33.114"], sans
+    assert_equal ["DNS:node01", "IP:192.168.33.101", "IP:192.168.33.111", "IP:192.168.33.112", "IP:192.168.33.113"], sans
   end
 end

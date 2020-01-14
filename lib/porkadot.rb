@@ -7,6 +7,7 @@ module Porkadot
   # Your code goes here...
 end
 
+require 'porkadot/const'
 require 'porkadot/config'
 require 'porkadot/utils'
 require 'porkadot/cli'

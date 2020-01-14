@@ -44,6 +44,20 @@ module Porkadot::Certs
     return key
   end
 
+  def public_key(path, key)
+    public_key = key.public_key
+    if File.file?(path)
+      self.logger.debug("--> Public key already exists, skipping: #{path}")
+    else
+      dir = File.dirname(path)
+      FileUtils.mkdir_p(dir)
+      File.open path, 'wb' do |f|
+        f.write public_key.export(nil, nil)
+      end
+    end
+    return public_key
+  end
+
   def random_number
     return (0...8).map{ (0 + rand(10)) }.join.to_i
   end
@@ -53,7 +67,7 @@ module Porkadot::Certs
 
     cert.version = 2 # cf. RFC 5280 - to make it a "v3" certificate
     cert.serial = self.random_number
-    cert.subject = OpenSSL::X509::Name.parse "/CN=#{name}"
+    cert.subject = OpenSSL::X509::Name.parse name
     if ca_cert
       cert.issuer = ca_cert.subject
     else
@@ -102,8 +116,8 @@ module Porkadot::Certs
     return cert
   end
 
-  def apiserver_cert(path, name, client_key, ca_cert, ca_key)
-    cert = unsigned_cert(name, ca_key, ca_cert, 1 * 365 * 24 * 60 * 60)
+  def apiserver_cert(path, client_key, ca_cert, ca_key)
+    cert = unsigned_cert('/CN=apiserver', ca_key, ca_cert, 1 * 365 * 24 * 60 * 60)
 
     ef = OpenSSL::X509::ExtensionFactory.new
     ef.subject_certificate = cert
@@ -136,31 +150,25 @@ module Porkadot::Certs
     ips = []
     if self.config.k8s.control_plane_endpoint
       host = self.config.k8s.control_plane_endpoint.split(':')[0]
-      begin
-        IPAddr.new(host)
-        ips << host
-      rescue IPAddr::InvalidAddressError
-        dns_names << host
-      end
+      self.ipaddr?(host) ? ips << host : dns_names << host
     end
     self.config.nodes.each do |k, v|
-      begin
-        IPAddr.new(k)
-        ips << k
-      rescue IPAddr::InvalidAddressError
-        dns_names << k
-      end
+      next unless v.labels && v.labels.include?(Porkadot::K8S_MASTER_LABEL)
+      self.ipaddr?(k) ? ips << k : dns_names << k
       if v.address
-        begin
-          IPAddr.new(v.address)
-          ips << v.address
-        rescue IPAddr::InvalidAddressError
-          dns_names << v.address
-        end
+        self.ipaddr?(v.address) ? ips << v.address : dns_names << v.address
       end
     end
 
     sans = dns_names.map {|v| "DNS:#{v}"} + ips.map {|v| "IP:#{v}"}
-    return sans
+    return sans.uniq
   end
+
+  def ipaddr?(addr)
+    IPAddr.new(addr)
+    return true
+  rescue IPAddr::InvalidAddressError
+    return false
+  end
+
 end

@@ -4,16 +4,18 @@ nodes:
   node01:
     address: 192.168.33.111
     labels:
-    - "node-role.kubernetes.io/master"
+      "node-role.kubernetes.io/master":
     taints:
-    - "node-role.kubernetes.io/master=:NoSchedule"
+      "node-role.kubernetes.io/master": :NoSchedule"
   '192.168.33.112':
     labels:
-    - "node-role.kubernetes.io/master"
+      "node-role.kubernetes.io/master":
     taints:
-    - "node-role.kubernetes.io/master=:NoSchedule"
-  node03:
+      "node-role.kubernetes.io/master": ":NoSchedule"
+  '192.168.33.113':
     address: 192.168.33.113
+    labels:
+      "node-role.kubernetes.io/master":
   node04:
     address: 192.168.33.114
 
