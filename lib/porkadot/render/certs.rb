@@ -6,8 +6,8 @@ module Porkadot; module Render; module Certs
     default_task :all
     desc "all", "Render all certificates to deploy Kubernetes cluster"
     def all
-      self.etcd
-      self.kubernetes
+      invoke :etcd
+      invoke :kubernetes
     end
 
     desc 'etcd', "Render certificates to deploy Etcd"
