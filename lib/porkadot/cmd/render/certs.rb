@@ -1,7 +1,19 @@
-module Porkadot; module Render; module Certs
+require 'forwardable'
+
+module Porkadot; module Cmd; module Render; module Certs
   class Cli < Porkadot::SubCommandBase
     include Porkadot::Utils
-    include Porkadot::Certs
+    extend Forwardable
+    attr_reader :certs
+
+    no_commands do
+      delegate [:private_key, :public_key, :ca_cert, :client_cert, :apiserver_cert] => :certs
+    end
+
+    def initialize(*arg)
+      super
+      @certs = Porkadot::Certs.new(self.config)
+    end
 
     default_task :all
     desc "all", "Render all certificates to deploy Kubernetes cluster"
@@ -18,7 +30,7 @@ module Porkadot; module Render; module Certs
       ca_cert = self.ca_cert(self.config.etcd_ca_cert_path, '/CN=kube-ca', ca_key)
       logger.info "--> Client key and certs"
       client_key = self.private_key(self.config.etcd_client_key_path)
-      client_cert = self.client_cert(self.config.etcd_client_cert_path, '/CN=etcd-client', client_key, ca_cert, ca_key)
+      self.client_cert(self.config.etcd_client_cert_path, '/CN=etcd-client', client_key, ca_cert, ca_key)
       ''
     end
 
@@ -53,4 +65,4 @@ module Porkadot; module Render; module Certs
       'render certs'
     end
   end
-end; end; end
+end; end; end; end

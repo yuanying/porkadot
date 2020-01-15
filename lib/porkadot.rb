@@ -7,8 +7,12 @@ module Porkadot
   # Your code goes here...
 end
 
-require 'porkadot/utils/hash_recursive_merge'
 require 'porkadot/const'
+require 'porkadot/utils/hash_recursive_merge'
 require 'porkadot/config'
 require 'porkadot/utils'
-require 'porkadot/cli'
+require 'porkadot/certs'
+
+require 'porkadot/cmd/render/certs'
+require 'porkadot/cmd/render'
+require 'porkadot/cmd'

@@ -3,20 +3,8 @@ require "test_helper"
 class CertsTest < Minitest::Test
   include Porkadot::TestUtils
 
-  class CertUtils
-    include Porkadot::Certs
-    attr_reader :config
-
-    def initialize config
-      @config = config
-    end
-    def logger
-      self.config.logger
-    end
-  end
-
   def setup
-    @cert_utils = CertUtils.new(self.mock_config)
+    @cert_utils = Porkadot::Certs.new(self.mock_config)
   end
 
   def test_additional_sans
