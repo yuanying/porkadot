@@ -91,5 +91,13 @@ module Porkadot; module Assets
     def k8s_sa_public_key_path
       File.join(self.k8s_certs_dir, 'sa.pub')
     end
+
+    def k8s_bootstrap_key_path
+      File.join(self.k8s_certs_dir, 'bootstrap.key')
+    end
+
+    def k8s_bootstrap_cert_path
+      File.join(self.k8s_certs_dir, 'bootstrap.crt')
+    end
   end
 end; end

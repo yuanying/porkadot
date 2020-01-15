@@ -48,6 +48,9 @@ module Porkadot; module Cmd; module Render; module Certs
       logger.info "--> Kubelet client key and certs"
       kubelet_client_key = self.private_key(self.assets.k8s_kubelet_client_key_path)
       self.client_cert(self.assets.k8s_kubelet_client_cert_path, '/O=system:masters/CN=kube-kubelet-client', kubelet_client_key, ca_cert, ca_key)
+      logger.info "--> Bootstrap client key and certs"
+      bootstrap_client_key = self.private_key(self.assets.k8s_bootstrap_key_path)
+      self.client_cert(self.assets.k8s_bootstrap_cert_path, '/O=porkadot:node-bootstrappers/CN=node-bootstrapper', bootstrap_client_key, ca_cert, ca_key)
       logger.info "--> Admin client key and certs"
       admin_client_key = self.private_key(self.assets.k8s_admin_key_path)
       self.client_cert(self.assets.k8s_admin_cert_path, '/O=system:masters/CN=admin', admin_client_key, ca_cert, ca_key)

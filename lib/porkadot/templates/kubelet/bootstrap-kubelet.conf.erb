@@ -1,0 +1,19 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: <%= ca_data %>
+    server: https://<%= control_plane_endpoint %>
+  name: bootstrap
+contexts:
+- context:
+    cluster: bootstrap
+    user: kubelet-bootstrap
+  name: bootstrap
+current-context: bootstrap
+kind: Config
+preferences: {}
+users:
+- name: kubelet-bootstrap
+  user:
+    client-certificate: /etc/kubernetes/pki/bootstrap.crt
+    client-key: /etc/kubernetes/pki/bootstrap.key
