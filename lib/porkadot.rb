@@ -13,6 +13,9 @@ require 'porkadot/config'
 require 'porkadot/utils'
 require 'porkadot/certs'
 
+require 'porkadot/assets/certs'
+require 'porkadot/assets/kubelet'
+
 require 'porkadot/cmd/render/certs'
 require 'porkadot/cmd/render'
 require 'porkadot/cmd'
