@@ -1,10 +1,22 @@
 module Porkadot; module Assets
+  class KubeletList
+    attr_reader :config
+    attr_reader :kubelets
+
+    def initialize config
+      @kubelets = []
+      config.nodes.each do |k, node|
+        @kubelets << Kubelet.new(config, k, node)
+      end
+    end
+  end
+
   class Kubelet
     attr_reader :config
     attr_reader :logger
     attr_reader :name
     attr_reader :node
-  
+
     def initialize config, name, node
       @config = config
       @logger = config.logger
@@ -21,3 +33,4 @@ module Porkadot; module Assets
     end
   end
 end; end
+
