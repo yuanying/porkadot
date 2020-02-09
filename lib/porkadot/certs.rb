@@ -1,7 +1,7 @@
 require 'openssl'
 require 'fileutils'
 require 'ipaddr'
-OpenSSL::Random.seed File.read('/dev/random', 16)
+#OpenSSL::Random.seed File.read('/dev/random', 16)
 
 class Porkadot::Certs
   attr_reader :config

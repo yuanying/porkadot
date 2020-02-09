@@ -1,16 +1,4 @@
 module Porkadot; module Assets
-  class KubeletList
-    attr_reader :config
-    attr_reader :kubelets
-
-    def initialize config
-      @kubelets = []
-      config.nodes.each do |k, node|
-        @kubelets << Kubelet.new(config, k, node)
-      end
-    end
-  end
-
   class Kubelet
     attr_reader :config
     attr_reader :logger
@@ -25,11 +13,19 @@ module Porkadot; module Assets
     end
 
     def kubelet_path
-      File.join(self.config.assets_dir, name, 'kubelet')
+      File.join(self.config.assets_dir, 'kubelet', name)
     end
 
     def bootstrap_kubeconfig_path
       File.join(self.kubelet_path, 'bootstrap-kubelet.conf')
+    end
+
+    def bootstrap_key_path
+      File.join(self.kubelet_path, 'bootstrap.key')
+    end
+
+    def bootstrap_cert_path
+      File.join(self.kubelet_path, 'bootstrap.crt')
     end
   end
 end; end

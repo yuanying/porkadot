@@ -16,6 +16,7 @@ module Porkadot; module Cmd; module Render
     desc "kubelet", "Render kubelet related files"
     def kubelet
       logger.info "Generating kubelet related files"
+      Porkadot::Templates::KubeletList.new(self.config).render
     end
 
     def self.subcommand_prefix
