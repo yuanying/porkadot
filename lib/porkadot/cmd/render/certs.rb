@@ -35,18 +35,21 @@ module Porkadot; module Cmd; module Render; module Certs
       logger.info "--> CA key and certs"
       certs.ca_key
       certs.ca_cert(true)
-      # logger.info "--> API server key and certs"
-      # apiserver_key = self.private_key(self.assets.k8s_apiserver_key_path)
-      # self.apiserver_cert(self.assets.k8s_apiserver_cert_path, apiserver_key, ca_cert, ca_key)
-      # logger.info "--> Kubelet client key and certs"
-      # kubelet_client_key = self.private_key(self.assets.k8s_kubelet_client_key_path)
-      # self.client_cert(self.assets.k8s_kubelet_client_cert_path, '/O=system:masters/CN=kube-kubelet-client', kubelet_client_key, ca_cert, ca_key)
+      logger.info "--> API server key and certs"
+      certs.apiserver_key
+      certs.apiserver_cert(true)
+      logger.info "--> Kubelet client key and certs"
+      certs.kubelet_client_key
+      certs.kubelet_client_cert
       # logger.info "--> Bootstrap client key and certs"
       # bootstrap_client_key = self.private_key(self.assets.k8s_bootstrap_key_path)
       # self.client_cert(self.assets.k8s_bootstrap_cert_path, '/O=porkadot:node-bootstrappers/CN=node-bootstrapper', bootstrap_client_key, ca_cert, ca_key)
       logger.info "--> Admin client key and certs"
       certs.client_key
       certs.client_cert(true)
+      logger.info "--> Private key for signing service account tokens"
+      certs.sa_private_key
+      certs.sa_public_key
 
       front_proxy_certs = Porkadot::Templates::Certs::FrontProxy.new(config)
       logger.info "--> Front-proxy CA key and certs"
@@ -55,9 +58,6 @@ module Porkadot; module Cmd; module Render; module Certs
       logger.info "--> Front-proxy client key and certs"
       front_proxy_certs.client_key
       front_proxy_certs.client_cert(true)
-      # logger.info "--> Private key for signing service account tokens"
-      # sa_private_key = self.private_key(self.assets.k8s_sa_private_key_path)
-      # self.public_key(self.assets.k8s_sa_public_key_path, sa_private_key)
       ''
     end
 

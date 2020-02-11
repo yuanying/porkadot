@@ -11,7 +11,6 @@ require 'porkadot/const'
 require 'porkadot/utils/hash_recursive_merge'
 require 'porkadot/config'
 require 'porkadot/utils'
-require 'porkadot/certs'
 
 require 'porkadot/assets/certs'
 require 'porkadot/assets/kubelet'

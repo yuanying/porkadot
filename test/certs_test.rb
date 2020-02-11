@@ -4,7 +4,7 @@ class CertsTest < Minitest::Test
   include Porkadot::TestUtils
 
   def setup
-    @cert_utils = Porkadot::Certs.new(self.mock_config)
+    @cert_utils = Porkadot::Templates::Certs::Kubernetes.new(self.mock_config)
   end
 
   def test_additional_sans
