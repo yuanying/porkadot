@@ -12,11 +12,11 @@ require 'porkadot/utils/hash_recursive_merge'
 require 'porkadot/config'
 require 'porkadot/utils'
 
+require 'porkadot/configs/certs'
+require 'porkadot/configs/kubelet'
+
 require 'porkadot/assets/certs'
 require 'porkadot/assets/kubelet'
-
-require 'porkadot/templates/certs'
-require 'porkadot/templates/kubelet'
 
 require 'porkadot/cmd/render/certs'
 require 'porkadot/cmd/render'

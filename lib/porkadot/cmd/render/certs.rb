@@ -18,7 +18,7 @@ module Porkadot; module Cmd; module Render; module Certs
     desc 'etcd', "Render certificates to deploy Etcd"
     def etcd
       logger.info "Generating etcd certificates"
-      certs = Porkadot::Templates::Certs::Etcd.new(config)
+      certs = Porkadot::Assets::Certs::Etcd.new(config)
       logger.info "--> CA key and certs"
       certs.ca_key
       certs.ca_cert(true)
@@ -31,7 +31,7 @@ module Porkadot; module Cmd; module Render; module Certs
     desc 'kubernetes', "Render certificates to deploy Kubernetes"
     def kubernetes
       logger.info "Generating kubernetes certificates"
-      certs = Porkadot::Templates::Certs::Kubernetes.new(config)
+      certs = Porkadot::Assets::Certs::Kubernetes.new(config)
       logger.info "--> CA key and certs"
       certs.ca_key
       certs.ca_cert(true)
@@ -51,7 +51,7 @@ module Porkadot; module Cmd; module Render; module Certs
       certs.sa_private_key
       certs.sa_public_key
 
-      front_proxy_certs = Porkadot::Templates::Certs::FrontProxy.new(config)
+      front_proxy_certs = Porkadot::Assets::Certs::FrontProxy.new(config)
       logger.info "--> Front-proxy CA key and certs"
       front_proxy_certs.ca_key
       front_proxy_certs.ca_cert(true)

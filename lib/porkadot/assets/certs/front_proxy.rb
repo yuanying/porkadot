@@ -1,33 +1,16 @@
 
-module Porkadot; module Assets; module Certs
-  class FrontProxy
-    include Porkadot::Assets::Certs
-    attr_reader :config
-    attr_reader :logger
+class Porkadot::Assets::Certs::FrontProxy < Porkadot::Assets::Certs
 
-    def initialize config
-      @config = config
-      @logger = config.logger
-    end
-
-    def certs_dir
-      File.join(self.certs_root_dir, 'kubernetes')
-    end
-
-    def ca_key_path
-      File.join(self.certs_dir, 'front-proxy-ca.key')
-    end
-
-    def ca_cert_path
-      File.join(self.certs_dir, 'front-proxy-ca.crt')
-    end
-
-    def client_key_path
-      File.join(self.certs_dir, 'front-proxy-client.key')
-    end
-
-    def client_cert_path
-      File.join(self.certs_dir, 'front-proxy-client.crt')
-    end
+  def initialize global_config
+    config = Porkadot::Configs::Certs::FrontProxy.new(global_config)
+    super config
   end
-end; end; end
+
+  def ca_name
+    '/CN=front-proxy-ca'
+  end
+
+  def client_name
+    '/CN=aggregator-client'
+  end
+end
