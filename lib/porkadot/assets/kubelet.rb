@@ -1,20 +1,22 @@
+require 'openssl'
 require 'fileutils'
 require 'erb'
 require 'base64'
 
 module Porkadot; module Assets
   class KubeletList
-    attr_reader :config
+    attr_reader :global_config
     attr_reader :logger
 
-    def initialize config
-      @config = config
-      @logger = config.logger
+    def initialize global_config
+      @global_config = global_config
+      @logger = global_config.logger
     end
 
     def render
-      config.nodes.each do |k, node|
-        Kubelet.new(config, k, node).render
+      global_config.nodes.each do |k, node|
+        config = Porkadot::Configs::Kubelet.new(global_config, k, node)
+        Kubelet.new(config).render
       end
     end
   end
@@ -22,40 +24,35 @@ module Porkadot; module Assets
   class Kubelet
     KUBELETE_TEMPLATE_DIR = File.join(File.dirname(__FILE__), "kubelet")
 
+    attr_reader :global_config
     attr_reader :config
     attr_reader :logger
-    attr_reader :name
-    attr_reader :node
     attr_reader :certs
-    attr_reader :assets
-    attr_reader :cert_assets
 
-    def initialize config, name, node
+    def initialize config
       @config = config
       @logger = config.logger
-      @name = name
-      @node = node
-      @assets = Porkadot::Assets::Kubelet.new(config, name, node)
-      @cert_assets = Porkadot::Assets::Certs.new(config)
-      @certs = Porkadot::Certs.new(config)
+      @global_config = config.config
+      @certs = Porkadot::Assets::Certs::Kubernetes.new(global_config)
     end
 
     def render
-      logger.info "--> Rendering #{name} node"
-      unless File.directory?(assets.kubelet_path)
-        FileUtils.mkdir_p(assets.kubelet_path)
+      logger.info "--> Rendering #{config.name} node"
+      unless File.directory?(config.kubelet_path)
+        FileUtils.mkdir_p(config.kubelet_path)
       end
       render_bootstrap_kubeconfig
+      render_bootstrap_certs
     end
 
     def render_bootstrap_kubeconfig
       logger.info "----> bootstrap kubeconfig"
-      ca_data = open(cert_assets.k8s_ca_cert_path) {|io| io.read }
+      ca_data = certs.ca_cert.to_pem
       open(File.join(KUBELETE_TEMPLATE_DIR, 'bootstrap-kubelet.conf.erb')) do |io|
-        open(assets.bootstrap_kubeconfig_path, 'w') do |out|
+        open(config.bootstrap_kubeconfig_path, 'w') do |out|
           out.write ERB.new(io.read).result_with_hash(
             config: config,
-            node: node,
+            global_config: global_config,
             ca_data: Base64.strict_encode64(ca_data)
           )
         end
@@ -63,9 +60,32 @@ module Porkadot; module Assets
     end
 
     def render_bootstrap_certs
-      logger.info "----> bootstrap private key"
-      bootstrap_client_key = self.private_key(self.assets.bootstrap_key_path)
-      self.client_cert(self.assets.bootstrap_cert_path, '/O=porkadot:node-bootstrappers/CN=node-bootstrapper:#{name}', bootstrap_client_key, ca_cert, ca_key)
+      logger.info "----> bootstrap certs"
+      self.bootstrap_key
+      self.bootstrap_cert(true)
     end
+
+    def bootstrap_key
+      @bootstrap_key ||= certs.private_key(config.bootstrap_key_path)
+      return @bootstrap_key
+    end
+
+    def bootstrap_cert(refresh=false)
+      return @bootstrap_cert if defined?(@bootstrap_cert)
+      if File.file?(config.bootstrap_cert_path) and !refresh
+        self.logger.debug("--> Bootstrap cert already exists, skipping: #{config.bootstrap_cert_path}")
+        @bootstrap_cert = OpenSSL::X509::Certificate.new(File.read(config.bootstrap_cert_path))
+      else
+        @bootstrap_cert = certs._client_cert(
+          config.bootstrap_cert_path,
+          "/O=porkadot:node-bootstrappers/CN=node-bootstrapper:#{config.name}",
+          self.bootstrap_key,
+          self.certs.ca_cert(false),
+          self.certs.ca_key
+        )
+      end
+      return @bootstrap_cert
+    end
+
   end
 end; end
