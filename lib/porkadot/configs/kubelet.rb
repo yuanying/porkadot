@@ -1,15 +1,16 @@
 module Porkadot; module Configs
   class Kubelet
+    include Porkadot::ConfigUtils
     attr_reader :config
     attr_reader :logger
     attr_reader :name
-    attr_reader :node
+    attr_reader :raw
 
-    def initialize config, name, node
+    def initialize config, name, raw
       @config = config
       @logger = config.logger
       @name = name
-      @node = node
+      @raw = raw
     end
 
     def kubelet_path

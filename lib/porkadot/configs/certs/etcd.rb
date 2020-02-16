@@ -1,7 +1,7 @@
 
-module Porkadot; module Configs; module Certs
+module Porkadot; module Configs; class Certs
   class Etcd
-    include Porkadot::Configs::Certs
+    include Porkadot::Configs::CertsUtils
     attr_reader :config
     attr_reader :logger
 

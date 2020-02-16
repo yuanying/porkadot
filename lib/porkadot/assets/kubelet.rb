@@ -14,8 +14,7 @@ module Porkadot; module Assets
     end
 
     def render
-      global_config.nodes.each do |k, node|
-        config = Porkadot::Configs::Kubelet.new(global_config, k, node)
+      global_config.nodes.each do |config|
         Kubelet.new(config).render
       end
     end
