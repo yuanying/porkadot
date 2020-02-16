@@ -17,6 +17,10 @@ module Porkadot; module Configs
       File.join(self.config.assets_dir, 'kubelet', name)
     end
 
+    def config_path
+      File.join(self.kubelet_path, 'config.yaml')
+    end
+
     def bootstrap_kubeconfig_path
       File.join(self.kubelet_path, 'bootstrap-kubelet.conf')
     end

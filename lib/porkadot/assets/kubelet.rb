@@ -42,6 +42,7 @@ module Porkadot; module Assets
       end
       render_bootstrap_kubeconfig
       render_bootstrap_certs
+      render_config
     end
 
     def render_bootstrap_kubeconfig
@@ -62,6 +63,18 @@ module Porkadot; module Assets
       logger.info "----> bootstrap certs"
       self.bootstrap_key
       self.bootstrap_cert(true)
+    end
+
+    def render_config
+      logger.info "----> config.yaml"
+      open(File.join(KUBELETE_TEMPLATE_DIR, 'config.yaml.erb')) do |io|
+        open(config.config_path, 'w') do |out|
+          out.write ERB.new(io.read).result_with_hash(
+            config: config,
+            global_config: global_config,
+          )
+        end
+      end
     end
 
     def bootstrap_key
