@@ -43,6 +43,7 @@ module Porkadot; module Assets
       render_bootstrap_kubeconfig
       render_bootstrap_certs
       render_config
+      render_kubelet_service
     end
 
     def render_bootstrap_kubeconfig
@@ -69,6 +70,18 @@ module Porkadot; module Assets
       logger.info "----> config.yaml"
       open(File.join(KUBELETE_TEMPLATE_DIR, 'config.yaml.erb')) do |io|
         open(config.config_path, 'w') do |out|
+          out.write ERB.new(io.read).result_with_hash(
+            config: config,
+            global_config: global_config,
+          )
+        end
+      end
+    end
+
+    def render_kubelet_service
+      logger.info "----> kubelet.service"
+      open(File.join(KUBELETE_TEMPLATE_DIR, 'kubelet.service.erb')) do |io|
+        open(config.kubelet_service_path, 'w') do |out|
           out.write ERB.new(io.read).result_with_hash(
             config: config,
             global_config: global_config,
