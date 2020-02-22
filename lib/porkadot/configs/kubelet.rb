@@ -25,6 +25,14 @@ module Porkadot; module Configs
       File.join(self.kubelet_path, 'kubelet.service')
     end
 
+    def ca_crt_path
+      File.join(self.kubelet_path, 'ca.crt')
+    end
+
+    def install_sh_path
+      File.join(self.kubelet_path, 'install.sh')
+    end
+
     def bootstrap_kubeconfig_path
       File.join(self.kubelet_path, 'bootstrap-kubelet.conf')
     end

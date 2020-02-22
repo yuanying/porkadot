@@ -44,6 +44,8 @@ module Porkadot; module Assets
       render_bootstrap_certs
       render_config
       render_kubelet_service
+      render_ca_crt
+      render_install_sh
     end
 
     def render_bootstrap_kubeconfig
@@ -82,6 +84,25 @@ module Porkadot; module Assets
       logger.info "----> kubelet.service"
       open(File.join(KUBELETE_TEMPLATE_DIR, 'kubelet.service.erb')) do |io|
         open(config.kubelet_service_path, 'w') do |out|
+          out.write ERB.new(io.read).result_with_hash(
+            config: config,
+            global_config: global_config,
+          )
+        end
+      end
+    end
+
+    def render_ca_crt
+      logger.info "----> ca.crt"
+      open(config.ca_crt_path, 'w') do |out|
+        out.write self.certs.ca_cert(false).to_pem
+      end
+    end
+
+    def render_install_sh
+      logger.info "----> install.sh"
+      open(File.join(KUBELETE_TEMPLATE_DIR, 'install.sh.erb')) do |io|
+        open(config.install_sh_path, 'w') do |out|
           out.write ERB.new(io.read).result_with_hash(
             config: config,
             global_config: global_config,
