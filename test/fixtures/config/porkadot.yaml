@@ -17,6 +17,7 @@ nodes:
       "node-role.kubernetes.io/master":
   node04:
     address: 192.168.33.114
+  192.168.33.115:
 
 kubernetes:
   control_plane_endpoint: '192.168.33.101:6443'

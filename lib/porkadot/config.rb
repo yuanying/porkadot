@@ -47,10 +47,12 @@ module Porkadot
   module ConfigUtils
 
     def method_missing name, *args
+      return nil if self.raw.nil?
       self.raw[name]
     end
 
     def respond_to_missing? sym, include_private
+      return false if self.raw.nil?
       self.raw.respond_to_missing?(sym, include_private) ? true : super
     end
   end
