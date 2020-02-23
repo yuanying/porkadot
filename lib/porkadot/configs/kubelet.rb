@@ -33,6 +33,10 @@ module Porkadot; module Configs
       File.join(self.kubelet_path, 'install.sh')
     end
 
+    def install_deps_sh_path
+      File.join(self.kubelet_path, 'install-deps.sh')
+    end
+
     def bootstrap_kubeconfig_path
       File.join(self.kubelet_path, 'bootstrap-kubelet.conf')
     end
