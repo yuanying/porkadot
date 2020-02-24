@@ -16,6 +16,7 @@ kubernetes:
     connection:
       user: ubuntu
       port: 22
+      keys: ["~/.ssh/id_rsa", "~/.ssh/id_dsa"]
 
     config:
       apiVersion: kubelet.config.k8s.io/v1beta1
