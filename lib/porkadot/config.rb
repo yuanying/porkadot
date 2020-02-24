@@ -3,6 +3,10 @@ require 'hashie'
 require 'logger'
 
 module Porkadot
+  class Raw < ::Hashie::Mash
+    disable_warnings :keys
+  end
+
   class Config
     attr_reader :raw
     attr_reader :logger
@@ -13,7 +17,7 @@ module Porkadot
         default_config = YAML::load(io)
       end
       open(File.expand_path(path)) do |io|
-        @raw = ::Hashie::Mash.new(default_config.rmerge(YAML.load(io)))
+        @raw = ::Porkadot::Raw.new(default_config.rmerge(YAML.load(io)))
       end
       @logger = Logger.new(STDOUT)
     end

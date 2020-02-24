@@ -5,12 +5,18 @@ module Porkadot; module Configs
     attr_reader :logger
     attr_reader :name
     attr_reader :raw
+    attr_reader :connection
 
     def initialize config, name, raw
       @config = config
       @logger = config.logger
       @name = name
-      @raw = raw
+      @raw = raw || ::Porkadot::Raw.new
+      address = @raw.address || name
+      con = { address: address }
+      gcon = config.kubernetes.kubelet.connection.to_h
+      lcon = @raw.connection.to_h || {}
+      @connection = ::Porkadot::Raw.new(con.rmerge(gcon.rmerge(lcon)))
     end
 
     def kubelet_path

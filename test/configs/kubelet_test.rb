@@ -1,12 +1,11 @@
 require 'test_helper'
 
-class PorkadotAssetsKubeletTest < Minitest::Test
+class PorkadotConfigsKubeletTest < Minitest::Test
   include Porkadot::TestUtils
 
   def kubelet name, raw={}
-    raw = ::Hashie::Mash.new(raw)
-    config = Porkadot::Configs::Kubelet.new(self.mock_config, name, raw)
-    return Porkadot::Assets::Kubelet.new(config)
+    raw = ::Porkadot::Raw.new(raw)
+    return Porkadot::Configs::Kubelet.new(self.mock_config, name, raw)
   end
 
   def test_connection_default_user
