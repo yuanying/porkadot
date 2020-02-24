@@ -14,9 +14,15 @@ module Porkadot; module Cmd; module Render
     subcommand "certs", Porkadot::Cmd::Render::Certs::Cli
 
     desc "kubelet", "Render kubelet related files"
+    option :node, type: :string
     def kubelet
       logger.info "Generating kubelet related files"
-      Porkadot::Assets::KubeletList.new(self.config).render
+      kubelets = Porkadot::Assets::KubeletList.new(self.config)
+      if node = options[:node]
+        kubelets[node].render
+      else
+        kubelets.render
+      end
       ""
     end
 

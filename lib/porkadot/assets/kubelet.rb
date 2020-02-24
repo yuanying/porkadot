@@ -7,16 +7,25 @@ module Porkadot; module Assets
   class KubeletList
     attr_reader :global_config
     attr_reader :logger
+    attr_reader :kubelets
 
     def initialize global_config
       @global_config = global_config
       @logger = global_config.logger
+      @kubelets = {}
+      global_config.nodes.each do |config|
+        @kubelets[config.name] = Kubelet.new(config)
+      end
     end
 
     def render
-      global_config.nodes.each do |config|
-        Kubelet.new(config).render
+      self.kubelets.each do |_, v|
+        v.render
       end
+    end
+
+    def [](name)
+      self.kubelets[name]
     end
   end
 
