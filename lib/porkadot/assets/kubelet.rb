@@ -27,12 +27,18 @@ module Porkadot; module Assets
     attr_reader :config
     attr_reader :logger
     attr_reader :certs
+    attr_reader :connection
 
     def initialize config
       @config = config
       @logger = config.logger
       @global_config = config.config
       @certs = Porkadot::Assets::Certs::Kubernetes.new(global_config)
+      address = config.address || config.name
+      con = { address: address }
+      gcon = global_config.kubernetes.kubelet.connection.to_h
+      lcon = config.connection.to_h || {}
+      @connection = ::Hashie::Mash.new(con.rmerge(gcon.rmerge(lcon)))
     end
 
     def render

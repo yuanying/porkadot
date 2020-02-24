@@ -13,6 +13,10 @@ kubernetes:
     dns_domain: 'cluster.local'
 
   kubelet:
+    connection:
+      user: ubuntu
+      port: 22
+
     config:
       apiVersion: kubelet.config.k8s.io/v1beta1
       kind: KubeletConfiguration

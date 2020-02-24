@@ -13,12 +13,22 @@ nodes:
       "node-role.kubernetes.io/master": ":NoSchedule"
   '192.168.33.113':
     address: 192.168.33.113
+    connection:
+      address: node03
     labels:
       "node-role.kubernetes.io/master":
   node04:
     address: 192.168.33.114
+    connection:
+      user: core
+      port: 11222
   192.168.33.115:
 
 kubernetes:
+  kubernetes_version: v1.17.2
   control_plane_endpoint: '192.168.33.101:6443'
 
+  kubelet:
+    connection:
+      user: ubuntu
+      port: 22
