@@ -94,8 +94,8 @@ class Porkadot::Assets::Certs::Kubernetes < Porkadot::Assets::Certs
       v = node
       next unless v.labels && v.labels.include?(Porkadot::K8S_MASTER_LABEL)
       self.ipaddr?(k) ? ips << k : dns_names << k
-      if v.address
-        self.ipaddr?(v.address) ? ips << v.address : dns_names << v.address
+      if v.hostname
+        self.ipaddr?(v.hostname) ? ips << v.hostname : dns_names << v.hostname
       end
     end
 

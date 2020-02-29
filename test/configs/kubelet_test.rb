@@ -21,23 +21,31 @@ class PorkadotConfigsKubeletTest < Minitest::Test
     assert_equal 'core', node.connection.user
   end
 
-  def test_connection_address_by_name
+  def test_connection_hostname_by_name
     node = kubelet('test')
 
-    assert_equal 'test', node.connection.address
+    assert_equal 'test', node.connection.hostname
   end
 
-  def test_connection_address_by_address
-    node = { address: 'hoge' }
+  def test_connection_hostname_by_hostname
+    node = { hostname: 'hoge' }
     node = kubelet('test', node)
 
-    assert_equal 'hoge', node.connection.address
+    assert_equal 'hoge', node.connection.hostname
   end
 
-  def test_connection_address_by_connection_address
-    node = { address: 'hoge' , connection: { address: 'fuga' }}
+  def test_connection_hostname_by_connection_hostname
+    node = { hostname: 'hoge' , connection: { hostname: 'fuga' }}
     node = kubelet('test', node)
 
-    assert_equal 'fuga', node.connection.address
+    assert_equal 'fuga', node.connection.hostname
+  end
+
+  def test_connection_has_user_port_hostname_by_default
+    node = kubelet('test')
+
+    assert node.connection.hostname
+    assert node.connection.user
+    assert node.connection.port
   end
 end

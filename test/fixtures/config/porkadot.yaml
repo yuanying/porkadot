@@ -1,7 +1,7 @@
 
 nodes:
   node01:
-    address: 192.168.33.111
+    hostname: 192.168.33.111
     labels:
       "node-role.kubernetes.io/master":
     taints:
@@ -12,13 +12,13 @@ nodes:
     taints:
       "node-role.kubernetes.io/master": ":NoSchedule"
   '192.168.33.113':
-    address: 192.168.33.113
+    hostname: 192.168.33.113
     connection:
-      address: node03
+      hostname: node03
     labels:
       "node-role.kubernetes.io/master":
   node04:
-    address: 192.168.33.114
+    hostname: 192.168.33.114
     connection:
       user: core
       port: 11222

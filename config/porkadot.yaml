@@ -1,20 +1,20 @@
 nodes:
   node01:
-    address: 192.168.33.111
+    hostname: 192.168.33.111
     labels:
       "node-role.kubernetes.io/master":
     taints:
       "node-role.kubernetes.io/master": :NoSchedule"
   node02:
-    address: 192.168.33.112
+    hostname: 192.168.33.112
     labels:
       "node-role.kubernetes.io/master":
     taints:
       "node-role.kubernetes.io/master": :NoSchedule"
   node03:
-    address: 192.168.33.113
+    hostname: 192.168.33.113
   node04:
-    address: 192.168.33.114
+    hostname: 192.168.33.114
 
 kubernetes:
   control_plane_endpoint: '192.168.33.101:6443'

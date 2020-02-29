@@ -12,10 +12,10 @@ module Porkadot; module Configs
       @logger = config.logger
       @name = name
       @raw = raw || ::Porkadot::Raw.new
-      address = @raw.address || name
-      con = { address: address }
-      gcon = config.kubernetes.kubelet.connection.to_h
-      lcon = @raw.connection.to_h || {}
+      hostname = @raw.hostname || name
+      con = { hostname: hostname }
+      gcon = config.kubernetes.kubelet.connection.to_hash
+      lcon = @raw.connection ? @raw.connection.to_hash : {}
       @connection = ::Porkadot::Raw.new(con.rmerge(gcon.rmerge(lcon)))
     end
 
