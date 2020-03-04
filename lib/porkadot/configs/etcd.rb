@@ -20,6 +20,10 @@ module Porkadot; module Configs
       File.join(self.kubelet.addon_path, 'etcd')
     end
 
+    def ca_crt_path
+      File.join(self.etcd_path, 'ca.crt')
+    end
+
     def install_sh_path
       File.join(self.etcd_path, 'install.sh')
     end

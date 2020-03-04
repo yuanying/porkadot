@@ -41,7 +41,7 @@ module Porkadot; module Assets
       @config = config
       @logger = config.logger
       @global_config = config.config
-      @certs = Porkadot::Assets::Certs::Kubernetes.new(global_config)
+      @certs = Porkadot::Assets::Certs::Etcd.new(global_config)
     end
 
     def render
@@ -49,7 +49,15 @@ module Porkadot; module Assets
       unless File.directory?(config.etcd_path)
         FileUtils.mkdir_p(config.etcd_path)
       end
+      render_ca_crt
       render_install_sh
+    end
+
+    def render_ca_crt
+      logger.info "----> ca.crt"
+      open(config.ca_crt_path, 'w') do |out|
+        out.write self.certs.ca_cert(false).to_pem
+      end
     end
 
     def render_install_sh
