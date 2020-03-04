@@ -89,7 +89,7 @@ class Porkadot::Assets::Certs::Kubernetes < Porkadot::Assets::Certs
       host = self.global_config.k8s.control_plane_endpoint.split(':')[0]
       self.ipaddr?(host) ? ips << host : dns_names << host
     end
-    self.global_config.nodes.each do |node|
+    self.global_config.nodes.each do |_, node|
       k = node.name
       v = node
       next unless v.labels && v.labels.include?(Porkadot::K8S_MASTER_LABEL)

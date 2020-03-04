@@ -38,9 +38,9 @@ module Porkadot
     alias k8s kubernetes
 
     def nodes
-      @nodes ||= [].tap do |nodes|
+      @nodes ||= {}.tap do |nodes|
         self.raw.nodes.each do |k, v|
-          nodes << Porkadot::Configs::Kubelet.new(self, k, v)
+          nodes[k] = Porkadot::Configs::Kubelet.new(self, k, v)
         end
       end
       return @nodes

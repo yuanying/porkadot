@@ -13,8 +13,8 @@ module Porkadot; module Assets
       @global_config = global_config
       @logger = global_config.logger
       @kubelets = {}
-      global_config.nodes.each do |config|
-        @kubelets[config.name] = Kubelet.new(config)
+      global_config.nodes.each do |k, config|
+        @kubelets[k] = Kubelet.new(config)
       end
     end
 
