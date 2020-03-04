@@ -16,6 +16,7 @@ require 'porkadot/utils'
 require 'porkadot/configs/certs'
 require 'porkadot/configs/kubelet'
 require 'porkadot/configs/kubernetes'
+require 'porkadot/configs/etcd'
 
 require 'porkadot/assets/certs'
 require 'porkadot/assets/kubelet'
