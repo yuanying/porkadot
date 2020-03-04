@@ -20,6 +20,7 @@ require 'porkadot/configs/etcd'
 
 require 'porkadot/assets/certs'
 require 'porkadot/assets/kubelet'
+require 'porkadot/assets/etcd'
 
 require 'porkadot/install/kubelet'
 

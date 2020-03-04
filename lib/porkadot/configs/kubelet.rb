@@ -23,6 +23,10 @@ module Porkadot; module Configs
       File.join(self.config.assets_dir, 'kubelet', name)
     end
 
+    def addon_path
+      File.join(self.kubelet_path, 'addons')
+    end
+
     def config_path
       File.join(self.kubelet_path, 'config.yaml')
     end

@@ -46,6 +46,17 @@ module Porkadot
       return @nodes
     end
 
+    def etcd_nodes
+      @etcd_nodes ||= {}.tap do |nodes|
+        self.raw.nodes.each do |k, v|
+          if v && v.labels && v.labels.to_hash.keys.include?(Porkadot::ETCD_NODE_LABEL)
+            nodes[k] = Porkadot::Configs::Etcd.new(self, k, v)
+          end
+        end
+      end
+      return @etcd_nodes
+    end
+
     def assets_dir
       File.expand_path(raw.local.assets_dir)
     end

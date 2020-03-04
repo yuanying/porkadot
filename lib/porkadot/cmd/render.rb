@@ -26,6 +26,19 @@ module Porkadot; module Cmd; module Render
       ""
     end
 
+    desc "etcd", "Render etcd related files"
+    option :node, type: :string
+    def etcd
+      logger.info "Generating etcd related files"
+      etcds = Porkadot::Assets::EtcdList.new(self.config)
+      if node = options[:node]
+        etcds[node].render
+      else
+        etcds.render
+      end
+      ""
+    end
+
     def self.subcommand_prefix
       'render'
     end
