@@ -1,14 +1,20 @@
 
+connection:
+  user: ubuntu
+  port: 22
+
 nodes:
   node01:
     hostname: 192.168.33.111
     labels:
       "node-role.kubernetes.io/master":
+      "etcd.unstable.cloud/node":
     taints:
       "node-role.kubernetes.io/master": :NoSchedule"
   '192.168.33.112':
     labels:
       "node-role.kubernetes.io/master":
+      "etcd.unstable.cloud/node": node02
     taints:
       "node-role.kubernetes.io/master": ":NoSchedule"
   '192.168.33.113':
@@ -28,7 +34,3 @@ kubernetes:
   kubernetes_version: v1.17.2
   control_plane_endpoint: '192.168.33.101:6443'
 
-  kubelet:
-    connection:
-      user: ubuntu
-      port: 22

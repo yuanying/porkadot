@@ -1,7 +1,16 @@
 local:
   assets_dir: ./assets
 
-nodes: []
+connection:
+  user: ubuntu
+  port: 22
+  keys: ["~/.ssh/id_rsa", "~/.ssh/id_dsa"]
+
+nodes: {}
+
+etcd:
+  image_repository: gcr.io/etcd-development/etcd
+  image_tag: v3.3.10
 
 kubernetes:
   kubernetes_version: v1.17.3
@@ -13,11 +22,6 @@ kubernetes:
     dns_domain: 'cluster.local'
 
   kubelet:
-    connection:
-      user: ubuntu
-      port: 22
-      keys: ["~/.ssh/id_rsa", "~/.ssh/id_dsa"]
-
     config:
       apiVersion: kubelet.config.k8s.io/v1beta1
       kind: KubeletConfiguration

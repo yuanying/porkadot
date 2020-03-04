@@ -14,7 +14,7 @@ module Porkadot; module Configs
       @raw = raw || ::Porkadot::Raw.new
       hostname = @raw.hostname || name
       con = { hostname: hostname }
-      gcon = config.kubernetes.kubelet.connection.to_hash
+      gcon = config.connection.to_hash
       lcon = @raw.connection ? @raw.connection.to_hash : {}
       @connection = ::Porkadot::Raw.new(con.rmerge(gcon.rmerge(lcon)))
     end

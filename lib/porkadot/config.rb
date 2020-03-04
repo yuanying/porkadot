@@ -27,6 +27,10 @@ module Porkadot
       return @certs
     end
 
+    def connection
+      self.raw.connection
+    end
+
     def kubernetes
       @kubernetes ||= Porkadot::Configs::Kubernetes.new(self)
       return @kubernetes
