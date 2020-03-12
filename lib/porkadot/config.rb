@@ -49,7 +49,7 @@ module Porkadot
     def etcd_nodes
       @etcd_nodes ||= {}.tap do |nodes|
         self.raw.nodes.each do |k, v|
-          if v && v.labels && v.labels.to_hash.keys.include?(Porkadot::ETCD_NODE_LABEL)
+          if v && v.labels && v.labels.to_hash.keys.include?(Porkadot::ETCD_MEMBER_LABEL)
             nodes[k] = Porkadot::Configs::Etcd.new(self, k, v)
           end
         end

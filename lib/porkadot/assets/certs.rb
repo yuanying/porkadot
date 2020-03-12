@@ -1,6 +1,5 @@
 require 'openssl'
 require 'fileutils'
-require 'ipaddr'
 #OpenSSL::Random.seed File.read('/dev/random', 16)
 
 module Porkadot; module Assets

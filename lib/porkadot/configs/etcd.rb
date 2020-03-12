@@ -2,6 +2,7 @@
 module Porkadot; module Configs
   class Etcd
     include Porkadot::ConfigUtils
+    include Porkadot::Configs::CertsUtils
     attr_reader :config
     attr_reader :kubelet
     attr_reader :logger
@@ -16,12 +17,40 @@ module Porkadot; module Configs
       @raw = raw || ::Porkadot::Raw.new
     end
 
+    def member_name
+      return (self.raw.labels && self.raw.labels[Porkadot::ETCD_MEMBER_LABEL]) || self.raw.hostname || self.name
+    end
+
+    def member_address
+      return (self.raw.labels && self.raw.labels[Porkadot::ETCD_ADDRESS_LABEL]) || self.raw.hostname || self.name
+    end
+
+    def additional_sans
+      sans = []
+      [self.member_name, self.member_address].each do |san|
+        if self.ipaddr?(san)
+          sans << "IP:#{san}"
+        else
+          sans << "DNS:#{san}"
+        end
+      end
+      return sans
+    end
+
     def etcd_path
       File.join(self.kubelet.addon_path, 'etcd')
     end
 
     def ca_crt_path
       File.join(self.etcd_path, 'ca.crt')
+    end
+
+    def etcd_key_path
+      File.join(self.etcd_path, 'etcd.key')
+    end
+
+    def etcd_crt_path
+      File.join(self.etcd_path, 'etcd.crt')
     end
 
     def install_sh_path

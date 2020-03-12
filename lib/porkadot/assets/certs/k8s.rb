@@ -72,7 +72,7 @@ class Porkadot::Assets::Certs::Kubernetes < Porkadot::Assets::Certs
     cert.add_extension(ef.create_extension("keyUsage","nonRepudiation, digitalSignature, keyEncipherment", true))
     cert.add_extension(ef.create_extension("extendedKeyUsage","clientAuth, serverAuth",true))
 
-    cert.add_extension(ef.create_extension("subjectAltName", self.additional_sans.join(','), true))
+    cert.add_extension(ef.create_extension("subjectAltName", self.config.additional_sans.join(','), true))
     cert.sign(ca_key, OpenSSL::Digest::SHA256.new)
 
     File.open path, 'wb' do |f|
@@ -80,41 +80,6 @@ class Porkadot::Assets::Certs::Kubernetes < Porkadot::Assets::Certs
     end
 
     return cert
-  end
-
-  def additional_sans
-    dns_names = []
-    ips = []
-    if self.global_config.k8s.control_plane_endpoint
-      host = self.global_config.k8s.control_plane_endpoint.split(':')[0]
-      self.ipaddr?(host) ? ips << host : dns_names << host
-    end
-    self.global_config.nodes.each do |_, node|
-      k = node.name
-      v = node
-      next unless v.labels && v.labels.include?(Porkadot::K8S_MASTER_LABEL)
-      self.ipaddr?(k) ? ips << k : dns_names << k
-      if v.hostname
-        self.ipaddr?(v.hostname) ? ips << v.hostname : dns_names << v.hostname
-      end
-    end
-
-    sans = dns_names.map {|v| "DNS:#{v}"} + ips.map {|v| "IP:#{v}"}
-    default_sans = %W(
-      DNS:kubernetes
-      DNS:kubernetes.default
-      DNS:kubernetes.default.svc
-      DNS:kubernetes.default.svc.#{self.global_config.k8s.networking.dns_domain}
-      IP:127.0.0.1
-    )
-    return default_sans + sans.uniq
-  end
-
-  def ipaddr?(addr)
-    IPAddr.new(addr)
-    return true
-  rescue IPAddr::InvalidAddressError
-    return false
   end
 
 end

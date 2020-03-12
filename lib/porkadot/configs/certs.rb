@@ -1,3 +1,5 @@
+require 'ipaddr'
+
 module Porkadot; module Configs
 
   class Certs
@@ -29,6 +31,13 @@ module Porkadot; module Configs
 
     def certs_root_dir
       File.join(self.config.assets_dir, 'certs')
+    end
+
+    def ipaddr?(addr)
+      IPAddr.new(addr)
+      return true
+    rescue IPAddr::InvalidAddressError
+      return false
     end
 
   end

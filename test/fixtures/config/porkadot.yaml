@@ -8,13 +8,13 @@ nodes:
     hostname: 192.168.33.111
     labels:
       "node-role.kubernetes.io/master":
-      "etcd.unstable.cloud/node":
+      "etcd.unstable.cloud/member":
     taints:
       "node-role.kubernetes.io/master": :NoSchedule"
   '192.168.33.112':
     labels:
       "node-role.kubernetes.io/master":
-      "etcd.unstable.cloud/node": node02
+      "etcd.unstable.cloud/member": node02
     taints:
       "node-role.kubernetes.io/master": ":NoSchedule"
   '192.168.33.113':
