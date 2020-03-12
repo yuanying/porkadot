@@ -2,6 +2,20 @@
 module Porkadot; module Configs
   class Etcd
     include Porkadot::ConfigUtils
+    attr_reader :config
+    attr_reader :logger
+    attr_reader :raw
+
+    def initialize config
+      @config = config
+      @logger = config.logger
+      @raw = config.raw.etcd
+    end
+
+  end
+
+  class EtcdNode
+    include Porkadot::ConfigUtils
     include Porkadot::Configs::CertsUtils
     attr_reader :config
     attr_reader :kubelet
@@ -23,6 +37,30 @@ module Porkadot; module Configs
 
     def member_address
       return (self.raw.labels && self.raw.labels[Porkadot::ETCD_ADDRESS_LABEL]) || self.raw.hostname || self.name
+    end
+
+    def advertise_client_urls
+     ["https://#{member_address}:2379"]
+    end
+
+    def advertise_peer_urls
+      ["https://#{member_address}:2379"]
+    end
+
+    def listen_client_urls
+      self.advertise_client_urls + ["https://127.0.0.1:2379"]
+    end
+
+    def listen_peer_urls
+      self.advertise_peer_urls
+    end
+
+    def initial_cluster
+      return {}.tap do |rtn|
+        self.config.etcd_nodes.each do |_, v|
+          rtn[v.member_name] = "https://#{v.member_address}:2380"
+        end
+      end
     end
 
     def additional_sans
@@ -51,6 +89,10 @@ module Porkadot; module Configs
 
     def etcd_crt_path
       File.join(self.etcd_path, 'etcd.crt')
+    end
+
+    def etcd_server_yaml_path
+      File.join(self.etcd_path, 'etcd-server.yaml')
     end
 
     def install_sh_path

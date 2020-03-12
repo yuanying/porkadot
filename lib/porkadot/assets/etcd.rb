@@ -14,7 +14,7 @@ module Porkadot; module Assets
       @logger = global_config.logger
       @nodes = {}
       global_config.etcd_nodes.each do |k, config|
-        @nodes[k] = Etcd.new(config)
+        @nodes[k] = EtcdNode.new(config)
       end
     end
 
@@ -29,7 +29,7 @@ module Porkadot; module Assets
     end
   end
 
-  class Etcd
+  class EtcdNode
     ETCD_TEMPLATE_DIR = File.join(File.dirname(__FILE__), "etcd")
 
     attr_reader :global_config
@@ -51,6 +51,7 @@ module Porkadot; module Assets
       end
       render_ca_crt
       render_etcd_crt
+      render_etcd_server_yaml
       render_install_sh
     end
 
@@ -67,6 +68,19 @@ module Porkadot; module Assets
       self.etcd_cert(true)
     end
 
+    def render_etcd_server_yaml
+      logger.info "----> etcd-server.yaml"
+      open(File.join(ETCD_TEMPLATE_DIR, 'etcd-server.yaml.erb')) do |io|
+        open(config.etcd_server_yaml_path, 'w') do |out|
+          out.write ERB.new(io.read).result_with_hash(
+            config: config,
+            global_config: global_config,
+            etcd: global_config.etcd,
+          )
+        end
+      end
+    end
+
     def render_install_sh
       logger.info "----> install.sh"
       open(File.join(ETCD_TEMPLATE_DIR, 'install.sh.erb')) do |io|
@@ -74,6 +88,7 @@ module Porkadot; module Assets
           out.write ERB.new(io.read).result_with_hash(
             config: config,
             global_config: global_config,
+            etcd: global_config.etcd,
           )
         end
       end

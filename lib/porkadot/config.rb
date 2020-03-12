@@ -37,6 +37,11 @@ module Porkadot
     end
     alias k8s kubernetes
 
+    def etcd
+      @etcd ||= Porkadot::Configs::Etcd.new(self)
+      return @etcd
+    end
+
     def nodes
       @nodes ||= {}.tap do |nodes|
         self.raw.nodes.each do |k, v|
@@ -50,7 +55,7 @@ module Porkadot
       @etcd_nodes ||= {}.tap do |nodes|
         self.raw.nodes.each do |k, v|
           if v && v.labels && v.labels.to_hash.keys.include?(Porkadot::ETCD_MEMBER_LABEL)
-            nodes[k] = Porkadot::Configs::Etcd.new(self, k, v)
+            nodes[k] = Porkadot::Configs::EtcdNode.new(self, k, v)
           end
         end
       end
