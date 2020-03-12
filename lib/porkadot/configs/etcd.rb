@@ -44,7 +44,7 @@ module Porkadot; module Configs
     end
 
     def advertise_peer_urls
-      ["https://#{member_address}:2379"]
+      ["https://#{member_address}:2380"]
     end
 
     def listen_client_urls

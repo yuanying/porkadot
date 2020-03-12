@@ -20,6 +20,15 @@ cp ${ROOT}/ca.crt ${KUBERNETES_PKI_PATH}/
 cp ${ROOT}/config.yaml ${KUBELET_PATH}/
 cp ${ROOT}/kubelet.service /etc/systemd/system/
 
+# Install addons
+for addon in $(ls ${ROOT}/addons/); do
+  install_sh="${ROOT}/addons/${addon}/install.sh"
+  if [[ -f ${install_sh} ]]; then
+    echo "Install: ${install_sh}"
+    bash ${install_sh}
+  fi
+done
+
 systemctl daemon-reload
 systemctl enable kubelet
 systemctl restart kubelet
