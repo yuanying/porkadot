@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bootstrap-kube-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - name: kube-scheduler
+    image: gcr.io/google_containers/hyperkube:v1.12.1
+    command:
+    - ./hyperkube
+    - scheduler
+    - --kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap
+    - --leader-elect=true
+    - --v=2
+    volumeMounts:
+    - name: kubernetes
+      mountPath: /etc/kubernetes
+      readOnly: true
+  hostNetwork: true
+  volumes:
+  - name: kubernetes
+    hostPath:
+      path: /etc/kubernetes

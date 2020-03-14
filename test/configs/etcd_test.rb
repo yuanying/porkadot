@@ -1,6 +1,18 @@
 
 require 'test_helper'
 
+class PorkadotConfigsEtcdTest < Minitest::Test
+  include Porkadot::TestUtils
+
+  def etcd
+    return Porkadot::Configs::Etcd.new(self.mock_config)
+  end
+
+  def test_advertise_urls
+    assert_equal ["https://192.168.33.111:2379", "https://192.168.33.112:2379"], etcd.advertise_client_urls
+  end
+end
+
 class PorkadotConfigsEtcdNodeTest < Minitest::Test
   include Porkadot::TestUtils
 

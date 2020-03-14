@@ -12,6 +12,14 @@ module Porkadot; module Configs
       @raw = config.raw.etcd
     end
 
+    def advertise_client_urls
+      urls = []
+      config.etcd_nodes.each do |_, v|
+        urls += v.advertise_client_urls
+      end
+      return urls
+    end
+
   end
 
   class EtcdNode

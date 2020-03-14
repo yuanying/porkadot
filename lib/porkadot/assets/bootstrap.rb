@@ -24,6 +24,7 @@ module Porkadot; module Assets
       end
       render_secrets
       render_kubeconfig
+      render_manifests
     end
 
     def render_secrets
@@ -38,7 +39,26 @@ module Porkadot; module Assets
       logger.info "----> bootstrap kubeconfig"
       open(File.join(BOOTSTRAP_TEMPLATE_DIR, 'kubeconfig-bootstrap.yaml.erb')) do |io|
         open(config.kubeconfig_path, 'w') do |out|
-          out.write ERB.new(io.read).result_with_hash(
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
+            config: config,
+            global_config: global_config,
+          )
+        end
+      end
+    end
+
+    def render_manifests
+      unless File.directory?(config.manifests_path)
+        FileUtils.mkdir_p(config.manifests_path)
+      end
+      render_apiserver
+    end
+
+    def render_apiserver
+      logger.info "----> kube-apiserver"
+      open(File.join(BOOTSTRAP_TEMPLATE_DIR, 'kube-apiserver.bootstrap.yaml.erb')) do |io|
+        open(config.apiserver_path, 'w') do |out|
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,
           )

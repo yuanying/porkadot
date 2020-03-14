@@ -28,6 +28,14 @@ module Porkadot; module Configs
       File.join(self.bootstrap_assets_path, 'kubeconfig-bootstrap.yaml')
     end
 
+    def manifests_path
+      File.join(self.bootstrap_path, 'manifests')
+    end
+
+    def apiserver_path
+      File.join(self.manifests_path, 'kube-apiserver.bootstrap.yaml')
+    end
+
   end
 
 end; end

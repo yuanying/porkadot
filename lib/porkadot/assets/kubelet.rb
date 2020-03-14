@@ -63,7 +63,7 @@ module Porkadot; module Assets
       ca_data = certs.ca_cert.to_pem
       open(File.join(KUBELETE_TEMPLATE_DIR, 'bootstrap-kubelet.conf.erb')) do |io|
         open(config.bootstrap_kubeconfig_path, 'w') do |out|
-          out.write ERB.new(io.read).result_with_hash(
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,
             ca_data: Base64.strict_encode64(ca_data)
@@ -82,7 +82,7 @@ module Porkadot; module Assets
       logger.info "----> config.yaml"
       open(File.join(KUBELETE_TEMPLATE_DIR, 'config.yaml.erb')) do |io|
         open(config.config_path, 'w') do |out|
-          out.write ERB.new(io.read).result_with_hash(
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,
           )
@@ -94,7 +94,7 @@ module Porkadot; module Assets
       logger.info "----> kubelet.service"
       open(File.join(KUBELETE_TEMPLATE_DIR, 'kubelet.service.erb')) do |io|
         open(config.kubelet_service_path, 'w') do |out|
-          out.write ERB.new(io.read).result_with_hash(
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,
           )
@@ -113,7 +113,7 @@ module Porkadot; module Assets
       logger.info "----> install-deps.sh"
       open(File.join(KUBELETE_TEMPLATE_DIR, 'install-deps.sh.erb')) do |io|
         open(config.install_deps_sh_path, 'w') do |out|
-          out.write ERB.new(io.read).result_with_hash(
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,
           )
@@ -125,7 +125,7 @@ module Porkadot; module Assets
       logger.info "----> install.sh"
       open(File.join(KUBELETE_TEMPLATE_DIR, 'install.sh.erb')) do |io|
         open(config.install_sh_path, 'w') do |out|
-          out.write ERB.new(io.read).result_with_hash(
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,
           )

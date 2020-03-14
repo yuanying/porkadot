@@ -72,7 +72,7 @@ module Porkadot; module Assets
       logger.info "----> etcd-server.yaml"
       open(File.join(ETCD_TEMPLATE_DIR, 'etcd-server.yaml.erb')) do |io|
         open(config.etcd_server_yaml_path, 'w') do |out|
-          out.write ERB.new(io.read).result_with_hash(
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,
             etcd: global_config.etcd,
@@ -85,7 +85,7 @@ module Porkadot; module Assets
       logger.info "----> install.sh"
       open(File.join(ETCD_TEMPLATE_DIR, 'install.sh.erb')) do |io|
         open(config.install_sh_path, 'w') do |out|
-          out.write ERB.new(io.read).result_with_hash(
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,
             etcd: global_config.etcd,
