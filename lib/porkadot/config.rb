@@ -31,6 +31,11 @@ module Porkadot
       self.raw.connection
     end
 
+    def bootstrap
+      @bootstrap ||= Porkadot::Configs::Bootstrap.new(self)
+      return @bootstrap
+    end
+
     def kubernetes
       @kubernetes ||= Porkadot::Configs::Kubernetes.new(self)
       return @kubernetes

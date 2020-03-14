@@ -8,6 +8,8 @@ module Porkadot; module Cmd; module Render
     def all
       invoke "porkadot:cmd:render:certs:cli:all", [], options
       invoke :kubelet, [], options
+      invoke :etcd, [], options
+      invoke :bootstrap, [], options
     end
 
     desc "certs", "Render certificates to deploy Kubernetes"
@@ -36,6 +38,14 @@ module Porkadot; module Cmd; module Render
       else
         etcds.render
       end
+      ""
+    end
+
+    desc "bootstrap", "Render bootstrap related files"
+    def bootstrap
+      logger.info "Generating bootstrap related files"
+      bootstrap = Porkadot::Assets::Bootstrap.new(self.config)
+      bootstrap.render
       ""
     end
 

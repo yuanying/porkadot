@@ -33,6 +33,7 @@ module Porkadot; module Configs; class Certs
         DNS:kubernetes.default
         DNS:kubernetes.default.svc
         DNS:kubernetes.default.svc.#{self.config.k8s.networking.dns_domain}
+        DNS:localhost
         IP:127.0.0.1
       )
       return default_sans + sans.uniq

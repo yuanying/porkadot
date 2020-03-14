@@ -19,5 +19,7 @@ nodes:
   node04:
     hostname: 192.168.33.114
 
+bootstrap: {}
+
 kubernetes:
   control_plane_endpoint: '192.168.33.101:6443'

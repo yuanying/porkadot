@@ -2,7 +2,23 @@ require 'ipaddr'
 
 module Porkadot; module Configs
 
+  module CertsUtils
+
+    def certs_root_dir
+      File.join(self.config.assets_dir, 'certs')
+    end
+
+    def ipaddr?(addr)
+      IPAddr.new(addr)
+      return true
+    rescue IPAddr::InvalidAddressError
+      return false
+    end
+
+  end
+
   class Certs
+    include CertsUtils
     attr_reader :config
     attr_reader :logger
 
@@ -27,20 +43,6 @@ module Porkadot; module Configs
     end
   end
 
-  module CertsUtils
-
-    def certs_root_dir
-      File.join(self.config.assets_dir, 'certs')
-    end
-
-    def ipaddr?(addr)
-      IPAddr.new(addr)
-      return true
-    rescue IPAddr::InvalidAddressError
-      return false
-    end
-
-  end
 end; end
 
 require 'porkadot/configs/certs/etcd'

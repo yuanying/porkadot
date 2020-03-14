@@ -8,18 +8,24 @@ connection:
 
 nodes: {}
 
+bootstrap: {}
+
 etcd:
   image_repository: gcr.io/etcd-development/etcd
   image_tag: v3.3.10
 
 kubernetes:
   kubernetes_version: v1.17.3
+  image_repository: k8s.gcr.io
 
   networking:
     cni_version: v0.8.2
     service_subnet: '10.254.0.0/24'
     pod_subnet: '10.244.0.0/16'
     dns_domain: 'cluster.local'
+
+  apiserver:
+    bind_port: 6444
 
   kubelet:
     config:

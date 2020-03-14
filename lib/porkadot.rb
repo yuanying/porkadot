@@ -17,10 +17,12 @@ require 'porkadot/configs/certs'
 require 'porkadot/configs/kubelet'
 require 'porkadot/configs/kubernetes'
 require 'porkadot/configs/etcd'
+require 'porkadot/configs/bootstrap'
 
 require 'porkadot/assets/certs'
 require 'porkadot/assets/kubelet'
 require 'porkadot/assets/etcd'
+require 'porkadot/assets/bootstrap'
 
 require 'porkadot/install/kubelet'
 
