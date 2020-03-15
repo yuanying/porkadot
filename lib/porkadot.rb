@@ -26,6 +26,7 @@ require 'porkadot/assets/bootstrap'
 
 require 'porkadot/install/base'
 require 'porkadot/install/kubelet'
+require 'porkadot/install/bootstrap'
 
 require 'porkadot/cmd/render/certs'
 require 'porkadot/cmd/render'

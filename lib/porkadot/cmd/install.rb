@@ -7,6 +7,7 @@ module Porkadot; module Cmd; module Install
     desc "all", "Install Kubernetes cluster"
     def all
       invoke :kubelet, [], options
+      invoke :bootstrap, [], options
     end
 
     desc "kubelet", "Install kubelet to nodes"
@@ -22,6 +23,13 @@ module Porkadot; module Cmd; module Install
         nodes = kubelets.kubelets.values
       end
       kubelets.install hosts: nodes, force: options[:force]
+      ""
+    end
+
+    desc "bootstrap", "Install bootstrap components"
+    def bootstrap
+      logger.info "Installing bootstrap components"
+      Porkadot::Install::Bootstrap.new(self.config).install
       ""
     end
 
