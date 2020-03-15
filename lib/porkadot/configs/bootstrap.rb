@@ -12,6 +12,10 @@ module Porkadot; module Configs
       @raw = config.raw.bootstrap
     end
 
+    def node
+      self.raw.node ? self.config.nodes[self.raw.node] : self.config.nodes[self.config.nodes.keys[0]]
+    end
+
     def bootstrap_path
       File.join(self.config.assets_dir, 'bootstrap')
     end

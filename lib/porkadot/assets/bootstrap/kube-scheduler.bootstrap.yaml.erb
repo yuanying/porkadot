@@ -1,3 +1,4 @@
+<% k8s = global_config.k8s %>
 ---
 apiVersion: v1
 kind: Pod
@@ -7,10 +8,9 @@ metadata:
 spec:
   containers:
   - name: kube-scheduler
-    image: gcr.io/google_containers/hyperkube:v1.12.1
+    image: <%= k8s.image_repository %>/kube-scheduler<%= k8s.kubernetes_version %>
     command:
-    - ./hyperkube
-    - scheduler
+    - kube-scheduler
     - --kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap
     - --leader-elect=true
     - --v=2

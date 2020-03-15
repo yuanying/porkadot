@@ -7,14 +7,12 @@ module Porkadot; module Assets
     attr_reader :config
     attr_reader :certs_config
     attr_reader :logger
-    attr_reader :node
 
     def initialize global_config
       @global_config = global_config
       @config = global_config.bootstrap
       @certs_config = global_config.certs
       @logger = global_config.logger
-      @node = global_config.nodes[global_config.nodes.keys[0]]
     end
 
     def render
@@ -52,6 +50,8 @@ module Porkadot; module Assets
         FileUtils.mkdir_p(config.manifests_path)
       end
       render_apiserver
+      render_controller_manager
+      render_scheduler
     end
 
     def render_apiserver
@@ -65,6 +65,31 @@ module Porkadot; module Assets
         end
       end
     end
+
+    def render_controller_manager
+      logger.info "----> kube-controller-manager"
+      open(File.join(BOOTSTRAP_TEMPLATE_DIR, 'kube-controller-manager.bootstrap.yaml.erb')) do |io|
+        open(config.controller_manager_path, 'w') do |out|
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
+            config: config,
+            global_config: global_config,
+          )
+        end
+      end
+    end
+
+    def render_scheduler
+      logger.info "----> kube-scheduler"
+      open(File.join(BOOTSTRAP_TEMPLATE_DIR, 'kube-scheduler.bootstrap.yaml.erb')) do |io|
+        open(config.scheduler_path, 'w') do |out|
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
+            config: config,
+            global_config: global_config,
+          )
+        end
+      end
+    end
+
   end
 
 end; end
