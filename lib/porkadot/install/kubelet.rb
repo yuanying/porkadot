@@ -1,8 +1,6 @@
-require 'sshkit/dsl'
-
 module Porkadot; module Install
   class KubeletList
-    KUBE_TEMP = './kube_temp'
+    KUBE_TEMP = File.join(Porkadot::Install::KUBE_TEMP, 'kubelet')
     include SSHKit::DSL
     attr_reader :global_config
     attr_reader :logger

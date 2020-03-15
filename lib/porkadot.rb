@@ -24,6 +24,7 @@ require 'porkadot/assets/kubelet'
 require 'porkadot/assets/etcd'
 require 'porkadot/assets/bootstrap'
 
+require 'porkadot/install/base'
 require 'porkadot/install/kubelet'
 
 require 'porkadot/cmd/render/certs'

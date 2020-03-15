@@ -36,6 +36,14 @@ module Porkadot; module Configs
       File.join(self.manifests_path, 'kube-apiserver.bootstrap.yaml')
     end
 
+    def controller_manager_path
+      File.join(self.manifests_path, 'kube-controller-manager.bootstrap.yaml')
+    end
+
+    def scheduler_path
+      File.join(self.manifests_path, 'kube-scheduler.bootstrap.yaml')
+    end
+
   end
 
 end; end
