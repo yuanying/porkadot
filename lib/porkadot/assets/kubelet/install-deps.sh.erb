@@ -7,6 +7,12 @@ curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_
 RELEASE="<%= global_config.k8s.kubernetes_version %>"
 
 mkdir -p /opt/bin
+
+curl -L https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/kubectl \
+  -o /opt/bin/kubectl-${RELEASE}
+chmod +x /opt/bin/kubectl-${RELEASE}
+ln -s /opt/bin/kubectl-${RELEASE} /opt/bin/kubectl
+
 curl -L https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/kubelet \
   -o /opt/bin/kubelet-${RELEASE}
 chmod +x /opt/bin/kubelet-${RELEASE}
