@@ -24,6 +24,7 @@ module Porkadot; module Install
       end
 
       on(hosts) do |host|
+        execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
         if test("[ -d #{KUBE_TEMP} ]")
           execute(:rm, '-rf', KUBE_TEMP)
         end

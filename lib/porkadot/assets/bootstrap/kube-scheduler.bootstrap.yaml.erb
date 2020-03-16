@@ -8,10 +8,12 @@ metadata:
 spec:
   containers:
   - name: kube-scheduler
-    image: <%= k8s.image_repository %>/kube-scheduler<%= k8s.kubernetes_version %>
+    image: <%= k8s.image_repository %>/kube-scheduler:<%= k8s.kubernetes_version %>
     command:
     - kube-scheduler
-    - --kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap
+    - --kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
+    - --authentication-kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
+    - --authorization-kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
     - --leader-elect=true
     - --v=2
     volumeMounts:

@@ -126,7 +126,7 @@ class Porkadot::Assets::Certs
   end
 
   def _client_cert(path, name, client_key, ca_cert, ca_key)
-    cert = unsigned_cert(name, ca_key, ca_cert, 1 * 365 * 24 * 60 * 60)
+    cert = unsigned_cert(name, client_key, ca_cert, 1 * 365 * 24 * 60 * 60)
 
     ef = OpenSSL::X509::ExtensionFactory.new
     ef.subject_certificate = cert

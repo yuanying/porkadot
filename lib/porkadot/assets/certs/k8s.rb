@@ -63,7 +63,7 @@ class Porkadot::Assets::Certs::Kubernetes < Porkadot::Assets::Certs
   end
 
   def _apiserver_cert(path, client_key, ca_cert, ca_key)
-    cert = unsigned_cert('/CN=apiserver', ca_key, ca_cert, 1 * 365 * 24 * 60 * 60)
+    cert = unsigned_cert('/CN=apiserver', client_key, ca_cert, 1 * 365 * 24 * 60 * 60)
 
     ef = OpenSSL::X509::ExtensionFactory.new
     ef.subject_certificate = cert
