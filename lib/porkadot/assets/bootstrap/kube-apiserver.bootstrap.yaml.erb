@@ -13,8 +13,6 @@ spec:
         cpu: 250m
     image: <%= k8s.image_repository %>/kube-apiserver:<%= k8s.kubernetes_version %>
     command:
-    - /usr/bin/flock
-    - /var/lock/api-server.lock
     - kube-apiserver
     - --advertise-address=$(POD_IP)
     - --allow-privileged

@@ -23,6 +23,7 @@ module Porkadot; module Assets
       render_secrets
       render_kubeconfig
       render_manifests
+      render_install_sh
     end
 
     def render_secrets
@@ -82,6 +83,18 @@ module Porkadot; module Assets
       logger.info "----> kube-scheduler"
       open(File.join(BOOTSTRAP_TEMPLATE_DIR, 'kube-scheduler.bootstrap.yaml.erb')) do |io|
         open(config.scheduler_path, 'w') do |out|
+          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
+            config: config,
+            global_config: global_config,
+          )
+        end
+      end
+    end
+
+    def render_install_sh
+      logger.info "----> install.sh"
+      open(File.join(BOOTSTRAP_TEMPLATE_DIR, 'install.sh.erb')) do |io|
+        open(config.install_sh_path, 'w') do |out|
           out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
             config: config,
             global_config: global_config,

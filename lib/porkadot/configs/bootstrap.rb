@@ -48,6 +48,9 @@ module Porkadot; module Configs
       File.join(self.manifests_path, 'kube-scheduler.bootstrap.yaml')
     end
 
+    def install_sh_path
+      File.join(self.bootstrap_path, 'install.sh')
+    end
   end
 
 end; end

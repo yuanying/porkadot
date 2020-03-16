@@ -21,6 +21,10 @@ module Porkadot; module Install
           execute(:rm, '-rf', KUBE_TEMP)
         end
         upload! config.bootstrap_path, KUBE_TEMP, recursive: true
+
+        as user: 'root' do
+          execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
+        end
       end
     end
 
