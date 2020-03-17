@@ -8,7 +8,10 @@ connection:
 
 nodes: {}
 
-bootstrap: {}
+bootstrap:
+  node:
+    kubernetes:
+      control_plane_endpoint: '127.0.0.1:6443'
 
 etcd:
   image_repository: gcr.io/etcd-development/etcd
@@ -25,7 +28,7 @@ kubernetes:
     dns_domain: 'cluster.local'
 
   apiserver:
-    bind_port: 6444
+    bind_port: 6443
 
   kubelet:
     config:

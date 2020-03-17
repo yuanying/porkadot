@@ -29,7 +29,10 @@ module Porkadot; module Cmd; module Install
     desc "bootstrap", "Install bootstrap components"
     def bootstrap
       logger.info "Installing bootstrap components"
-      Porkadot::Install::Bootstrap.new(self.config).install
+      bootstrap = Porkadot::Install::Bootstrap.new(self.config)
+      kubelets = Porkadot::Install::KubeletList.new(self.config)
+      kubelets.install hosts: [bootstrap.host]
+      bootstrap.install
       ""
     end
 

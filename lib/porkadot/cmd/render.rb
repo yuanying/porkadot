@@ -45,6 +45,8 @@ module Porkadot; module Cmd; module Render
     def bootstrap
       logger.info "Generating bootstrap related files"
       bootstrap = Porkadot::Assets::Bootstrap.new(self.config)
+      kubelet = Porkadot::Assets::Kubelet.new(self.config.bootstrap.kubelet_config)
+      kubelet.render
       bootstrap.render
       ""
     end

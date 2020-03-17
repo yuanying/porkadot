@@ -12,3 +12,11 @@ mkdir -p ${KUBERNETES_BOOTSTRAP_ASSETS_PATH}
 
 cp ${ROOT}/manifests/*.bootstrap.yaml ${KUBERNETES_MANIFESTS_PATH}/
 cp -r ${ROOT}/bootstrap/* ${KUBERNETES_BOOTSTRAP_ASSETS_PATH}/
+
+echo "Start to wait for Bootstrapping Kubernetes API (https://127.0.0.1:<%= global_config.k8s.apiserver.bind_port %>/healthz)"
+until curl -skf "https://127.0.0.1:<%= global_config.k8s.apiserver.bind_port %>/healthz"
+do
+    echo "Still waiting for Bootstrapping Kubernetes API..."
+    sleep 5
+done
+

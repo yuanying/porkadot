@@ -19,6 +19,14 @@ module Porkadot; module Configs
       @connection = ::Porkadot::Raw.new(con.rmerge(gcon.rmerge(lcon)))
     end
 
+    def control_plane_endpoint
+      self.raw.kubernetes.control_plane_endpoint || self.global_config.k8s.control_plane_endpoint
+    end
+
+    def hostname
+      self.raw.hostname || self.name
+    end
+
     def kubelet_path
       File.join(self.config.assets_dir, 'kubelet', name)
     end

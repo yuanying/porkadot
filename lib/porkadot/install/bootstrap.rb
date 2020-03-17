@@ -11,7 +11,7 @@ module Porkadot; module Install
       @global_config = global_config
       @config = global_config.bootstrap
       @logger = global_config.logger
-      @host = KubeletList.new(global_config)[config.node.name]
+      @host = Porkadot::Install::Kubelet.new(self.config.kubelet_config)
     end
 
     def install
