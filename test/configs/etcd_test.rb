@@ -24,6 +24,6 @@ class PorkadotConfigsEtcdNodeTest < Minitest::Test
   def test_etcd_path_contains_node_name
     node = etcd_node("node01")
 
-    assert_includes node.etcd_path, 'node01'
+    assert_includes node.target_path, 'node01'
   end
 end

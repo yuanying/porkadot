@@ -20,8 +20,10 @@ module Porkadot; module Assets
       unless File.directory?(config.manifests_path)
         FileUtils.mkdir_p(config.manifests_path)
       end
+      lb = global_config.lb
       render_erb 'manifests/kubelet.yaml'
-      render_erb 'manifests/metallb.yaml'
+      render_erb "manifests/#{lb.type}.yaml"
+      render_erb "manifests/#{lb.type}-config.yaml"
       render_erb 'install.sh'
     end
 

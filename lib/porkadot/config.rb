@@ -31,6 +31,11 @@ module Porkadot
       self.raw.connection
     end
 
+    def lb
+      @lb ||= Porkadot::Configs::Lb.new(self)
+      return @lb
+    end
+
     def bootstrap
       @bootstrap ||= Porkadot::Configs::Bootstrap.new(self)
       return @bootstrap

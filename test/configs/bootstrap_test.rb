@@ -8,11 +8,11 @@ class PorkadotConfigsBootstrapTest < Minitest::Test
   end
 
   def test_default_node
-    assert_equal 'node01', bootstrap.node.name
+    assert_equal 'node01', bootstrap.node.hostname
   end
 
   def test_node_specified
-    assert_equal 'node04', bootstrap('porkadot2.yaml').node.name
+    assert_equal 'node04', bootstrap('porkadot2.yaml').node.hostname
   end
 
 end

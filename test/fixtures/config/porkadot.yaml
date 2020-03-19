@@ -30,6 +30,10 @@ nodes:
       port: 11222
   192.168.33.115:
 
+bootstrap:
+  node:
+    hostname: node01
+
 kubernetes:
   kubernetes_version: v1.17.2
   control_plane_endpoint: '192.168.33.101:6443'

@@ -5,6 +5,7 @@ module Porkadot; module Configs
       attr_reader :bootstrap_config
       def initialize bootstrap_config
         @bootstrap_config = bootstrap_config
+        # TODO: specify default node
         super bootstrap_config.config, 'bootstrap', bootstrap_config.raw.node
       end
 

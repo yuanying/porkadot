@@ -20,6 +20,7 @@ require 'porkadot/configs/kubernetes'
 require 'porkadot/configs/etcd'
 require 'porkadot/configs/bootstrap'
 require 'porkadot/configs/kubernetes'
+require 'porkadot/configs/loadbalancer'
 
 require 'porkadot/assets/certs'
 require 'porkadot/assets/kubelet'
