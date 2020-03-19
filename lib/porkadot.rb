@@ -29,6 +29,7 @@ require 'porkadot/assets/kubernetes'
 
 require 'porkadot/install/base'
 require 'porkadot/install/kubelet'
+require 'porkadot/install/kubernetes'
 require 'porkadot/install/bootstrap'
 
 require 'porkadot/cmd/render/certs'

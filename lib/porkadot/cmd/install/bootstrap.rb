@@ -27,6 +27,10 @@ module Porkadot; module Cmd; module Install; module Bootstrap
     desc "kubernetes", "Install bootstrap kubernetes"
     def kubernetes
       logger.info "Installing bootstrap kubernetes"
+      bootstrap = Porkadot::Install::Bootstrap.new(self.config)
+      k8s = Porkadot::Install::Kubernetes.new(self.config)
+      k8s.install(bootstrap.host)
+      ""
     end
 
     def self.subcommand_prefix

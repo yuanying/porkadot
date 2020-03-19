@@ -19,6 +19,10 @@ module Porkadot; module Configs
       File.join(self.config.assets_dir, 'kubernetes')
     end
 
+    def manifests_path
+      File.join(self.target_path, 'manifests')
+    end
+
     class Networking
       include Porkadot::ConfigUtils
       attr_reader :config

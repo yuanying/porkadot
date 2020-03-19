@@ -17,11 +17,12 @@ module Porkadot; module Assets
 
     def render
       logger.info "--> Rendering kubernetes manifests"
-      unless File.directory?(config.target_path)
-        FileUtils.mkdir_p(config.target_path)
+      unless File.directory?(config.manifests_path)
+        FileUtils.mkdir_p(config.manifests_path)
       end
-      render_erb 'kubelet.yaml'
-      render_erb 'metallb.yaml'
+      render_erb 'manifests/kubelet.yaml'
+      render_erb 'manifests/metallb.yaml'
+      render_erb 'install.sh'
     end
 
   end
