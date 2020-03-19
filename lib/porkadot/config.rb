@@ -78,6 +78,7 @@ module Porkadot
     def asset_path file
       File.join(self.target_path, file.to_s)
     end
+    alias path asset_path
 
     def method_missing name, *args
       return nil if self.raw.nil?

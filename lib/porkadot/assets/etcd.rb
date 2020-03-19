@@ -30,7 +30,8 @@ module Porkadot; module Assets
   end
 
   class EtcdNode
-    ETCD_TEMPLATE_DIR = File.join(File.dirname(__FILE__), "etcd")
+    include Porkadot::Assets
+    TEMPLATE_DIR = File.join(File.dirname(__FILE__), "etcd")
 
     attr_reader :global_config
     attr_reader :config
@@ -46,13 +47,13 @@ module Porkadot; module Assets
 
     def render
       logger.info "--> Rendering #{config.name} node"
-      unless File.directory?(config.etcd_path)
-        FileUtils.mkdir_p(config.etcd_path)
+      unless File.directory?(config.target_path)
+        FileUtils.mkdir_p(config.target_path)
       end
       render_ca_crt
       render_etcd_crt
-      render_etcd_server_yaml
-      render_install_sh
+      render_erb 'etcd-server.yaml', etcd: global_config.etcd
+      render_erb 'install.sh', etcd: global_config.etcd
     end
 
     def render_ca_crt
@@ -66,32 +67,6 @@ module Porkadot; module Assets
       logger.info "----> etcd.crt"
       self.etcd_key
       self.etcd_cert(true)
-    end
-
-    def render_etcd_server_yaml
-      logger.info "----> etcd-server.yaml"
-      open(File.join(ETCD_TEMPLATE_DIR, 'etcd-server.yaml.erb')) do |io|
-        open(config.etcd_server_yaml_path, 'w') do |out|
-          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
-            config: config,
-            global_config: global_config,
-            etcd: global_config.etcd,
-          )
-        end
-      end
-    end
-
-    def render_install_sh
-      logger.info "----> install.sh"
-      open(File.join(ETCD_TEMPLATE_DIR, 'install.sh.erb')) do |io|
-        open(config.install_sh_path, 'w') do |out|
-          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
-            config: config,
-            global_config: global_config,
-            etcd: global_config.etcd,
-          )
-        end
-      end
     end
 
     def etcd_key

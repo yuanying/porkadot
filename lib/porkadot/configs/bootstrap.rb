@@ -9,7 +9,7 @@ module Porkadot; module Configs
       end
 
       def kubelet_path
-        File.join(bootstrap_config.bootstrap_path, 'kubelet')
+        File.join(bootstrap_config.target_path, 'kubelet')
       end
     end
 
@@ -26,24 +26,24 @@ module Porkadot; module Configs
       @kubelet_config = Kubelet.new(self)
     end
 
-    def bootstrap_path
+    def target_path
       File.join(self.config.assets_dir, 'bootstrap')
     end
 
-    def bootstrap_assets_path
-      File.join(self.bootstrap_path, 'bootstrap')
+    def bootstrap_path
+      File.join(self.target_path, 'bootstrap')
     end
 
     def secrets_path
-      File.join(self.bootstrap_assets_path, 'secrets')
+      File.join(self.bootstrap_path, 'secrets')
     end
 
     def kubeconfig_path
-      File.join(self.bootstrap_assets_path, 'kubeconfig-bootstrap.yaml')
+      File.join(self.bootstrap_path, 'kubeconfig-bootstrap.yaml')
     end
 
     def manifests_path
-      File.join(self.bootstrap_path, 'manifests')
+      File.join(self.target_path, 'manifests')
     end
 
     def apiserver_path
@@ -59,7 +59,7 @@ module Porkadot; module Configs
     end
 
     def install_sh_path
-      File.join(self.bootstrap_path, 'install.sh')
+      File.join(self.target_path, 'install.sh')
     end
   end
 

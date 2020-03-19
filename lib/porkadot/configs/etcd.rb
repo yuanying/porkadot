@@ -83,28 +83,21 @@ module Porkadot; module Configs
       return sans
     end
 
-    def etcd_path
+    def target_path
       File.join(self.kubelet.addon_path, 'etcd')
     end
 
     def ca_crt_path
-      File.join(self.etcd_path, 'ca.crt')
+      File.join(self.target_path, 'ca.crt')
     end
 
     def etcd_key_path
-      File.join(self.etcd_path, 'etcd.key')
+      File.join(self.target_path, 'etcd.key')
     end
 
     def etcd_crt_path
-      File.join(self.etcd_path, 'etcd.crt')
+      File.join(self.target_path, 'etcd.crt')
     end
 
-    def etcd_server_yaml_path
-      File.join(self.etcd_path, 'etcd-server.yaml')
-    end
-
-    def install_sh_path
-      File.join(self.etcd_path, 'install.sh')
-    end
   end
 end; end

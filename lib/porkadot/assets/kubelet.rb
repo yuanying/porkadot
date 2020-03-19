@@ -30,7 +30,8 @@ module Porkadot; module Assets
   end
 
   class Kubelet
-    KUBELETE_TEMPLATE_DIR = File.join(File.dirname(__FILE__), "kubelet")
+    include Porkadot::Assets
+    TEMPLATE_DIR = File.join(File.dirname(__FILE__), "kubelet")
 
     attr_reader :global_config
     attr_reader :config
@@ -46,30 +47,19 @@ module Porkadot; module Assets
 
     def render
       logger.info "--> Rendering #{config.name} node"
-      unless File.directory?(config.kubelet_path)
-        FileUtils.mkdir_p(config.kubelet_path)
+      unless File.directory?(config.target_path)
+        FileUtils.mkdir_p(config.target_path)
       end
-      render_bootstrap_kubeconfig
-      render_bootstrap_certs
-      render_config
-      render_kubelet_service
-      render_ca_crt
-      render_install_sh
-      render_install_deps_sh
-    end
-
-    def render_bootstrap_kubeconfig
-      logger.info "----> bootstrap kubeconfig"
       ca_data = certs.ca_cert.to_pem
-      open(File.join(KUBELETE_TEMPLATE_DIR, 'bootstrap-kubelet.conf.erb')) do |io|
-        open(config.bootstrap_kubeconfig_path, 'w') do |out|
-          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
-            config: config,
-            global_config: global_config,
-            ca_data: Base64.strict_encode64(ca_data)
-          )
-        end
-      end
+      ca_data = Base64.strict_encode64(ca_data)
+
+      render_erb 'bootstrap-kubelet.conf', ca_data: ca_data
+      render_bootstrap_certs
+      render_erb 'config.yaml'
+      render_erb 'kubelet.service'
+      render_ca_crt
+      render_erb 'install.sh'
+      render_erb 'install-deps.sh'
     end
 
     def render_bootstrap_certs
@@ -78,58 +68,10 @@ module Porkadot; module Assets
       self.bootstrap_cert(true)
     end
 
-    def render_config
-      logger.info "----> config.yaml"
-      open(File.join(KUBELETE_TEMPLATE_DIR, 'config.yaml.erb')) do |io|
-        open(config.config_path, 'w') do |out|
-          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
-            config: config,
-            global_config: global_config,
-          )
-        end
-      end
-    end
-
-    def render_kubelet_service
-      logger.info "----> kubelet.service"
-      open(File.join(KUBELETE_TEMPLATE_DIR, 'kubelet.service.erb')) do |io|
-        open(config.kubelet_service_path, 'w') do |out|
-          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
-            config: config,
-            global_config: global_config,
-          )
-        end
-      end
-    end
-
     def render_ca_crt
       logger.info "----> ca.crt"
       open(config.ca_crt_path, 'w') do |out|
         out.write self.certs.ca_cert(false).to_pem
-      end
-    end
-
-    def render_install_deps_sh
-      logger.info "----> install-deps.sh"
-      open(File.join(KUBELETE_TEMPLATE_DIR, 'install-deps.sh.erb')) do |io|
-        open(config.install_deps_sh_path, 'w') do |out|
-          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
-            config: config,
-            global_config: global_config,
-          )
-        end
-      end
-    end
-
-    def render_install_sh
-      logger.info "----> install.sh"
-      open(File.join(KUBELETE_TEMPLATE_DIR, 'install.sh.erb')) do |io|
-        open(config.install_sh_path, 'w') do |out|
-          out.write ERB.new(io.read, trim_mode: '-').result_with_hash(
-            config: config,
-            global_config: global_config,
-          )
-        end
       end
     end
 

@@ -20,51 +20,31 @@ module Porkadot; module Configs
     end
 
     def control_plane_endpoint
-      self.raw.kubernetes.control_plane_endpoint || self.global_config.k8s.control_plane_endpoint
+      (self.raw.kubernetes && self.raw.kubernetes.control_plane_endpoint) || self.config.k8s.control_plane_endpoint
     end
 
     def hostname
       self.raw.hostname || self.name
     end
 
-    def kubelet_path
+    def target_path
       File.join(self.config.assets_dir, 'kubelet', name)
     end
 
     def addon_path
-      File.join(self.kubelet_path, 'addons')
-    end
-
-    def config_path
-      File.join(self.kubelet_path, 'config.yaml')
-    end
-
-    def kubelet_service_path
-      File.join(self.kubelet_path, 'kubelet.service')
+      File.join(self.target_path, 'addons')
     end
 
     def ca_crt_path
-      File.join(self.kubelet_path, 'ca.crt')
-    end
-
-    def install_sh_path
-      File.join(self.kubelet_path, 'install.sh')
-    end
-
-    def install_deps_sh_path
-      File.join(self.kubelet_path, 'install-deps.sh')
-    end
-
-    def bootstrap_kubeconfig_path
-      File.join(self.kubelet_path, 'bootstrap-kubelet.conf')
+      File.join(self.target_path, 'ca.crt')
     end
 
     def bootstrap_key_path
-      File.join(self.kubelet_path, 'bootstrap.key')
+      File.join(self.target_path, 'bootstrap.key')
     end
 
     def bootstrap_cert_path
-      File.join(self.kubelet_path, 'bootstrap.crt')
+      File.join(self.target_path, 'bootstrap.crt')
     end
   end
 end; end

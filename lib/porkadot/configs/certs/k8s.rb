@@ -39,50 +39,50 @@ module Porkadot; module Configs; class Certs
       return default_sans + sans.uniq
     end
 
-    def certs_dir
+    def target_dir
       File.join(self.certs_root_dir, 'kubernetes')
     end
 
     def ca_key_path
-      File.join(self.certs_dir, 'ca.key')
+      File.join(self.target_dir, 'ca.key')
     end
 
     def ca_cert_path
-      File.join(self.certs_dir, 'ca.crt')
+      File.join(self.target_dir, 'ca.crt')
     end
 
     def apiserver_key_path
-      File.join(self.certs_dir, 'apiserver.key')
+      File.join(self.target_dir, 'apiserver.key')
     end
 
     def apiserver_cert_path
-      File.join(self.certs_dir, 'apiserver.crt')
+      File.join(self.target_dir, 'apiserver.crt')
     end
 
     def kubelet_client_key_path
-      File.join(self.certs_dir, 'kubelet-client.key')
+      File.join(self.target_dir, 'kubelet-client.key')
     end
 
     def kubelet_client_cert_path
-      File.join(self.certs_dir, 'kubelet-client.crt')
+      File.join(self.target_dir, 'kubelet-client.crt')
     end
 
     def admin_key_path
-      File.join(self.certs_dir, 'admin.key')
+      File.join(self.target_dir, 'admin.key')
     end
     alias_method :client_key_path, :admin_key_path
 
     def admin_cert_path
-      File.join(self.certs_dir, 'admin.crt')
+      File.join(self.target_dir, 'admin.crt')
     end
     alias_method :client_cert_path, :admin_cert_path
 
     def sa_private_key_path
-      File.join(self.certs_dir, 'sa.key')
+      File.join(self.target_dir, 'sa.key')
     end
 
     def sa_public_key_path
-      File.join(self.certs_dir, 'sa.pub')
+      File.join(self.target_dir, 'sa.pub')
     end
   end
 end; end; end
