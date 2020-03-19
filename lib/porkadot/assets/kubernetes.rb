@@ -21,9 +21,11 @@ module Porkadot; module Assets
         FileUtils.mkdir_p(config.manifests_path)
       end
       lb = global_config.lb
+      cni = global_config.cni
       render_erb 'manifests/kubelet.yaml'
       render_erb "manifests/#{lb.type}.yaml"
       render_erb "manifests/#{lb.type}-config.yaml"
+      render_erb "manifests/#{cni.type}.yaml"
       render_erb 'install.sh'
     end
 

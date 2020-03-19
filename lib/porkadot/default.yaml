@@ -13,6 +13,11 @@ bootstrap:
     kubernetes:
       control_plane_endpoint: '127.0.0.1:6443'
 
+cni:
+  type: flannel
+  flannel:
+    backend: vxlan
+
 lb:
   type: metallb
   metallb:

@@ -36,6 +36,11 @@ module Porkadot
       return @lb
     end
 
+    def cni
+      @cni ||= Porkadot::Configs::Cni.new(self)
+      return @cni
+    end
+
     def bootstrap
       @bootstrap ||= Porkadot::Configs::Bootstrap.new(self)
       return @bootstrap
