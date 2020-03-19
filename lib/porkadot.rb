@@ -33,5 +33,6 @@ require 'porkadot/install/bootstrap'
 
 require 'porkadot/cmd/render/certs'
 require 'porkadot/cmd/render'
+require 'porkadot/cmd/install/bootstrap'
 require 'porkadot/cmd/install'
 require 'porkadot/cmd'

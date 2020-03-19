@@ -8,7 +8,7 @@ module Porkadot; module Configs
         super bootstrap_config.config, 'bootstrap', bootstrap_config.raw.node
       end
 
-      def kubelet_path
+      def target_path
         File.join(bootstrap_config.target_path, 'kubelet')
       end
     end

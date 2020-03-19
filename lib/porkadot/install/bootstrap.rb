@@ -21,7 +21,7 @@ module Porkadot; module Install
         if test("[ -d #{KUBE_TEMP} ]")
           execute(:rm, '-rf', KUBE_TEMP)
         end
-        upload! config.bootstrap_path, KUBE_TEMP, recursive: true
+        upload! config.target_path, KUBE_TEMP, recursive: true
 
         as user: 'root' do
           execute(:bash, File.join(KUBE_TEMP, 'install.sh'))

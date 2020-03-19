@@ -28,7 +28,7 @@ module Porkadot; module Install
         if test("[ -d #{KUBE_TEMP} ]")
           execute(:rm, '-rf', KUBE_TEMP)
         end
-        upload! host.config.kubelet_path, KUBE_TEMP, recursive: true
+        upload! host.config.target_path, KUBE_TEMP, recursive: true
 
         as user: 'root' do
           unless test("[ -f /opt/bin/kubelet-#{host.global_config.k8s.kubernetes_version} ]") && !force
