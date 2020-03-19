@@ -15,6 +15,7 @@ module Porkadot; module Install
     end
 
     def install
+      global_config = self.global_config
       config = self.config
       on(host) do |host|
         execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
@@ -25,6 +26,13 @@ module Porkadot; module Install
 
         as user: 'root' do
           execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
+        end
+
+       endpoint = "https://127.0.0.1:#{global_config.k8s.apiserver.bind_port}/healthz"
+       info "Start to wait for Bootstrapping Kubernetes API: #{endpoint}"
+        while !test('curl', '-skf', endpoint)
+          info "Still wating for Bootstrapping Kubernetes API..."
+          sleep 5
         end
       end
     end

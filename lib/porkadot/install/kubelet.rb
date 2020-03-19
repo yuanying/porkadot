@@ -34,6 +34,7 @@ module Porkadot; module Install
           unless test("[ -f /opt/bin/kubelet-#{host.global_config.k8s.kubernetes_version} ]") && !force
             execute(:bash, File.join(KUBE_TEMP, 'install-deps.sh'))
           end
+          execute(:bash, File.join(KUBE_TEMP, 'install-pkgs.sh'))
           execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
         end
       end
