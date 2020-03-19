@@ -15,6 +15,10 @@ module Porkadot; module Configs
       @networking = Networking.new(config)
     end
 
+    def target_path
+      File.join(self.config.assets_dir, 'kubernetes')
+    end
+
     class Networking
       include Porkadot::ConfigUtils
       attr_reader :config

@@ -75,6 +75,10 @@ module Porkadot
 
   module ConfigUtils
 
+    def asset_path file
+      File.join(self.target_path, file.to_s)
+    end
+
     def method_missing name, *args
       return nil if self.raw.nil?
       self.raw[name]

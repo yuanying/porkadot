@@ -13,6 +13,14 @@ bootstrap:
     kubernetes:
       control_plane_endpoint: '127.0.0.1:6443'
 
+metallb:
+  config: |
+    address-pools:
+    - name: default
+      protocol: layer2
+      addresses:
+      - 192.168.1.240-192.168.1.250
+
 etcd:
   image_repository: gcr.io/etcd-development/etcd
   image_tag: v3.3.10

@@ -25,5 +25,13 @@ bootstrap:
   node:
     hostname: 172.18.13.111
 
+metallb:
+  config: |
+    address-pools:
+    - name: default
+      protocol: layer2
+      addresses:
+      - 172.18.13.140-172.18.13.200
+
 kubernetes:
   control_plane_endpoint: '172.18.13.101:6443'
