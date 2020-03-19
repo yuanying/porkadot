@@ -1,9 +1,17 @@
 module Porkadot::Assets
+  class ErbUtils
+    def indent(text, space=2)
+      space = space.times.map{' '}.join('')
+      text.lines.map{|line| "#{space}#{line}"}.join('')
+    end
+  end
 
   def render_erb file, opts={}
     file = file.to_s
     opts[:config] = self.config
     opts[:global_config] = self.global_config
+    opts[:u] = ErbUtils.new
+
     logger.info "----> #{file}"
     open(File.join(self.class::TEMPLATE_DIR, "#{file}.erb")) do |io|
       open(config.asset_path(file), 'w') do |out|
