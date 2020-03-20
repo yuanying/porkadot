@@ -7,13 +7,13 @@ nodes:
   node01:
     hostname: 192.168.33.111
     labels:
-      "node-role.kubernetes.io/master":
-      "etcd.unstable.cloud/member":
+      "k8s.unstable.cloud/master":
+      "etcd.unstable.cloud/member": node01
     taints:
-      "node-role.kubernetes.io/master": :NoSchedule"
+      "node-role.kubernetes.io/master": ":NoSchedule"
   '192.168.33.112':
     labels:
-      "node-role.kubernetes.io/master":
+      "k8s.unstable.cloud/master":
       "etcd.unstable.cloud/member": node02
     taints:
       "node-role.kubernetes.io/master": ":NoSchedule"
@@ -22,7 +22,7 @@ nodes:
     connection:
       hostname: node03
     labels:
-      "node-role.kubernetes.io/master":
+      "k8s.unstable.cloud/master":
   node04:
     hostname: 192.168.33.114
     connection:

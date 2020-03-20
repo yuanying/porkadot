@@ -19,6 +19,16 @@ module Porkadot; module Configs
       (self.raw.kubernetes && self.raw.kubernetes.control_plane_endpoint) || self.config.k8s.control_plane_endpoint
     end
 
+    def labels_string
+      return '' unless self.raw.labels
+      return self.raw.labels.map{|v| v.compact.join('=')}.join(',')
+    end
+
+    def taints_string
+      return '' unless self.raw.taints
+      return self.raw.taints.map{|v| v.compact.join('=')}.join(',')
+    end
+
     def hostname
       self.raw.hostname || self.name
     end

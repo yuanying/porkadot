@@ -48,4 +48,16 @@ class PorkadotConfigsKubeletTest < Minitest::Test
     assert node.connection.user
     assert node.connection.port
   end
+
+  def test_node01_labels_string
+    config = self.mock_config('porkadot2.yaml')
+    node = config.nodes['node01']
+    assert_equal 'k8s.unstable.cloud/master,etcd.unstable.cloud/member=node01', node.labels_string
+  end
+
+  def test_node04_labels_string_should_be_blank
+    config = self.mock_config('porkadot2.yaml')
+    node = config.nodes['node04']
+    assert_equal '', node.labels_string
+  end
 end

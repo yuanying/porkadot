@@ -1,22 +1,22 @@
 nodes:
   172.18.13.111:
     labels:
-      "node-role.kubernetes.io/master":
+      "k8s.unstable.cloud/master":
       "etcd.unstable.cloud/member": node01
     taints:
-      "node-role.kubernetes.io/master": :NoSchedule"
+      "node-role.kubernetes.io/master": ":NoSchedule"
   172.18.13.112:
     labels:
-      "node-role.kubernetes.io/master":
+      "k8s.unstable.cloud/master":
       "etcd.unstable.cloud/member": node02
     taints:
-      "node-role.kubernetes.io/master": :NoSchedule"
+      "node-role.kubernetes.io/master": ":NoSchedule"
   172.18.13.113:
     labels:
-      "node-role.kubernetes.io/master":
+      "k8s.unstable.cloud/master":
       "etcd.unstable.cloud/member": node03
     taints:
-      "node-role.kubernetes.io/master": :NoSchedule"
+      "node-role.kubernetes.io/master": ":NoSchedule"
   172.18.13.121:
   172.18.13.122:
   172.18.13.123:
