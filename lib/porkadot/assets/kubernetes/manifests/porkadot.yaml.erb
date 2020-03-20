@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    provider: porkadot
+  name: porkadot-kubernetes
+  namespace: kube-system
+spec:
+  selector:
+    app.kubernetes.io/component: kube-apiserver
+    app.kubernetes.io/managed-by: porkadot
+  <%- host, port = global_config.k8s.control_plane_endpoint_host_and_port -%>
+  loadBalancerIP: <%= host %>
+  ports:
+  - name: https
+    port: <%= port %>
+    protocol: TCP
+    targetPort: <%= global_config.k8s.apiserver.bind_port %>
+  sessionAffinity: None
+  type: LoadBalancer

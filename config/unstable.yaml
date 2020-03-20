@@ -39,4 +39,4 @@ cni:
     backend: host-gw
 
 kubernetes:
-  control_plane_endpoint: '172.18.13.101:6443'
+  control_plane_endpoint: '172.18.13.140:6443'

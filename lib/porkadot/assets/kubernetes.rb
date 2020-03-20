@@ -22,6 +22,7 @@ module Porkadot; module Assets
       end
       lb = global_config.lb
       cni = global_config.cni
+      render_erb 'manifests/porkadot.yaml'
       render_erb 'manifests/kubelet.yaml'
       render_erb "manifests/#{lb.type}.yaml"
       render_erb "manifests/#{cni.type}.yaml"
