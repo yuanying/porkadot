@@ -46,6 +46,11 @@ module Porkadot; module Configs
         @raw = config.raw.kubernetes.networking
       end
 
+      def kubernetes_ip
+        cluster_ip_range = IPAddr.new(self.service_subnet)
+        cluster_ip_range.to_range.first(2)[1].to_s
+      end
+
       def dns_ip
         cluster_ip_range = IPAddr.new(self.service_subnet)
         cluster_ip_range.to_range.first(11)[10].to_s
