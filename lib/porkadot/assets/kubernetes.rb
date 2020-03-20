@@ -24,7 +24,6 @@ module Porkadot; module Assets
       cni = global_config.cni
       render_erb 'manifests/kubelet.yaml'
       render_erb "manifests/#{lb.type}.yaml"
-      render_erb "manifests/#{lb.type}-config.yaml"
       render_erb "manifests/#{cni.type}.yaml"
       render_erb 'install.sh'
     end

@@ -9,6 +9,10 @@ module Porkadot; module Configs
         super bootstrap_config.config, 'bootstrap', bootstrap_config.raw.node
       end
 
+      def control_plane_endpoint
+        "127.0.0.1:#{bootstrap_config.config.k8s.apiserver.bind_port}"
+      end
+
       def target_path
         File.join(bootstrap_config.target_path, 'kubelet')
       end

@@ -8,10 +8,7 @@ connection:
 
 nodes: {}
 
-bootstrap:
-  node:
-    kubernetes:
-      control_plane_endpoint: '127.0.0.1:6443'
+bootstrap: {}
 
 cni:
   type: flannel
