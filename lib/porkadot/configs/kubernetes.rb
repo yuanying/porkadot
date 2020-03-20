@@ -2,17 +2,15 @@
 module Porkadot; module Configs
   class Kubernetes
     include Porkadot::ConfigUtils
-    attr_reader :config
-    attr_reader :logger
-    attr_reader :raw
     attr_reader :networking
+    attr_reader :proxy
 
     def initialize config
       @config = config
-      @logger = config.logger
       @raw = config.raw.kubernetes
 
       @networking = Networking.new(config)
+      @proxy = Proxy.new(config)
     end
 
     def target_path
@@ -23,15 +21,28 @@ module Porkadot; module Configs
       File.join(self.target_path, 'manifests')
     end
 
-    class Networking
+    class Proxy
       include Porkadot::ConfigUtils
-      attr_reader :config
-      attr_reader :logger
-      attr_reader :raw
 
       def initialize config
         @config = config
-        @logger = config.logger
+        @raw = config.raw.kubernetes.proxy
+      end
+
+      def proxy_config kubeconfig=nil
+        self.raw.config['clusterCIDR'] = config.k8s.networking.service_subnet
+        if kubeconfig
+          self.raw.config['clientConnection']['kubeconfig'] = kubeconfig
+        end
+        self.raw.config.to_hash.to_yaml
+      end
+    end
+
+    class Networking
+      include Porkadot::ConfigUtils
+
+      def initialize config
+        @config = config
         @raw = config.raw.kubernetes.networking
       end
 

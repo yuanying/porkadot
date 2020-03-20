@@ -1,15 +1,11 @@
 module Porkadot; module Configs
   class Kubelet
     include Porkadot::ConfigUtils
-    attr_reader :config
-    attr_reader :logger
     attr_reader :name
-    attr_reader :raw
     attr_reader :connection
 
     def initialize config, name, raw
       @config = config
-      @logger = config.logger
       @name = name
       @raw = raw || ::Porkadot::Raw.new
       hostname = @raw.hostname || name

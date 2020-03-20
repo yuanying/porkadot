@@ -13,7 +13,7 @@ module Porkadot; module Install
     end
 
     def install host
-      global_config = self.global_config
+      # global_config = self.global_config
       config = self.config
       on(host) do |host|
         execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)

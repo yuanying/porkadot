@@ -2,14 +2,10 @@
 module Porkadot; module Configs
   class Lb
     include Porkadot::ConfigUtils
-    attr_reader :config
-    attr_reader :logger
-    attr_reader :raw
     attr_reader :type
 
     def initialize config
       @config = config
-      @logger = config.logger
       @type = config.raw.lb.type
       @raw = config.raw.lb.send(config.raw.lb.type.to_sym)
     end

@@ -4,7 +4,7 @@ require 'logger'
 
 module Porkadot
   class Raw < ::Hashie::Mash
-    disable_warnings :keys
+    disable_warnings :keys, :min
   end
 
   class Config
@@ -84,6 +84,18 @@ module Porkadot
   end
 
   module ConfigUtils
+
+    def config
+      return @config
+    end
+
+    def logger
+      return @config.logger
+    end
+
+    def raw
+      return @raw
+    end
 
     def asset_path file
       File.join(self.target_path, file.to_s)

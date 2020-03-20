@@ -15,14 +15,10 @@ module Porkadot; module Configs
     end
 
     include Porkadot::ConfigUtils
-    attr_reader :config
-    attr_reader :logger
-    attr_reader :raw
     attr_reader :kubelet_config
 
     def initialize config
       @config = config
-      @logger = config.logger
       @raw = config.raw.bootstrap
       @kubelet_config = Kubelet.new(self)
     end

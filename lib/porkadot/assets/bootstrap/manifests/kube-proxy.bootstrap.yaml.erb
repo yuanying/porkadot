@@ -1,0 +1,53 @@
+<% k8s = global_config.k8s -%>
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bootstrap-kube-proxy
+  namespace: kube-system
+  labels:
+    tier: node
+    k8s-app: kube-proxy
+spec:
+  containers:
+  - name: kube-proxy
+    image: <%= k8s.image_repository %>/kube-proxy:<%= k8s.kubernetes_version %>
+    imagePullPolicy: IfNotPresent
+    command:
+    - kube-proxy
+    - --config=/etc/kubernetes/bootstrap/kube-proxy-bootstrap.yaml
+    - --hostname-override=$(NODE_NAME)
+    env:
+      - name: NODE_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: spec.nodeName
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - name: kubernetes
+      mountPath: /etc/kubernetes
+      readOnly: true
+    - mountPath: /run/xtables.lock
+      name: xtables-lock
+    - mountPath: /lib/modules
+      name: lib-modules
+      readOnly: true
+  hostNetwork: true
+  priorityClassName: system-node-critical
+  serviceAccountName: kube-proxy
+  tolerations:
+  - operator: Exists
+    effect: NoSchedule
+  volumes:
+  - hostPath:
+      path: /run/xtables.lock
+      type: FileOrCreate
+    name: xtables-lock
+  - hostPath:
+      path: /lib/modules
+      type: ""
+    name: lib-modules
+  - name: kubernetes
+    hostPath:
+      path: /etc/kubernetes

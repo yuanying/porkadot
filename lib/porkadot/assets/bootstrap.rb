@@ -23,6 +23,7 @@ module Porkadot; module Assets
       end
       render_secrets
       render_erb 'bootstrap/kubeconfig-bootstrap.yaml'
+      render_erb 'bootstrap/kube-proxy-bootstrap.yaml'
       render_manifests
       render_erb 'install.sh'
     end
@@ -42,6 +43,7 @@ module Porkadot; module Assets
       render_erb 'manifests/kube-apiserver.bootstrap.yaml'
       render_erb 'manifests/kube-controller-manager.bootstrap.yaml'
       render_erb 'manifests/kube-scheduler.bootstrap.yaml'
+      render_erb 'manifests/kube-proxy.bootstrap.yaml'
     end
 
   end
