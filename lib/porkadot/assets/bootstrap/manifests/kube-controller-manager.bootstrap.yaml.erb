@@ -5,6 +5,10 @@ kind: Pod
 metadata:
   name: bootstrap-kube-controller-manager
   namespace: kube-system
+  labels:
+    <%- k8s.controller_manager.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
 spec:
   containers:
   - name: kube-controller-manager

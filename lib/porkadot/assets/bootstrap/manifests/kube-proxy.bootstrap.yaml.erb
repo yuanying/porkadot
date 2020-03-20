@@ -8,6 +8,9 @@ metadata:
   labels:
     tier: node
     k8s-app: kube-proxy
+    <%- k8s.proxy.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
 spec:
   containers:
   - name: kube-proxy
