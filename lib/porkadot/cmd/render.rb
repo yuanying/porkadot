@@ -10,6 +10,7 @@ module Porkadot; module Cmd; module Render
       invoke :kubelet, [], options
       invoke :etcd, [], options
       invoke :bootstrap, [], options
+      invoke :kubernetes, [], options
     end
 
     desc "certs", "Render certificates to deploy Kubernetes"
