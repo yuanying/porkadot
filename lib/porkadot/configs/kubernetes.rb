@@ -46,6 +46,11 @@ module Porkadot; module Configs
           "#{RECOMMENDED_LABEL_PREFIX}/managed-by": 'porkadot',
         }
       end
+
+      def args
+        return self.default_args.merge(self.extra_args.map{|i| i.split('=', 2)}.to_h || {})
+      end
+
     end
 
     class Apiserver
@@ -63,10 +68,6 @@ module Porkadot; module Configs
 
       def component_name
         'kube-apiserver'
-      end
-
-      def args
-        return self.default_args.merge(self.extra_args.map{|i| i.split('=', 2)}.to_h || {})
       end
 
       def default_args
