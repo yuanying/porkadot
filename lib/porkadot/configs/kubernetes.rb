@@ -37,18 +37,31 @@ module Porkadot; module Configs
     module Component
       RECOMMENDED_LABEL_PREFIX = 'app.kubernetes.io'
       def labels
-        {
+        self.instance_labels.merge({
           "#{RECOMMENDED_LABEL_PREFIX}/name": self.component_name,
           "#{RECOMMENDED_LABEL_PREFIX}/component": self.component_name,
           "#{RECOMMENDED_LABEL_PREFIX}/instance": "#{self.component_name}-porkadot",
           "#{RECOMMENDED_LABEL_PREFIX}/version": self.config.k8s.kubernetes_version,
           "#{RECOMMENDED_LABEL_PREFIX}/part-of": 'kubernetes',
           "#{RECOMMENDED_LABEL_PREFIX}/managed-by": 'porkadot',
+        })
+      end
+
+      def instance_labels
+        {
+
+          "#{RECOMMENDED_LABEL_PREFIX}/component": self.component_name,
+          "#{RECOMMENDED_LABEL_PREFIX}/instance": "#{self.component_name}-porkadot",
+          "#{RECOMMENDED_LABEL_PREFIX}/managed-by": 'porkadot',
         }
       end
 
       def args
-        return self.default_args.merge(self.extra_args.map{|i| i.split('=', 2)}.to_h || {})
+        extra = {}
+        if self.extra_args
+          extra = self.extra_args.map{|i| i.split('=', 2)}.to_h
+        end
+        return self.default_args.merge(extra)
       end
 
     end
@@ -76,29 +89,29 @@ module Porkadot; module Configs
           --allow-privileged=true
           --authorization-mode=Node,RBAC
           --bind-address=0.0.0.0
-          --client-ca-file=/etc/kubernetes/pki/ca.crt
+          --client-ca-file=/etc/kubernetes/pki/kubernetes/ca.crt
           --enable-bootstrap-token-auth=true
-          --etcd-cafile=/etc/kubernetes/pki/etcd-client-ca.crt
-          --etcd-certfile=/etc/kubernetes/pki/etcd-client.crt
-          --etcd-keyfile=/etc/kubernetes/pki/etcd-client.key
+          --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
+          --etcd-certfile=/etc/kubernetes/pki/etcd/etcd-client.crt
+          --etcd-keyfile=/etc/kubernetes/pki/etcd/etcd-client.key
           --etcd-servers=#{config.etcd.advertise_client_urls.join(',')}
-          --kubelet-certificate-authority=/etc/kubernetes/pki/ca.crt
-          --kubelet-client-certificate=/etc/kubernetes/pki/kubelet-client.crt
-          --kubelet-client-key=/etc/kubernetes/pki/kubelet-client.key
+          --kubelet-certificate-authority=/etc/kubernetes/pki/kubernetes/ca.crt
+          --kubelet-client-certificate=/etc/kubernetes/pki/kubernetes/kubelet-client.crt
+          --kubelet-client-key=/etc/kubernetes/pki/kubernetes/kubelet-client.key
           --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
-          --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt
-          --proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key
+          --proxy-client-cert-file=/etc/kubernetes/pki/kubernetes/front-proxy-client.crt
+          --proxy-client-key-file=/etc/kubernetes/pki/kubernetes/front-proxy-client.key
           --requestheader-allowed-names=aggregator-client
-          --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt
+          --requestheader-client-ca-file=/etc/kubernetes/pki/kubernetes/front-proxy-ca.crt
           --requestheader-extra-headers-prefix=X-Remote-Extra-
           --requestheader-group-headers=X-Remote-Group
           --requestheader-username-headers=X-Remote-User
           --secure-port=#{self.bind_port}
-          --service-account-key-file=/etc/kubernetes/pki/sa.pub
+          --service-account-key-file=/etc/kubernetes/pki/kubernetes/sa.pub
           --service-cluster-ip-range=#{config.k8s.networking.service_subnet}
           --storage-backend=etcd3
-          --tls-cert-file=/etc/kubernetes/pki/apiserver.crt
-          --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+          --tls-cert-file=/etc/kubernetes/pki/kubernetes/apiserver.crt
+          --tls-private-key-file=/etc/kubernetes/pki/kubernetes/apiserver.key
           --v=#{self.log_level}
         ).map {|i| i.split('=', 2)}.to_h
       end

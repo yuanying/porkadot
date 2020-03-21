@@ -10,6 +10,7 @@ module Porkadot::Assets
     file = file.to_s
     opts[:config] = self.config
     opts[:global_config] = self.global_config
+    opts[:certs] = Porkadot::Assets::Certs.new(self.global_config)
     opts[:u] = ErbUtils.new
 
     logger.info "----> #{file}"
