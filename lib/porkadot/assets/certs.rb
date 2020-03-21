@@ -1,5 +1,6 @@
 require 'openssl'
 require 'fileutils'
+require 'base64'
 #OpenSSL::Random.seed File.read('/dev/random', 16)
 
 module Porkadot; module Assets
@@ -14,6 +15,14 @@ class Porkadot::Assets::Certs
     @config = config
     @logger = config.logger
     @global_config = config.config
+  end
+
+  def to_pem(key_or_cert)
+    self.send(key_or_cert.to_sym).to_pem
+  end
+
+  def to_base64(key_or_cert)
+    Base64.strict_encode64(self.to_pem(key_or_cert))
   end
 
   def ca_name
