@@ -57,8 +57,49 @@ module Porkadot; module Configs
         @raw = config.raw.kubernetes.apiserver
       end
 
+      def log_level
+        config.kubernetes.log_level || raw.log_level || 2
+      end
+
       def component_name
         'kube-apiserver'
+      end
+
+      def args
+        return self.default_args.merge(self.extra_args.map{|i| i.split('=', 2)}.to_h || {})
+      end
+
+      def default_args
+        return %W(
+          --advertise-address=$(POD_IP)
+          --allow-privileged=true
+          --authorization-mode=Node,RBAC
+          --bind-address=0.0.0.0
+          --client-ca-file=/etc/kubernetes/pki/ca.crt
+          --enable-bootstrap-token-auth=true
+          --etcd-cafile=/etc/kubernetes/pki/etcd-client-ca.crt
+          --etcd-certfile=/etc/kubernetes/pki/etcd-client.crt
+          --etcd-keyfile=/etc/kubernetes/pki/etcd-client.key
+          --etcd-servers=#{config.etcd.advertise_client_urls.join(',')}
+          --kubelet-certificate-authority=/etc/kubernetes/pki/ca.crt
+          --kubelet-client-certificate=/etc/kubernetes/pki/kubelet-client.crt
+          --kubelet-client-key=/etc/kubernetes/pki/kubelet-client.key
+          --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+          --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt
+          --proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key
+          --requestheader-allowed-names=aggregator-client
+          --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt
+          --requestheader-extra-headers-prefix=X-Remote-Extra-
+          --requestheader-group-headers=X-Remote-Group
+          --requestheader-username-headers=X-Remote-User
+          --secure-port=#{self.bind_port}
+          --service-account-key-file=/etc/kubernetes/pki/sa.pub
+          --service-cluster-ip-range=#{config.k8s.networking.service_subnet}
+          --storage-backend=etcd3
+          --tls-cert-file=/etc/kubernetes/pki/apiserver.crt
+          --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+          --v=#{self.log_level}
+        ).map {|i| i.split('=', 2)}.to_h
       end
     end
 

@@ -23,4 +23,12 @@ class PorkadotConfigsK8sTest < Minitest::Test
     assert_includes proxy.proxy_config, "clusterCIDR: #{k8s.networking.service_subnet}"
   end
 
+  def test_apiserver_default_args
+    assert_includes apiserver.default_args, '--v'
+    assert_includes apiserver.default_args, '--advertise-address'
+  end
+
+  def test_apiserver_args
+    assert_equal '2', apiserver.args['--v']
+  end
 end
