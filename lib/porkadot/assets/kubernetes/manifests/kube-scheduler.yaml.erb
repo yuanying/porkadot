@@ -1,0 +1,134 @@
+<% k8s = global_config.k8s -%>
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: kube-scheduler
+  namespace: kube-system
+  labels:
+    <%- k8s.scheduler.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      tier: control-plane
+      k8s-app: kube-scheduler
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: remora:kube-scheduler
+  labels:
+    <%- k8s.scheduler.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:kube-scheduler
+subjects:
+- kind: ServiceAccount
+  name: kube-scheduler
+  namespace: kube-system
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: remora:volume-scheduler
+  labels:
+    <%- k8s.scheduler.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:volume-scheduler
+subjects:
+- kind: ServiceAccount
+  name: kube-scheduler
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-scheduler
+  namespace: kube-system
+  labels:
+    <%- k8s.scheduler.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-scheduler
+  namespace: kube-system
+  labels:
+    <%- k8s.scheduler.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      <%- k8s.scheduler.labels.each do |k, v| -%>
+      <%= k.to_s %>: <%= v %>
+      <%- end -%>
+  template:
+    metadata:
+      labels:
+        <%- k8s.scheduler.labels.each do |k, v| -%>
+        <%= k.to_s %>: <%= v %>
+        <%- end -%>
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: 'app.kubernetes.io/component'
+                  operator: In
+                  values:
+                  - kube-scheduler
+                - key: 'app.kubernetes.io/managed-by'
+                  operator: In
+                  values:
+                  - porkadot
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: kube-scheduler
+        resources:
+          requests:
+            cpu: 100m
+        image: <%= k8s.image_repository %>/kube-scheduler:<%= k8s.kubernetes_version %>
+        command:
+        - kube-scheduler
+        <%- k8s.scheduler.args.each do |k, v| -%>
+        - <%= k %><% if v ;%>=<%= v %><%; end %>
+        <%- end -%>
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10251  # Note: Using default port. Update if --port option is set differently.
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+      priorityClassName: system-cluster-critical
+      nodeSelector:
+        k8s.unstable.cloud/master: ""
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: kube-scheduler
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+

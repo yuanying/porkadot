@@ -64,6 +64,10 @@ module Porkadot; module Configs
         return self.default_args.merge(extra)
       end
 
+      def log_level
+        config.kubernetes.log_level || raw.log_level || 2
+      end
+
     end
 
     class Apiserver
@@ -73,10 +77,6 @@ module Porkadot; module Configs
       def initialize config
         @config = config
         @raw = config.raw.kubernetes.apiserver
-      end
-
-      def log_level
-        config.kubernetes.log_level || raw.log_level || 2
       end
 
       def component_name
@@ -128,6 +128,13 @@ module Porkadot; module Configs
 
       def component_name
         'kube-scheduler'
+      end
+
+      def default_args
+        return %W(
+          --leader-elect=true
+          --v=#{self.log_level}
+        ).map {|i| i.split('=', 2)}.to_h
       end
     end
 
