@@ -27,6 +27,7 @@ module Porkadot; module Assets
       render_erb "manifests/#{lb.type}.yaml"
       render_erb "manifests/#{cni.type}.yaml"
       render_erb "manifests/kube-apiserver.yaml"
+      render_erb "manifests/kube-proxy.yaml"
       render_erb 'install.sh'
     end
 

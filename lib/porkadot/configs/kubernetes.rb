@@ -165,6 +165,13 @@ module Porkadot; module Configs
       def component_name
         'kube-proxy'
       end
+
+      def default_args
+        return %W(
+          --config=/var/lib/kube-proxy/config.conf
+          --hostname-override=$(NODE_NAME)
+        ).map {|i| i.split('=', 2)}.to_h
+      end
     end
 
     class Networking

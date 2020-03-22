@@ -1,0 +1,132 @@
+<% k8s = global_config.k8s -%>
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: remora:node-proxier
+  labels:
+    <%- k8s.proxy.instance_labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:node-proxier
+subjects:
+- kind: ServiceAccount
+  name: kube-proxy
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-proxy
+  namespace: kube-system
+  labels:
+    <%- k8s.proxy.instance_labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kube-proxy
+  namespace: kube-system
+  labels:
+    <%- k8s.proxy.instance_labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+data:
+  config.conf: |-
+<%= u.indent(k8s.proxy.proxy_config, 4) %>
+  kubeconfig.conf: |
+    apiVersion: v1
+    kind: Config
+    clusters:
+    - cluster:
+        certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        server: https://<%= k8s.control_plane_endpoint %>
+      name: default
+    contexts:
+    - context:
+        cluster: default
+        namespace: default
+        user: default
+      name: default
+    current-context: default
+    users:
+    - name: default
+      user:
+        tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    <%- k8s.proxy.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+  name: kube-proxy
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      <%- k8s.proxy.instance_labels.each do |k, v| -%>
+      <%= k.to_s %>: <%= v %>
+      <%- end -%>
+  template:
+    metadata:
+      labels:
+        <%- k8s.proxy.instance_labels.each do |k, v| -%>
+        <%= k.to_s %>: <%= v %>
+        <%- end -%>
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      containers:
+      - name: kube-proxy
+        image: <%= k8s.image_repository %>/kube-proxy:<%= k8s.kubernetes_version %>
+        imagePullPolicy: IfNotPresent
+        command:
+        - kube-proxy
+        <%- k8s.proxy.args.each do |k, v| -%>
+        - <%= k %><% if v ;%>=<%= v %><%; end %>
+        <%- end -%>
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /var/lib/kube-proxy
+          name: kube-proxy
+        - mountPath: /run/xtables.lock
+          name: xtables-lock
+        - mountPath: /lib/modules
+          name: lib-modules
+          readOnly: true
+      hostNetwork: true
+      priorityClassName: system-node-critical
+      serviceAccountName: kube-proxy
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: kube-proxy
+        name: kube-proxy
+      - hostPath:
+          path: /run/xtables.lock
+          type: FileOrCreate
+        name: xtables-lock
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: lib-modules
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
