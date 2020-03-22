@@ -1,0 +1,173 @@
+<% k8s = global_config.k8s -%>
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: kube-controller-manager
+  namespace: kube-system
+  labels:
+    <%- k8s.controller_manager.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      <%- k8s.controller_manager.instance_labels.each do |k, v| -%>
+      <%= k.to_s %>: <%= v %>
+      <%- end -%>
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: remora:kube-controller-manager
+  labels:
+    <%- k8s.controller_manager.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:kube-controller-manager
+subjects:
+- kind: ServiceAccount
+  name: kube-controller-manager
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-controller-manager
+  namespace: kube-system
+  labels:
+    <%- k8s.controller_manager.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+---
+apiVersion: v1
+data:
+  ca.crt: <%= certs.kubernetes.to_base64(:ca_cert) %>
+  ca.key: <%= certs.kubernetes.to_base64(:ca_key) %>
+  sa.key: <%= certs.kubernetes.to_base64(:sa_private_key) %>
+kind: Secret
+metadata:
+  name: kube-controller-manager
+  namespace: kube-system
+  labels:
+    <%- k8s.controller_manager.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+type: Opaque
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-controller-manager
+  namespace: kube-system
+  labels:
+    <%- k8s.controller_manager.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      <%- k8s.controller_manager.instance_labels.each do |k, v| -%>
+      <%= k.to_s %>: <%= v %>
+      <%- end -%>
+  template:
+    metadata:
+      labels:
+        <%- k8s.controller_manager.instance_labels.each do |k, v| -%>
+        <%= k.to_s %>: <%= v %>
+        <%- end -%>
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: 'app.kubernetes.io/component'
+                  operator: In
+                  values:
+                  - kube-controller-manager
+                - key: 'app.kubernetes.io/managed-by'
+                  operator: In
+                  values:
+                  - porkadot
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: kube-controller-manager
+        resources:
+          requests:
+            cpu: 200m
+        image: <%= k8s.image_repository %>/kube-controller-manager:<%= k8s.kubernetes_version %>
+        command:
+        - kube-controller-manager
+        <%- k8s.controller_manager.args.each do |k, v| -%>
+        - <%= k %><% if v ;%>=<%= v %><%; end %>
+        <%- end -%>
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10252  # Note: Using default port. Update if --port option is set differently.
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+        volumeMounts:
+        - name: var-run-kubernetes
+          mountPath: /var/run/kubernetes
+        - name: secrets
+          mountPath: /etc/kubernetes/pki/kubernetes
+          readOnly: true
+        - mountPath: /usr/libexec/kubernetes/kubelet-plugins/volume/exec
+          name: flexvolume-dir
+        - mountPath: /usr/share/ca-certificates
+          name: usr-share-ca-certificates
+          readOnly: true
+        - mountPath: /etc/ca-certificates
+          name: etc-ca-certificates
+          readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: ca-certs
+          readOnly: true
+      priorityClassName: system-cluster-critical
+      nodeSelector:
+        k8s.unstable.cloud/master: ""
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: kube-controller-manager
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      volumes:
+      - name: var-run-kubernetes
+        emptyDir: {}
+      - name: secrets
+        secret:
+          secretName: kube-controller-manager
+      - hostPath:
+          path: /etc/ssl/certs
+          type: DirectoryOrCreate
+        name: ca-certs
+      - hostPath:
+          path: /var/lib/kubelet/volumeplugins
+          type: DirectoryOrCreate
+        name: flexvolume-dir
+      - hostPath:
+          path: /usr/share/ca-certificates
+          type: DirectoryOrCreate
+        name: usr-share-ca-certificates
+      - hostPath:
+          path: /etc/ca-certificates
+          type: DirectoryOrCreate
+        name: etc-ca-certificates
+      dnsPolicy: Default # Don't use cluster DNS.
+

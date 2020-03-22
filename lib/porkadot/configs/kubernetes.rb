@@ -150,6 +150,22 @@ module Porkadot; module Configs
       def component_name
         'kube-controller-manager'
       end
+
+      def default_args
+        return %W(
+          --allocate-node-cidrs=true
+          --cluster-cidr=#{config.k8s.networking.service_subnet}
+          --cluster-signing-cert-file=/etc/kubernetes/pki/kubernetes/ca.crt
+          --cluster-signing-key-file=/etc/kubernetes/pki/kubernetes/ca.key
+          --controllers=*,bootstrapsigner,tokencleaner
+          --leader-elect=true
+          --node-cidr-mask-size=24
+          --root-ca-file=/etc/kubernetes/pki/kubernetes/ca.crt
+          --service-account-private-key-file=/etc/kubernetes/pki/kubernetes/sa.key
+          --use-service-account-credentials=true
+          --v=#{self.log_level}
+        ).map {|i| i.split('=', 2)}.to_h
+      end
     end
 
     class Proxy
