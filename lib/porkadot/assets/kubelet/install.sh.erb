@@ -29,6 +29,7 @@ for addon in $(ls ${ROOT}/addons/); do
   fi
 done
 
+rm -f ${KUBERNETES_PATH}/kubelet.conf
 systemctl daemon-reload
 systemctl enable kubelet
 systemctl restart kubelet
