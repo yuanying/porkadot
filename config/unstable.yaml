@@ -32,6 +32,7 @@ lb:
       - name: default
         protocol: layer2
         addresses:
+        - 172.18.13.101/32
         - 172.18.13.140-172.18.13.200
 
 cni:
@@ -39,8 +40,9 @@ cni:
     backend: host-gw
 
 kubernetes:
+  kubernetes_version: v1.15.11
   cluster_name: unstable
-  control_plane_endpoint: '172.18.13.140:6443'
+  control_plane_endpoint: '172.18.13.101:6443'
 
   proxy:
     config:
