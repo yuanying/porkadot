@@ -20,7 +20,7 @@ spec:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: remora:kube-scheduler
+  name: porkadot:kube-scheduler
   labels:
     <%- k8s.scheduler.labels.each do |k, v| -%>
     <%= k.to_s %>: <%= v %>
@@ -37,7 +37,7 @@ subjects:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: remora:volume-scheduler
+  name: porkadot:volume-scheduler
   labels:
     <%- k8s.scheduler.labels.each do |k, v| -%>
     <%= k.to_s %>: <%= v %>

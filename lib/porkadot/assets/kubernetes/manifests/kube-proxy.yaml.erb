@@ -3,7 +3,7 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: remora:node-proxier
+  name: porkadot:node-proxier
   labels:
     <%- k8s.proxy.labels.each do |k, v| -%>
     <%= k.to_s %>: <%= v %>
