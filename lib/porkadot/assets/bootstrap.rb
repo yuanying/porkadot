@@ -26,6 +26,7 @@ module Porkadot; module Assets
       render_erb 'bootstrap/kube-proxy-bootstrap.yaml'
       render_manifests
       render_erb 'install.sh'
+      render_erb 'cleanup.sh'
     end
 
     def render_secrets

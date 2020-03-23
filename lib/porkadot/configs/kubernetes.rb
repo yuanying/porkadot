@@ -158,7 +158,7 @@ module Porkadot; module Configs
       def default_args
         return %W(
           --allocate-node-cidrs=true
-          --cluster-cidr=#{config.k8s.networking.service_subnet}
+          --cluster-cidr=#{config.k8s.networking.pod_subnet}
           --cluster-signing-cert-file=/etc/kubernetes/pki/kubernetes/ca.crt
           --cluster-signing-key-file=/etc/kubernetes/pki/kubernetes/ca.key
           --controllers=*,bootstrapsigner,tokencleaner

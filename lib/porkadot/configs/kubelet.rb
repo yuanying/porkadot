@@ -15,6 +15,10 @@ module Porkadot; module Configs
       @connection = ::Porkadot::Raw.new(con.rmerge(gcon.rmerge(lcon)))
     end
 
+    def apiserver?
+      self.raw.labels && self.raw.labels.include?(Porkadot::K8S_MASTER_LABEL)
+    end
+
     def control_plane_endpoint
       (self.raw.kubernetes && self.raw.kubernetes.control_plane_endpoint) || self.config.k8s.control_plane_endpoint
     end

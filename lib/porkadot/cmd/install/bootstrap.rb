@@ -33,6 +33,14 @@ module Porkadot; module Cmd; module Install; module Bootstrap
       ""
     end
 
+    desc "cleanup", "Cleanup bootstrap node"
+    def cleanup
+      logger.info "Cleanup bootstrap node"
+      bootstrap = Porkadot::Install::Bootstrap.new(self.config)
+      bootstrap.cleanup
+      ""
+    end
+
     def self.subcommand_prefix
       'install bootstrap'
     end

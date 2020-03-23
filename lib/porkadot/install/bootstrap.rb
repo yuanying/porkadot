@@ -37,6 +37,33 @@ module Porkadot; module Install
       end
     end
 
+    def cleanup
+      global_config = self.global_config
+      config = self.config
+      on(host) do |host|
+        execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
+        if test("[ -d #{KUBE_TEMP} ]")
+          execute(:rm, '-rf', KUBE_TEMP)
+        end
+        upload! config.target_path, KUBE_TEMP, recursive: true
+
+        global_config.nodes.each do |k, node|
+          if node.apiserver?
+            endpoint = "https://#{node.hostname}:#{global_config.k8s.apiserver.bind_port}/healthz"
+            info "Start to wait api node #{node.hostname}"
+            while !test('curl', '-skf', endpoint)
+              info "Still waiting for API node: #{node.hostname}"
+              sleep 5
+            end
+          end
+        end
+
+        as user: 'root' do
+          execute(:bash, File.join(KUBE_TEMP, 'cleanup.sh'))
+        end
+      end
+    end
+
   end
 
 end; end
