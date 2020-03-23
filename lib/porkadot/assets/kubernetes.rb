@@ -31,6 +31,7 @@ module Porkadot; module Assets
       render_erb "manifests/kube-scheduler.yaml"
       render_erb "manifests/kube-controller-manager.yaml"
       render_erb "manifests/pod-checkpointer.yaml"
+      render_erb "manifests/kubelet-rubber-stamp.yaml"
       render_erb 'install.sh'
     end
 
