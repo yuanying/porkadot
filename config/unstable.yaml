@@ -23,7 +23,7 @@ nodes:
 
 bootstrap:
   node:
-    hostname: 172.18.13.111
+    hostname: 172.18.13.121
 
 lb:
   metallb:
@@ -41,3 +41,7 @@ cni:
 kubernetes:
   cluster_name: unstable
   control_plane_endpoint: '172.18.13.140:6443'
+
+  proxy:
+    config:
+      mode: 'ipvs'
