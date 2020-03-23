@@ -12,6 +12,7 @@ module Porkadot; module Cmd; module Install; module Bootstrap
     def all
       invoke :node
       invoke :kubernetes
+      invoke :cleanup
     end
 
     desc "node", "Install bootstrap node"

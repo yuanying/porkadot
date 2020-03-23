@@ -38,6 +38,8 @@ module Porkadot; module Cmd
     default_task :all
     desc "all", "Render and install Kubernetes cluster"
     def all
+      invoke :render, [], options
+      invoke :install, [], options
     end
   end
 end; end
