@@ -1,3 +1,4 @@
+<% k8s = global_config.k8s -%>
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -199,6 +200,24 @@ spec:
         app: metallb
         component: speaker
     spec:
+      initContainers:
+      - command:
+        - "iptables"
+        - "-P"
+        - "FORWARD"
+        - "ACCEPT"
+        image: <%= k8s.image_repository %>/hyperkube:<%= k8s.kubernetes_version %>
+        imagePullPolicy: IfNotPresent
+        name: default-iptables
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
       containers:
       - args:
         - --port=7472
