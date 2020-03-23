@@ -58,6 +58,13 @@ module Porkadot; module Install
           end
         end
 
+        endpoint = "https://#{global_config.k8s.control_plane_endpoint}/healthz"
+        info "Start to wait api endpoint"
+        while !test('curl', '-skf', endpoint)
+          info "Still waiting for API: #{endpoint}"
+          sleep 5
+        end
+
         as user: 'root' do
           execute(:bash, File.join(KUBE_TEMP, 'cleanup.sh'))
         end
