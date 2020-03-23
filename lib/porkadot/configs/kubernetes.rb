@@ -19,6 +19,10 @@ module Porkadot; module Configs
       @scheduler = Scheduler.new(config)
     end
 
+    def cluster_name
+      self.raw.cluster_name || 'porkadot'
+    end
+
     def target_path
       File.join(self.config.assets_dir, 'kubernetes')
     end

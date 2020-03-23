@@ -39,4 +39,5 @@ cni:
     backend: host-gw
 
 kubernetes:
+  cluster_name: unstable
   control_plane_endpoint: '172.18.13.140:6443'
