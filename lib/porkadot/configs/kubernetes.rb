@@ -182,7 +182,7 @@ module Porkadot; module Configs
       end
 
       def proxy_config kubeconfig=nil
-        self.raw.config['clusterCIDR'] = config.k8s.networking.service_subnet
+        self.raw.config['clusterCIDR'] = config.k8s.networking.pod_subnet
         if kubeconfig
           self.raw.config['clientConnection']['kubeconfig'] = kubeconfig
         end
