@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["yuanying@fraction.jp"]
 
   spec.summary       = "Porkadot is a CLI tool to deploy Kubernetes cluster."
-  spec.description   = "Porkadot is a CLI tool to deploy Kubernetes cluster."
+  spec.description   = "The kubernetes installer for those who want to install k8s in your home."
   spec.homepage      = "https://github.com/yuanying/porkadot"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
