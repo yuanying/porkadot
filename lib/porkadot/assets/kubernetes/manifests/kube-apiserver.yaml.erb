@@ -54,7 +54,7 @@ spec:
   template:
     metadata:
       labels:
-        <%- k8s.apiserver.instance_labels.each do |k, v| -%>
+        <%- k8s.apiserver.labels.each do |k, v| -%>
         <%= k.to_s %>: <%= v %>
         <%- end -%>
       annotations:

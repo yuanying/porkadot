@@ -23,6 +23,29 @@ spec:
   type: LoadBalancer
 ---
 apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    provider: porkadot
+  name: porkadot-kubernetes-latest
+  namespace: kube-system
+spec:
+  selector:
+    <%- k8s.apiserver.labels.each do |k, v| -%>
+    <%= k.to_s %>: <%= v %>
+    <%- end -%>
+  <%- _, port = global_config.k8s.control_plane_endpoint_host_and_port -%>
+  loadBalancerIP: <%= host %>
+  ports:
+  - name: https
+    port: <%= port %>
+    protocol: TCP
+    targetPort: <%= global_config.k8s.apiserver.bind_port %>
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kubeconfig-in-cluster

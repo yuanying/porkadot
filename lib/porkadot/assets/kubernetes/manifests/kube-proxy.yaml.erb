@@ -77,7 +77,7 @@ spec:
   template:
     metadata:
       labels:
-        <%- k8s.proxy.instance_labels.each do |k, v| -%>
+        <%- k8s.proxy.labels.each do |k, v| -%>
         <%= k.to_s %>: <%= v %>
         <%- end -%>
       annotations:

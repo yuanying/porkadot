@@ -78,7 +78,7 @@ spec:
   template:
     metadata:
       labels:
-        <%- k8s.controller_manager.instance_labels.each do |k, v| -%>
+        <%- k8s.controller_manager.labels.each do |k, v| -%>
         <%= k.to_s %>: <%= v %>
         <%- end -%>
       annotations:
