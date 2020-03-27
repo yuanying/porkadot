@@ -4,7 +4,7 @@ module Porkadot; module Cmd
     include Porkadot::Utils
 
     class_option :config, type: :string,
-      default: '~/.kube/porkadot.yaml',
+      default: './porkadot.yaml',
       desc: 'Path to porkadot config file'
 
     desc "render", "Render assets to deploy Kubernetes"
