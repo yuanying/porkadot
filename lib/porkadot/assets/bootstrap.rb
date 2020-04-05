@@ -18,8 +18,8 @@ module Porkadot; module Assets
 
     def render
       logger.info "--> Rendering bootstrap manifests"
-      unless File.directory?(config.target_path)
-        FileUtils.mkdir_p(config.target_path)
+      unless File.directory?(config.bootstrap_path)
+        FileUtils.mkdir_p(config.bootstrap_path)
       end
       render_secrets
       render_erb 'bootstrap/kubeconfig-bootstrap.yaml'

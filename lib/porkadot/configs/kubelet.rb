@@ -41,6 +41,10 @@ module Porkadot; module Configs
       File.join(self.config.assets_dir, 'kubelet', name)
     end
 
+    def target_secrets_path
+      File.join(self.config.secrets_root_dir, 'kubelet', name)
+    end
+
     def addon_path
       File.join(self.target_path, 'addons')
     end
@@ -50,7 +54,7 @@ module Porkadot; module Configs
     end
 
     def bootstrap_key_path
-      File.join(self.target_path, 'bootstrap.key')
+      File.join(self.target_secrets_path, 'bootstrap.key')
     end
 
     def bootstrap_cert_path

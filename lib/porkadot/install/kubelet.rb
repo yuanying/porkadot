@@ -1,6 +1,7 @@
 module Porkadot; module Install
   class KubeletList
     KUBE_TEMP = File.join(Porkadot::Install::KUBE_TEMP, 'kubelet')
+    KUBE_SECRETS_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.kubelet')
     include SSHKit::DSL
     attr_reader :global_config
     attr_reader :logger
@@ -27,8 +28,11 @@ module Porkadot; module Install
         execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
         if test("[ -d #{KUBE_TEMP} ]")
           execute(:rm, '-rf', KUBE_TEMP)
+          execute(:rm, '-rf', KUBE_SECRETS_TEMP)
         end
         upload! host.config.target_path, KUBE_TEMP, recursive: true
+        upload! host.config.target_secrets_path, KUBE_SECRETS_TEMP, recursive: true
+        execute(:cp, '-r', KUBE_SECRETS_TEMP + '/*', KUBE_TEMP)
 
         as user: 'root' do
           unless test("[ -f /opt/bin/kubelet-#{host.global_config.k8s.kubernetes_version} ]") && !force

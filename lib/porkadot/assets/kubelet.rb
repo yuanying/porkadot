@@ -50,6 +50,9 @@ module Porkadot; module Assets
       unless File.directory?(config.target_path)
         FileUtils.mkdir_p(config.target_path)
       end
+      unless File.directory?(config.target_secrets_path)
+        FileUtils.mkdir_p(config.target_secrets_path)
+      end
       ca_data = certs.ca_cert.to_pem
       ca_data = Base64.strict_encode64(ca_data)
 

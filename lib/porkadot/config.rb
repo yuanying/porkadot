@@ -81,6 +81,10 @@ module Porkadot
       File.expand_path(raw.local.assets_dir)
     end
 
+    def secrets_root_dir
+      File.join(self.assets_dir, 'secrets')
+    end
+
   end
 
   module ConfigUtils
