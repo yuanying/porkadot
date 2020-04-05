@@ -49,6 +49,10 @@ module Porkadot; module Configs
       File.join(self.target_path, 'addons')
     end
 
+    def addon_secrets_path
+      File.join(self.target_secrets_path, 'addons')
+    end
+
     def ca_crt_path
       File.join(self.target_path, 'ca.crt')
     end

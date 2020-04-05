@@ -79,16 +79,20 @@ module Porkadot; module Configs
       File.join(self.kubelet.addon_path, 'etcd')
     end
 
+    def target_secrets_path
+      File.join(self.kubelet.addon_secrets_path, 'etcd')
+    end
+
     def ca_crt_path
-      File.join(self.target_path, 'ca.crt')
+      File.join(self.target_secrets_path, 'ca.crt')
     end
 
     def etcd_key_path
-      File.join(self.target_path, 'etcd.key')
+      File.join(self.target_secrets_path, 'etcd.key')
     end
 
     def etcd_crt_path
-      File.join(self.target_path, 'etcd.crt')
+      File.join(self.target_secrets_path, 'etcd.crt')
     end
 
   end

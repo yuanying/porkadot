@@ -50,6 +50,9 @@ module Porkadot; module Assets
       unless File.directory?(config.target_path)
         FileUtils.mkdir_p(config.target_path)
       end
+      unless File.directory?(config.target_secrets_path)
+        FileUtils.mkdir_p(config.target_secrets_path)
+      end
       render_ca_crt
       render_etcd_crt
       render_erb 'etcd-server.yaml', etcd: global_config.etcd
