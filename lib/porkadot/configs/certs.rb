@@ -5,7 +5,7 @@ module Porkadot; module Configs
   module CertsUtils
 
     def certs_root_dir
-      File.join(self.config.assets_dir, 'certs')
+      File.join(self.config.secrets_root_dir, 'certs')
     end
 
     def ipaddr?(addr)
