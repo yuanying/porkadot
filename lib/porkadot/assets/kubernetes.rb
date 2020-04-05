@@ -20,6 +20,9 @@ module Porkadot; module Assets
       unless File.directory?(config.manifests_path)
         FileUtils.mkdir_p(config.manifests_path)
       end
+      unless File.directory?(config.manifests_secrets_path)
+        FileUtils.mkdir_p(config.manifests_secrets_path)
+      end
       lb = global_config.lb
       cni = global_config.cni
       render_erb 'manifests/porkadot.yaml'
@@ -27,9 +30,11 @@ module Porkadot; module Assets
       render_erb "manifests/#{lb.type}.yaml"
       render_erb "manifests/#{cni.type}.yaml"
       render_erb "manifests/kube-apiserver.yaml"
+      render_secrets_erb "manifests/kube-apiserver.secrets.yaml"
       render_erb "manifests/kube-proxy.yaml"
       render_erb "manifests/kube-scheduler.yaml"
       render_erb "manifests/kube-controller-manager.yaml"
+      render_secrets_erb "manifests/kube-controller-manager.secrets.yaml"
       render_erb "manifests/pod-checkpointer.yaml"
       render_erb "manifests/kubelet-rubber-stamp.yaml"
       render_erb 'install.sh'

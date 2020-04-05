@@ -106,6 +106,10 @@ module Porkadot
     end
     alias path asset_path
 
+    def secrets_path file
+      File.join(self.target_secrets_path, file.to_s)
+    end
+
     def method_missing name, *args
       return nil if self.raw.nil?
       self.raw[name]
