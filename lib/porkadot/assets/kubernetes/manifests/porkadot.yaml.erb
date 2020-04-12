@@ -36,7 +36,6 @@ spec:
     <%= k.to_s %>: <%= v %>
     <%- end -%>
   <%- _, port = global_config.k8s.control_plane_endpoint_host_and_port -%>
-  loadBalancerIP: <%= host %>
   ports:
   - name: https
     port: <%= port %>
