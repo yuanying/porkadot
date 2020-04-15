@@ -86,7 +86,7 @@ module Porkadot; module Assets
         ca_key = self.certs.ca_key
         ca_cert = self.certs.ca_cert(false)
         @etcd_cert = certs.unsigned_cert(
-          "/O=porkadot:etcd-servers/CN=porkadot:etcd-server-#{config.member_name}",
+          "/O=porkadot:etcd-servers/CN=#{config.member_name}",
           self.etcd_key, ca_cert,
           1 * 365 * 24 * 60 * 60
         )
