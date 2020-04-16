@@ -33,6 +33,12 @@ module Porkadot; module Configs; class Certs
         DNS:kubernetes.default
         DNS:kubernetes.default.svc
         DNS:kubernetes.default.svc.#{self.config.k8s.networking.dns_domain}
+        DNS:porkadot-kubernetes
+        DNS:porkadot-kubernetes.kube-system
+        DNS:porkadot-kubernetes.kube-system.svc
+        DNS:porkadot-kubernetes-latest
+        DNS:porkadot-kubernetes-latest.kube-system
+        DNS:porkadot-kubernetes-latest.kube-system.svc
         DNS:localhost
         IP:#{self.config.k8s.networking.kubernetes_ip}
         IP:127.0.0.1
