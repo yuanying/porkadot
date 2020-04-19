@@ -27,7 +27,7 @@ lb:
 
 etcd:
   image_repository: gcr.io/etcd-development/etcd
-  image_tag: v3.3.10
+  image_tag: v3.3.17
 
 kubernetes:
   kubernetes_version: v1.17.3
