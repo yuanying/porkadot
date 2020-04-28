@@ -26,3 +26,14 @@ curl -L https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin
 chmod +x /opt/bin/kubelet-${RELEASE}
 rm -f /opt/bin/kubelet
 ln -s /opt/bin/kubelet-${RELEASE} /opt/bin/kubelet
+
+ETCD_VER="<%= global_config.etcd.image_tag %>"
+ETCD_URL=https://storage.googleapis.com/etcd/${ETCD_VER}/etcd-${ETCD_VER}-linux-${architecture}.tar.gz
+ETCD_TMP=$(mktemp -d)
+
+curl -L ${ETCD_URL} -o ${ETCD_TMP}/etcd.tar.gz
+tar zxvf ${ETCD_TMP}/etcd.tar.gz -C ${ETCD_TMP}/ --strip-components=1
+chmod +x ${ETCD_TMP}/etcdctl
+rm -f /opt/bin/etcdctl
+mv ${ETCD_TMP}/etcdctl /opt/bin/etcdctl-${ETCD_VER}
+ln -s /opt/bin/etcdctl-${ETCD_VER} /opt/bin/etcdctl
