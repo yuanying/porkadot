@@ -30,6 +30,8 @@ spec:
     - --data-dir=/var/lib/etcd
     - --heartbeat-interval=1000
     - --election-timeout=10000
+    env:
+<%= u.to_yaml(etcd.extra_env, 4) -%>
     volumeMounts:
     - mountPath: /var/lib/etcd
       name: etcd

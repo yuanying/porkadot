@@ -4,6 +4,15 @@ module Porkadot::Assets
       space = space.times.map{' '}.join('')
       text.lines.map{|line| "#{space}#{line}"}.join('')
     end
+
+    def to_yaml(obj, space=0)
+      h = Hashie::Mash.new({obj: obj})
+      h = h.to_hash
+      if h['obj'].size == 0
+        return ''
+      end
+      return self.indent(h['obj'].to_yaml(canonical: false, header: false).gsub(/---\n/, ''), space)
+    end
   end
 
   def render_erb file, opts={}
