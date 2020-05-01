@@ -62,7 +62,7 @@ rules:
   verbs: ["get", "watch", "list"]
 - apiGroups: [""] # "" indicates the core API group
   resources: ["secrets", "configmaps"]
-  verbs: ["get"]
+  verbs: ["get", "watch", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
