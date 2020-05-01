@@ -27,7 +27,7 @@ chmod +x /opt/bin/kubelet-${RELEASE}
 rm -f /opt/bin/kubelet
 ln -s /opt/bin/kubelet-${RELEASE} /opt/bin/kubelet
 
-ETCD_VER="<%= global_config.etcd.image_tag %>"
+ETCD_VER="<%= global_config.etcd.image_tag.gsub(/\-\w+$/, '') %>"
 ETCD_URL=https://storage.googleapis.com/etcd/${ETCD_VER}/etcd-${ETCD_VER}-linux-${architecture}.tar.gz
 ETCD_TMP=$(mktemp -d)
 
