@@ -56,6 +56,7 @@ module Porkadot; module Configs
           "#{RECOMMENDED_LABEL_PREFIX}/version": self.config.k8s.kubernetes_version,
           "#{RECOMMENDED_LABEL_PREFIX}/part-of": 'kubernetes',
           "#{RECOMMENDED_LABEL_PREFIX}/managed-by": 'porkadot',
+          "k8s-app": self.component_name,
         })
       end
 
