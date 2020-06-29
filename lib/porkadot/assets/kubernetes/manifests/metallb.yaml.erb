@@ -206,7 +206,7 @@ spec:
         - "-P"
         - "FORWARD"
         - "ACCEPT"
-        image: <%= k8s.image_repository %>/hyperkube:<%= k8s.kubernetes_version %>
+        image: <%= k8s.image_repository %>/kube-proxy:<%= k8s.kubernetes_version %>
         imagePullPolicy: IfNotPresent
         name: default-iptables
         securityContext:
