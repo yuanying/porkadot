@@ -31,7 +31,7 @@ etcd:
   extra_env: []
 
 kubernetes:
-  kubernetes_version: v1.17.5
+  kubernetes_version: v1.18.10
   image_repository: k8s.gcr.io
 
   networking:
