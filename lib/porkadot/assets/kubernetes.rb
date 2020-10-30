@@ -28,6 +28,7 @@ module Porkadot; module Assets
       render_erb 'manifests/porkadot.yaml'
       render_erb 'manifests/kubelet.yaml'
       render_erb "manifests/#{lb.type}.yaml"
+      render_secrets_erb "manifests/#{lb.type}.secrets.yaml"
       render_erb "manifests/#{cni.type}.yaml"
       render_erb "manifests/coredns.yaml"
       render_erb "manifests/dns-horizontal-autoscaler.yaml"
