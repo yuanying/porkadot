@@ -40,7 +40,7 @@ module Porkadot; module Cmd; module Render; module Certs
       certs.apiserver_cert(true)
       logger.info "--> Kubelet client key and certs"
       certs.kubelet_client_key
-      certs.kubelet_client_cert
+      certs.kubelet_client_cert(true)
       # logger.info "--> Bootstrap client key and certs"
       # bootstrap_client_key = self.private_key(self.assets.k8s_bootstrap_key_path)
       # self.client_cert(self.assets.k8s_bootstrap_cert_path, '/O=porkadot:node-bootstrappers/CN=node-bootstrapper', bootstrap_client_key, ca_cert, ca_key)
