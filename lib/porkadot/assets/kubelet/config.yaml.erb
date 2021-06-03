@@ -12,6 +12,7 @@ authorization:
   webhook:
     cacheAuthorizedTTL: 0s
     cacheUnauthorizedTTL: 0s
+cgroupDriver: systemd
 clusterDNS:
   - <%= global_config.k8s.networking.dns_ip %>
 clusterDomain: <%= global_config.k8s.networking.dns_domain %>

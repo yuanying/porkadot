@@ -102,7 +102,7 @@ kubernetes:
         webhook:
           cacheAuthorizedTTL: 0s
           cacheUnauthorizedTTL: 0s
-      cgroupDriver: cgroupfs
+      cgroupDriver: systemd
       clusterDNS: []
       clusterDomain: cluster.local
       cpuManagerReconcilePeriod: 0s
