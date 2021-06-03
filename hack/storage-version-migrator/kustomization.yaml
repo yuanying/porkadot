@@ -1,0 +1,13 @@
+resources:
+- https://github.com/kubernetes-sigs/kube-storage-version-migrator/manifests/?ref=master
+
+images:
+- name: REGISTRY/storage-version-migration-initializer:VERSION
+  newName: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-initializer
+  newTag: v0.0.3
+- name: REGISTRY/storage-version-migration-migrator:VERSION
+  newName: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-migrator
+  newTag: v0.0.3
+- name: REGISTRY/storage-version-migration-trigger:VERSION
+  newName: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-trigger
+  newTag: v0.0.3
