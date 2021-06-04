@@ -316,13 +316,6 @@ spec:
         - --kube-api-qps=40
         - --kube-api-burst=1000
         image: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-migrator:v0.0.3
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 2112
-            scheme: HTTP
-          initialDelaySeconds: 10
-          timeoutSeconds: 60
         name: migrator
 ---
 apiVersion: apps/v1
@@ -344,11 +337,4 @@ spec:
     spec:
       containers:
       - image: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-trigger:v0.0.3
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 2113
-            scheme: HTTP
-          initialDelaySeconds: 10
-          timeoutSeconds: 60
         name: trigger

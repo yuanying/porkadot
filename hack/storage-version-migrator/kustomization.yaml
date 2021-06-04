@@ -1,5 +1,7 @@
+namespace: kube-system
+
 resources:
-- https://github.com/kubernetes-sigs/kube-storage-version-migrator/manifests/?ref=master
+- https://github.com/kubernetes-sigs/kube-storage-version-migrator/manifests/?ref=acdee30ced218b79e39c6a701985e8cd8bd33824
 
 images:
 - name: REGISTRY/storage-version-migration-initializer:VERSION
@@ -11,3 +13,22 @@ images:
 - name: REGISTRY/storage-version-migration-trigger:VERSION
   newName: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-trigger
   newTag: v0.0.3
+patchesJson6902:
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: migrator
+    namespace: kube-system
+  patch: |-
+    - op: remove
+      path: /spec/template/spec/containers/0/livenessProbe
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: trigger
+    namespace: kube-system
+  patch: |-
+    - op: remove
+      path: /spec/template/spec/containers/0/livenessProbe
