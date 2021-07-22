@@ -64,6 +64,7 @@ module Porkadot; module Assets
       render_erb 'install.sh'
       render_erb 'install-deps.sh'
       render_erb 'install-pkgs.sh'
+      render_erb 'setup-containerd.sh'
     end
 
     def render_bootstrap_certs

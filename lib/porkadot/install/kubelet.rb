@@ -16,6 +16,30 @@ module Porkadot; module Install
       end
     end
 
+    def setup_containerd hosts: nil, force: false
+      unless hosts
+        hosts = []
+        self.kubelets.each do |_, v|
+          hosts << v
+        end
+      end
+
+      on(hosts) do |host|
+        execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
+        if test("[ -d #{KUBE_TEMP} ]")
+          execute(:rm, '-rf', KUBE_TEMP)
+          execute(:rm, '-rf', KUBE_SECRETS_TEMP)
+        end
+        upload! host.config.target_path, KUBE_TEMP, recursive: true
+        upload! host.config.target_secrets_path, KUBE_SECRETS_TEMP, recursive: true
+        execute(:cp, '-r', KUBE_SECRETS_TEMP + '/*', KUBE_TEMP)
+
+        as user: 'root' do
+          execute(:bash, File.join(KUBE_TEMP, 'setup-containerd.sh'))
+        end
+      end
+    end
+
     def install hosts: nil, force: false
       unless hosts
         hosts = []

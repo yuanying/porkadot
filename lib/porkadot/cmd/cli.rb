@@ -13,6 +13,22 @@ module Porkadot; module Cmd
     desc "install", "Install kubernetes"
     subcommand "install", Porkadot::Cmd::Install::Cli
 
+    desc "setup-containerd", "Setup containerd"
+    option :node, type: :string
+    option :force, type: :boolean, default: false
+    def setup_containerd
+      logger.info "Setup containerd"
+      kubelets = Porkadot::Install::KubeletList.new(self.config)
+      nodes = []
+      if node = options[:node]
+        nodes = kubelets[node]
+      else
+        nodes = kubelets.kubelets.values
+      end
+      kubelets.setup_containerd hosts: nodes, force: options[:force]
+      ""
+    end
+
     desc "set-config", "Set cluster to kubeconfig"
     def set_config
       name = config.k8s.cluster_name
