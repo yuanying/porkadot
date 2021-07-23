@@ -23,6 +23,9 @@ patchesJson6902:
   patch: |-
     - op: remove
       path: /spec/template/spec/containers/0/livenessProbe
+    - op: add
+      path: /spec/template/spec/containers/0/command/-
+      value: --kubeconfig=/etc/migrator/kubeconfig
 - target:
     group: apps
     version: v1
@@ -32,3 +35,43 @@ patchesJson6902:
   patch: |-
     - op: remove
       path: /spec/template/spec/containers/0/livenessProbe
+    - op: add
+      path: /spec/template/spec/containers/0/args
+      value: ["--kubeconfig=/etc/migrator/kubeconfig"]
+patchesStrategicMerge:
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: migrator
+    namespace: NAMESPACE
+  spec:
+    template:
+      spec:
+        containers:
+        - name: migrator
+          volumeMounts:
+          - mountPath: /etc/migrator
+            name: kubeconfig
+        volumes:
+        - name: kubeconfig
+          configMap:
+            name: kubeconfig-in-cluster-latest
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: trigger
+    namespace: NAMESPACE
+  spec:
+    template:
+      spec:
+        containers:
+        - name: trigger
+          volumeMounts:
+          - mountPath: /etc/migrator
+            name: kubeconfig
+        volumes:
+        - name: kubeconfig
+          configMap:
+            name: kubeconfig-in-cluster-latest

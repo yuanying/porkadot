@@ -315,8 +315,16 @@ spec:
         - --alsologtostderr
         - --kube-api-qps=40
         - --kube-api-burst=1000
+        - --kubeconfig=/etc/migrator/kubeconfig
         image: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-migrator:v0.0.3
         name: migrator
+        volumeMounts:
+        - mountPath: /etc/migrator
+          name: kubeconfig
+      volumes:
+      - configMap:
+          name: kubeconfig-in-cluster-latest
+        name: kubeconfig
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -336,5 +344,14 @@ spec:
         app: trigger
     spec:
       containers:
-      - image: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-trigger:v0.0.3
+      - args:
+        - --kubeconfig=/etc/migrator/kubeconfig
+        image: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-trigger:v0.0.3
         name: trigger
+        volumeMounts:
+        - mountPath: /etc/migrator
+          name: kubeconfig
+      volumes:
+      - configMap:
+          name: kubeconfig-in-cluster-latest
+        name: kubeconfig
