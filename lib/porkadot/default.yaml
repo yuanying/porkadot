@@ -27,11 +27,11 @@ lb:
 
 etcd:
   image_repository: gcr.io/etcd-development/etcd
-  image_tag: v3.4.3
+  image_tag: v3.4.13
   extra_env: []
 
 kubernetes:
-  kubernetes_version: v1.19.6
+  kubernetes_version: v1.20.3
   image_repository: k8s.gcr.io
 
   networking:

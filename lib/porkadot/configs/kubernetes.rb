@@ -128,7 +128,9 @@ module Porkadot; module Configs
           --requestheader-group-headers=X-Remote-Group
           --requestheader-username-headers=X-Remote-User
           --secure-port=#{self.bind_port}
+          --service-account-issuer=https://kubernetes.default.svc#{self.config.k8s.networking.dns_domain}
           --service-account-key-file=/etc/kubernetes/pki/kubernetes/sa.pub
+          --service-account-signing-key-file=/etc/kubernetes/pki/kubernetes/sa.key
           --service-cluster-ip-range=#{config.k8s.networking.service_subnet}
           --storage-backend=etcd3
           --tls-cert-file=/etc/kubernetes/pki/kubernetes/apiserver.crt
