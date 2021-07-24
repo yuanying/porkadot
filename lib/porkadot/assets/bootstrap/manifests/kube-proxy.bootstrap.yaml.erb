@@ -18,8 +18,9 @@ spec:
     imagePullPolicy: IfNotPresent
     command:
     - kube-proxy
-    - --config=/etc/kubernetes/bootstrap/kube-proxy-bootstrap.yaml
-    - --hostname-override=$(NODE_NAME)
+    <%- k8s.proxy.args(bootstrap: true).each do |k, v| -%>
+    - <%= k %><% if v ;%>=<%= v %><%; end %>
+    <%- end -%>
     env:
       - name: NODE_NAME
         valueFrom:

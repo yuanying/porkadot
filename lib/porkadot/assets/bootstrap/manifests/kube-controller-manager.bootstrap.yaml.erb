@@ -15,23 +15,17 @@ spec:
     image: <%= k8s.image_repository %>/kube-controller-manager:<%= k8s.kubernetes_version %>
     command:
     - kube-controller-manager
-    - --allocate-node-cidrs=true
-    - --cluster-cidr=<%= k8s.networking.pod_subnet %>
-    - --cluster-signing-cert-file=/etc/kubernetes/bootstrap/secrets/kubernetes/ca.crt
-    - --cluster-signing-key-file=/etc/kubernetes/bootstrap/secrets/kubernetes/ca.key
-    - --controllers=*,bootstrapsigner,tokencleaner
-    - --kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
-    - --leader-elect=true
-    - --node-cidr-mask-size=24
-    - --root-ca-file=/etc/kubernetes/bootstrap/secrets/kubernetes/ca.crt
-    - --service-account-private-key-file=/etc/kubernetes/bootstrap/secrets/kubernetes/sa.key
-    - --use-service-account-credentials=true
-    - --v=2
+    <%- k8s.controller_manager.args(bootstrap: true).each do |k, v| -%>
+    - <%= k %><% if v ;%>=<%= v %><%; end %>
+    <%- end -%>
     volumeMounts:
     - name: var-run-kubernetes
       mountPath: /var/run/kubernetes
-    - name: kubernetes
-      mountPath: /etc/kubernetes
+    - name: kubernetes-secrets
+      mountPath: /etc/kubernetes/pki
+      readOnly: true
+    - name: kubernetes-bootstrap
+      mountPath: /etc/kubernetes/bootstrap
       readOnly: true
     - mountPath: /usr/libexec/kubernetes/kubelet-plugins/volume/exec
       name: flexvolume-dir
@@ -48,9 +42,12 @@ spec:
   volumes:
   - name: var-run-kubernetes
     emptyDir: {}
-  - name: kubernetes
+  - name: kubernetes-secrets
     hostPath:
-      path: /etc/kubernetes
+      path: /etc/kubernetes/bootstrap/secrets
+  - name: kubernetes-bootstrap
+    hostPath:
+      path: /etc/kubernetes/bootstrap
   - hostPath:
       path: /etc/ssl/certs
       type: DirectoryOrCreate

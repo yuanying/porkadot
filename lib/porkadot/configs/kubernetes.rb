@@ -69,10 +69,13 @@ module Porkadot; module Configs
         }
       end
 
-      def args
+      def args bootstrap: false
         extra = {}
         if self.extra_args
           extra = self.extra_args.map{|i| i.split('=', 2)}.to_h
+        end
+        if bootstrap
+          extra = self.bootstrap_args.merge(extra)
         end
         return self.default_args.merge(extra)
       end
@@ -96,6 +99,10 @@ module Porkadot; module Configs
         'kube-apiserver'
       end
 
+      def bootstrap_args
+        return {}
+      end
+
       def default_args
         return %W(
           --advertise-address=$(POD_IP)
@@ -103,6 +110,7 @@ module Porkadot; module Configs
           --authorization-mode=Node,RBAC
           --bind-address=0.0.0.0
           --client-ca-file=/etc/kubernetes/pki/kubernetes/ca.crt
+          --enable-admission-plugins=NodeRestriction
           --enable-bootstrap-token-auth=true
           --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
           --etcd-certfile=/etc/kubernetes/pki/etcd/etcd-client.crt
@@ -143,6 +151,14 @@ module Porkadot; module Configs
         'kube-scheduler'
       end
 
+      def bootstrap_args
+        return %W(
+          --kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
+          --authentication-kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
+          --authorization-kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
+        ).map {|i| i.split('=', 2)}.to_h
+      end
+
       def default_args
         return %W(
           --leader-elect=true
@@ -162,6 +178,12 @@ module Porkadot; module Configs
 
       def component_name
         'kube-controller-manager'
+      end
+
+      def bootstrap_args
+        return %W(
+          --kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
+        ).map {|i| i.split('=', 2)}.to_h
       end
 
       def default_args
@@ -200,6 +222,12 @@ module Porkadot; module Configs
 
       def component_name
         'kube-proxy'
+      end
+
+      def bootstrap_args
+        return %W(
+          --config=/etc/kubernetes/bootstrap/kube-proxy-bootstrap.yaml
+        ).map {|i| i.split('=', 2)}.to_h
       end
 
       def default_args
