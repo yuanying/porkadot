@@ -26,7 +26,8 @@ module Porkadot; module Install
         upload! config.target_secrets_path, KUBE_SECRETS_TEMP, recursive: true
         execute(:cp, '-r', KUBE_SECRETS_TEMP + '/*', KUBE_TEMP)
 
-        as user: 'root' do
+        # as user: 'root' do
+        with KUBECONFIG: File.join(KUBE_TEMP, 'kubeconfig.yaml') do
           execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
         end
       end

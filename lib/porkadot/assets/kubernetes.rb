@@ -40,6 +40,7 @@ module Porkadot; module Assets
       render_secrets_erb "manifests/kube-controller-manager.secrets.yaml"
       render_erb "manifests/kubelet-rubber-stamp.yaml"
       render_erb "manifests/storage-version-migrator.yaml"
+      render_secrets_erb "kubeconfig.yaml"
       render_erb 'install.sh'
     end
 
