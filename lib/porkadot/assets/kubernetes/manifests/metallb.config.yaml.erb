@@ -1,0 +1,13 @@
+<% k8s = global_config.k8s -%>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: metallb
+  name: config
+  namespace: metallb-system
+data:
+  config: |
+<%= u.indent(global_config.lb.lb_config, 4) %>
+

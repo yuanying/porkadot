@@ -27,7 +27,9 @@ module Porkadot; module Assets
       cni = global_config.cni
       render_erb 'manifests/porkadot.yaml'
       render_erb 'manifests/kubelet.yaml'
+      render_erb "manifests/000-#{lb.type}.yaml"
       render_erb "manifests/#{lb.type}.yaml"
+      render_erb "manifests/#{lb.type}.config.yaml"
       render_secrets_erb "manifests/#{lb.type}.secrets.yaml"
       render_erb "manifests/#{cni.type}.yaml"
       render_erb "manifests/coredns.yaml"
