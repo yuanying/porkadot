@@ -249,13 +249,17 @@ module Porkadot; module Configs
       end
 
       def kubernetes_ip
-        cluster_ip_range = IPAddr.new(self.service_subnet)
-        cluster_ip_range.to_range.first(2)[1].to_s
+        cluster_ip_range = IPAddr.new(self.default_service_subnet)
+        cluster_ip_range.to_range.first(2)[1]
       end
 
       def dns_ip
-        cluster_ip_range = IPAddr.new(self.service_subnet)
-        cluster_ip_range.to_range.first(11)[10].to_s
+        cluster_ip_range = IPAddr.new(self.default_service_subnet)
+        cluster_ip_range.to_range.first(11)[10]
+      end
+
+      def default_service_subnet
+        self.service_subnet.split(',')[0]
       end
     end
   end

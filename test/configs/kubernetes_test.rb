@@ -3,8 +3,11 @@ require 'test_helper'
 class PorkadotConfigsK8sTest < Minitest::Test
   include Porkadot::TestUtils
 
-  def k8s
-    return Porkadot::Configs::Kubernetes.new(self.mock_config)
+  DUALSTACK_CONFIG='porkadot2.yaml'
+  IPV6_CONFIG='porkadot3.yaml'
+
+  def k8s(file='porkadot.yaml')
+    return Porkadot::Configs::Kubernetes.new(self.mock_config(file))
   end
 
   def proxy
@@ -15,12 +18,16 @@ class PorkadotConfigsK8sTest < Minitest::Test
     return self.k8s.apiserver
   end
 
+  def networking
+    return self.k8s.networking
+  end
+
   def test_endpoint_host_and_port
     assert_equal ['192.168.33.101', '6443'], k8s.control_plane_endpoint_host_and_port
   end
 
   def test_proxy_config_has_cluster_cidr
-    assert_includes proxy.proxy_config, "clusterCIDR: #{k8s.networking.service_subnet}"
+    assert_includes proxy.proxy_config, "clusterCIDR: #{k8s.networking.pod_subnet}"
   end
 
   def test_apiserver_default_args
@@ -30,5 +37,29 @@ class PorkadotConfigsK8sTest < Minitest::Test
 
   def test_apiserver_args
     assert_equal '2', apiserver.args['--v']
+  end
+
+  def test_default_service_subnet
+    assert_equal '10.254.0.0/24', k8s.networking.default_service_subnet
+  end
+
+  def test_default_service_subnet_dualstack
+    assert_equal '10.254.0.0/24', k8s(DUALSTACK_CONFIG).networking.default_service_subnet
+  end
+
+  def test_default_service_subnet_ipv6
+    assert_equal '2001:db8:1::/108', k8s(IPV6_CONFIG).networking.default_service_subnet
+  end
+
+  def test_dns_ip
+    assert_equal '10.254.0.10', "#{k8s.networking.dns_ip}"
+  end
+
+  def test_dns_ip_dualstack
+    assert_equal '10.254.0.10', "#{k8s(DUALSTACK_CONFIG).networking.dns_ip}"
+  end
+
+  def test_dns_ip_v6
+    assert_equal '2001:db8:1::a', "#{k8s(IPV6_CONFIG).networking.dns_ip}"
   end
 end

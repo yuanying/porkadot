@@ -38,3 +38,8 @@ kubernetes:
   kubernetes_version: v1.17.2
   control_plane_endpoint: '192.168.33.101:6443'
 
+  networking:
+    cni_version: v0.9.1
+    service_subnet: '10.254.0.0/24,2008:db8:1::/108'
+    pod_subnet: '10.244.0.0/16,2008:db8::/48'
+    dns_domain: 'cluster.local'

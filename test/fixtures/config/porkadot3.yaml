@@ -8,9 +8,9 @@ nodes:
     hostname: 192.168.33.111
     labels:
       "k8s.unstable.cloud/master":
-      "etcd.unstable.cloud/member":
+      "etcd.unstable.cloud/member": node01
     taints:
-      "node-role.kubernetes.io/master": :NoSchedule"
+      "node-role.kubernetes.io/master": ":NoSchedule"
   '192.168.33.112':
     labels:
       "k8s.unstable.cloud/master":
@@ -32,18 +32,14 @@ nodes:
 
 bootstrap:
   node:
-    hostname: node01
+    hostname: node04
 
 kubernetes:
   kubernetes_version: v1.17.2
   control_plane_endpoint: '192.168.33.101:6443'
 
-  apiserver:
-    extra_args:
-    - '--bind-address=127.0.0.1'
-
   networking:
     cni_version: v0.9.1
-    service_subnet: '10.254.0.0/24'
-    pod_subnet: '10.244.0.0/16'
+    service_subnet: '2001:db8:1::/108'
+    pod_subnet: '2001:db8::/48'
     dns_domain: 'cluster.local'
