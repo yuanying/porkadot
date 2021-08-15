@@ -1,4 +1,3 @@
-
 module Porkadot; module Configs
   class Kubernetes
     include Porkadot::ConfigUtils
@@ -196,9 +195,9 @@ module Porkadot; module Configs
           --cluster-signing-key-file=/etc/kubernetes/pki/kubernetes/ca.key
           --controllers=*,bootstrapsigner,tokencleaner
           --leader-elect=true
-          --node-cidr-mask-size=24
           --root-ca-file=/etc/kubernetes/pki/kubernetes/ca.crt
           --service-account-private-key-file=/etc/kubernetes/pki/kubernetes/sa.key
+          --service-cluster-ip-range=#{config.k8s.networking.service_subnet}
           --use-service-account-credentials=true
           --v=#{self.log_level}
         ).map {|i| i.split('=', 2)}.to_h
@@ -260,6 +259,24 @@ module Porkadot; module Configs
 
       def default_service_subnet
         self.service_subnet.split(',')[0]
+      end
+
+      def pod_v4subnet
+        if ip = self._pod_subnet.find{ |net| net.ipv4? }
+          return "#{ip.to_s}/#{ip.prefix}"
+        end
+      end
+      alias enable_ipv4 pod_v4subnet
+
+      def pod_v6subnet
+        if ip = self._pod_subnet.find{ |net| net.ipv6? }
+          return "#{ip.to_s}/#{ip.prefix}"
+        end
+      end
+      alias enable_ipv6 pod_v6subnet
+
+      def _pod_subnet
+        self.pod_subnet.split(",").map{|net| IPAddr.new(net)}
       end
     end
   end

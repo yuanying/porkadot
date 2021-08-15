@@ -125,7 +125,13 @@ data:
     }
   net-conf.json: |
     {
-      "Network": "<%= global_config.k8s.networking.pod_subnet %>",
+      <%- if global_config.k8s.networking.enable_ipv4 -%>
+      "Network": "<%= global_config.k8s.networking.pod_v4subnet %>",
+      <%- end -%>
+      <%- if global_config.k8s.networking.enable_ipv6 -%>
+      "EnableIPv6": true,
+      "IPv6Network": "<%= global_config.k8s.networking.pod_v6subnet %>",
+      <%- end -%>
       "Backend": {
         "Type": "<%= global_config.cni.backend %>"
       }
@@ -166,7 +172,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.14.0
+        image: <%= global_config.cni.image_repository %>:<%= global_config.cni.image_tag %>
         command:
         - cp
         args:
@@ -180,7 +186,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.14.0
+        image: <%= global_config.cni.image_repository %>:<%= global_config.cni.image_tag %>
         command:
         - /opt/bin/flanneld
         args:

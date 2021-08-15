@@ -14,6 +14,8 @@ cni:
   type: flannel
   flannel:
     backend: vxlan
+    image_repository: quay.io/coreos/flannel
+    image_tag: v0.14.0
 
 lb:
   type: metallb

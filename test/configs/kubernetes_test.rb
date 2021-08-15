@@ -62,4 +62,21 @@ class PorkadotConfigsK8sTest < Minitest::Test
   def test_dns_ip_v6
     assert_equal '2001:db8:1::a', "#{k8s(IPV6_CONFIG).networking.dns_ip}"
   end
+
+  def test_podv4subnet
+    assert_equal '10.244.0.0/16', "#{k8s.networking.pod_v4subnet}"
+  end
+
+  def test_podv6subnet
+    assert_nil k8s.networking.pod_v6subnet
+  end
+
+  def test_podv4subnet_dualstack
+    assert_equal '10.244.0.0/16', "#{k8s(DUALSTACK_CONFIG).networking.pod_v4subnet}"
+  end
+
+  def test_podv6subnet_dualstack
+    assert_equal '2008:db8::/48', "#{k8s(DUALSTACK_CONFIG).networking.pod_v6subnet}"
+  end
+
 end
