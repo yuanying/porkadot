@@ -217,6 +217,8 @@ spec:
           mountPath: /run/flannel
         - name: flannel-cfg
           mountPath: /etc/kube-flannel/
+        - name: ipam-data
+          mountPath: /var/lib/cni/networks
       volumes:
       - name: run
         hostPath:
@@ -224,6 +226,9 @@ spec:
       - name: cni
         hostPath:
           path: /etc/cni/net.d
+      - name: ipam-data
+        hostPath:
+          path: /var/lib/cni/networks
       - name: flannel-cfg
         configMap:
           name: kube-flannel-cfg
