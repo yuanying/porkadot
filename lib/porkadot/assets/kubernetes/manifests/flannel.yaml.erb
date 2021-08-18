@@ -1,3 +1,5 @@
+<% cni = global_config.cni -%>
+<% k8s = global_config.k8s -%>
 ---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
@@ -125,15 +127,15 @@ data:
     }
   net-conf.json: |
     {
-      <%- if global_config.k8s.networking.enable_ipv4 -%>
-      "Network": "<%= global_config.k8s.networking.pod_v4subnet %>",
+      <%- if k8s.networking.enable_ipv4 -%>
+      "Network": "<%= k8s.networking.pod_v4subnet %>",
       <%- end -%>
-      <%- if global_config.k8s.networking.enable_ipv6 -%>
+      <%- if k8s.networking.enable_ipv6 -%>
       "EnableIPv6": true,
-      "IPv6Network": "<%= global_config.k8s.networking.pod_v6subnet %>",
+      "IPv6Network": "<%= k8s.networking.pod_v6subnet %>",
       <%- end -%>
       "Backend": {
-        "Type": "<%= global_config.cni.backend %>"
+        "Type": "<%= cni.backend %>"
       }
     }
 ---
@@ -172,7 +174,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: <%= global_config.cni.image_repository %>:<%= global_config.cni.image_tag %>
+        image: <%= cni.image_repository %>:<%= cni.image_tag %>
         command:
         - cp
         args:
@@ -186,19 +188,14 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: <%= global_config.cni.image_repository %>:<%= global_config.cni.image_tag %>
+        image: <%= cni.image_repository %>:<%= cni.image_tag %>
         command:
         - /opt/bin/flanneld
         args:
         - --ip-masq
         - --kube-subnet-mgr
         resources:
-          requests:
-            cpu: "100m"
-            memory: "50Mi"
-          limits:
-            cpu: "100m"
-            memory: "50Mi"
+<%= u.to_yaml(cni.resources, 10)%>
         securityContext:
           privileged: false
           capabilities:

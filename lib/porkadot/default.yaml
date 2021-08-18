@@ -16,6 +16,13 @@ cni:
     backend: vxlan
     image_repository: quay.io/coreos/flannel
     image_tag: v0.14.0
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "50Mi"
+      limits:
+        cpu: "100m"
+        memory: "50Mi"
 
 lb:
   type: metallb
