@@ -10,6 +10,9 @@ metadata:
     <%= k.to_s %>: <%= v %>
     <%- end -%>
 spec:
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
   containers:
   - name: kube-controller-manager
     image: <%= k8s.image_repository %>/kube-controller-manager:<%= k8s.kubernetes_version %>
@@ -18,6 +21,26 @@ spec:
     <%- k8s.controller_manager.args(bootstrap: true).each do |k, v| -%>
     - <%= k %><% if v ;%>=<%= v %><%; end %>
     <%- end -%>
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 10257
+        scheme: HTTPS
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 15
+    startupProbe:
+      failureThreshold: 24
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 10257
+        scheme: HTTPS
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 15
     volumeMounts:
     - name: var-run-kubernetes
       mountPath: /var/run/kubernetes
