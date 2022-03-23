@@ -29,6 +29,22 @@ module Porkadot; module Cmd
       ""
     end
 
+    desc "setup-node", "Setup node default settings"
+    option :node, type: :string
+    option :force, type: :boolean, default: false
+    def setup_node
+      logger.info "Setup node default"
+      kubelets = Porkadot::Install::KubeletList.new(self.config)
+      nodes = []
+      if node = options[:node]
+        nodes = kubelets[node]
+      else
+        nodes = kubelets.kubelets.values
+      end
+      kubelets.setup_default hosts: nodes, force: options[:force]
+      ""
+    end
+
     desc "set-config", "Set cluster to kubeconfig"
     def set_config
       name = config.k8s.cluster_name

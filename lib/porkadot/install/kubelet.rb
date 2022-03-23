@@ -2,6 +2,7 @@ module Porkadot; module Install
   class KubeletList
     KUBE_TEMP = File.join(Porkadot::Install::KUBE_TEMP, 'kubelet')
     KUBE_SECRETS_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.kubelet')
+    KUBE_DEFAULT_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.default')
     include SSHKit::DSL
     attr_reader :global_config
     attr_reader :logger
@@ -36,6 +37,30 @@ module Porkadot; module Install
 
         as user: 'root' do
           execute(:bash, File.join(KUBE_TEMP, 'setup-containerd.sh'))
+        end
+      end
+    end
+
+    def setup_default hosts: nil, force: false
+      unless hosts
+        hosts = []
+        self.kubelets.each do |_, v|
+          hosts << v
+        end
+      end
+
+      on(hosts) do |host|
+        execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
+        if test("[ -d #{KUBE_TEMP} ]")
+          execute(:rm, '-rf', KUBE_TEMP)
+          execute(:rm, '-rf', KUBE_SECRETS_TEMP)
+        end
+        upload! host.global_config.kubelet_default.target_path, KUBE_TEMP, recursive: true
+        upload! host.global_config.kubelet_default.target_secrets_path, KUBE_SECRETS_TEMP, recursive: true
+        execute(:cp, '-r', KUBE_SECRETS_TEMP + '/*', KUBE_TEMP)
+
+        as user: 'root' do
+          execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
         end
       end
     end

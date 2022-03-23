@@ -57,6 +57,11 @@ module Porkadot
       return @etcd
     end
 
+    def kubelet_default
+      @kubelet_default ||= Porkadot::Configs::KubeletDefault.new(self)
+      return @kubelet_default
+    end
+
     def nodes
       @nodes ||= {}.tap do |nodes|
         self.raw.nodes.each do |k, v|

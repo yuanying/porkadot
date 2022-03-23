@@ -1,4 +1,30 @@
 module Porkadot; module Configs
+  class KubeletDefault
+    include Porkadot::ConfigUtils
+
+    def initialize config
+      @config = config
+      @raw = ::Porkadot::Raw.new
+    end
+
+    def target_path
+      File.join(self.config.assets_dir, 'kubelet-default')
+    end
+
+    def target_secrets_path
+      File.join(self.config.secrets_root_dir, 'kubelet-default')
+    end
+
+    def addon_path
+      File.join(self.target_path, 'addons')
+    end
+
+    def addon_secrets_path
+      File.join(self.target_secrets_path, 'addons')
+    end
+
+  end
+
   class Kubelet
     include Porkadot::ConfigUtils
     attr_reader :name

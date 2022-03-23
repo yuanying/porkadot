@@ -7,11 +7,13 @@ module Porkadot; module Assets
   class KubeletList
     attr_reader :global_config
     attr_reader :logger
+    attr_reader :kubelet_default
     attr_reader :kubelets
 
     def initialize global_config
       @global_config = global_config
       @logger = global_config.logger
+      @kubelet_default = KubeletDefault.new(global_config.kubelet_default)
       @kubelets = {}
       global_config.nodes.each do |k, config|
         @kubelets[k] = Kubelet.new(config)
@@ -19,6 +21,7 @@ module Porkadot; module Assets
     end
 
     def render
+      self.kubelet_default.render
       self.kubelets.each do |_, v|
         v.render
       end
@@ -26,6 +29,35 @@ module Porkadot; module Assets
 
     def [](name)
       self.kubelets[name]
+    end
+  end
+
+  class KubeletDefault
+    include Porkadot::Assets
+    TEMPLATE_DIR = File.join(File.dirname(__FILE__), "kubelet-default")
+
+    attr_reader :global_config
+    attr_reader :config
+    attr_reader :logger
+    attr_reader :certs
+
+    def initialize config
+      @config = config
+      @logger = config.logger
+      @global_config = config.config
+      @certs = Porkadot::Assets::Certs::Kubernetes.new(global_config)
+    end
+
+    def render
+      logger.info "--> Rendering Kubelet default configs"
+      unless File.directory?(config.addon_path)
+        FileUtils.mkdir_p(config.addon_path)
+      end
+      unless File.directory?(config.addon_secrets_path)
+        FileUtils.mkdir_p(config.addon_secrets_path)
+      end
+
+      render_erb 'install.sh'
     end
   end
 
