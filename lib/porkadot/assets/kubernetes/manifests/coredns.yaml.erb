@@ -75,7 +75,7 @@ data:
             lameduck 5s
         }
         ready
-        kubernetes <%= k8s.networking.dns_domain %>  in-addr.arpa ip6.arpa {
+        kubernetes <%= k8s.networking.dns_domain %> <%= k8s.networking.additional_domains.join(" ") %> in-addr.arpa ip6.arpa {
             pods insecure
             fallthrough in-addr.arpa ip6.arpa
             ttl 30
