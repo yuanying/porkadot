@@ -1,7 +1,7 @@
 <% cni = global_config.cni -%>
 <% k8s = global_config.k8s -%>
 ---
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: psp.flannel.unprivileged

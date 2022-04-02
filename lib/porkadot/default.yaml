@@ -14,9 +14,9 @@ cni:
   type: flannel
   flannel:
     backend: vxlan
-    plugin_image_repository: rancher/mirrored-flannelcni-flannel-cni-plugin:v1.0.1
+    plugin_image_repository: rancher/mirrored-flannelcni-flannel-cni-plugin
     plugin_image_tag: v1.0.1
-    daemon_image_repository: rancher/mirrored-flannelcni-flannel:v0.17.0
+    daemon_image_repository: rancher/mirrored-flannelcni-flannel
     daemon_image_tag: v0.17.0
     resources:
       requests:
@@ -42,7 +42,8 @@ etcd:
   extra_env: []
 
 kubernetes:
-  kubernetes_version: v1.21.3
+  kubernetes_version: v1.22.8
+  crictl_version: v1.22.0
   image_repository: k8s.gcr.io
 
   networking:
