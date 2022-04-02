@@ -46,7 +46,7 @@ kubernetes:
   image_repository: k8s.gcr.io
 
   networking:
-    cni_version: v0.9.1
+    cni_version: v1.0.1
     service_subnet: '10.254.0.0/24'
     pod_subnet: '10.244.0.0/16'
     dns_domain: 'cluster.local'
