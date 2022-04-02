@@ -173,8 +173,20 @@ spec:
         effect: NoSchedule
       serviceAccountName: flannel
       initContainers:
+      - name: install-cni-plugin
+       #image: flannelcni/flannel-cni-plugin:v1.0.1 for ppc64le and mips64le (dockerhub limitations may apply)
+        image: <%= cni.plugin_image_repository %>:<%= cni.plugin_image_tag %>
+        command:
+        - cp
+        args:
+        - -f
+        - /flannel
+        - /opt/cni/bin/flannel
+        volumeMounts:
+        - name: cni-plugin
+          mountPath: /opt/cni/bin
       - name: install-cni
-        image: <%= cni.image_repository %>:<%= cni.image_tag %>
+        image: <%= cni.daemon_image_repository %>:<%= cni.daemon_image_tag %>
         command:
         - cp
         args:
@@ -188,7 +200,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: <%= cni.image_repository %>:<%= cni.image_tag %>
+        image: <%= cni.daemon_image_repository %>:<%= cni.daemon_image_tag %>
         command:
         - /opt/bin/flanneld
         args:
@@ -216,10 +228,15 @@ spec:
           mountPath: /etc/kube-flannel/
         - name: ipam-data
           mountPath: /var/lib/cni/networks
+        - name: xtables-lock
+          mountPath: /run/xtables.lock
       volumes:
       - name: run
         hostPath:
           path: /run/flannel
+      - name: cni-plugin
+        hostPath:
+          path: /opt/cni/bin
       - name: cni
         hostPath:
           path: /etc/cni/net.d
@@ -229,3 +246,7 @@ spec:
       - name: flannel-cfg
         configMap:
           name: kube-flannel-cfg
+      - name: xtables-lock
+        hostPath:
+          path: /run/xtables.lock
+          type: FileOrCreate
