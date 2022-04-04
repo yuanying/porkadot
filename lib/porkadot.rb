@@ -35,6 +35,7 @@ require 'porkadot/install/kubernetes'
 require 'porkadot/install/bootstrap'
 
 require 'porkadot/cmd/render/certs'
+require 'porkadot/cmd/render/manifests'
 require 'porkadot/cmd/render'
 require 'porkadot/cmd/install/bootstrap'
 require 'porkadot/cmd/install'

@@ -34,10 +34,6 @@ module Porkadot; module Configs
       File.join(self.target_path, 'manifests')
     end
 
-    def manifests_secrets_path
-      File.join(self.target_secrets_path, 'manifests')
-    end
-
     def control_plane_endpoint_host_and_port
       endpoint = self.config.k8s.control_plane_endpoint
       raise "kubernetes.control_plane_endpoint should not be nil" unless endpoint

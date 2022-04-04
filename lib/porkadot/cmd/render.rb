@@ -10,11 +10,14 @@ module Porkadot; module Cmd; module Render
       invoke :kubelet, [], options
       invoke :etcd, [], options
       invoke :bootstrap, [], options
-      invoke :kubernetes, [], options
+      invoke :manifests, [], options
     end
 
     desc "certs", "Render certificates to deploy Kubernetes"
     subcommand "certs", Porkadot::Cmd::Render::Certs::Cli
+
+    desc "manifests", "Render kubernetes manifests"
+    subcommand "manifests", Porkadot::Cmd::Render::Manifests::Cli
 
     desc "kubelet", "Render kubelet related files"
     option :node, type: :string
@@ -49,14 +52,6 @@ module Porkadot; module Cmd; module Render
       kubelet = Porkadot::Assets::Kubelet.new(self.config.bootstrap.kubelet_config)
       kubelet.render
       bootstrap.render
-      ""
-    end
-
-    desc "kubernetes", "Render kubernetes manifests"
-    def kubernetes
-      logger.info "Generating kubernetes manifests"
-      k8s = Porkadot::Assets::Kubernetes.new(self.config)
-      k8s.render
       ""
     end
 

@@ -17,11 +17,8 @@ module Porkadot; module Assets
 
     def render
       logger.info "--> Rendering kubernetes manifests"
-      unless File.directory?(config.manifests_path)
-        FileUtils.mkdir_p(config.manifests_path)
-      end
-      unless File.directory?(config.manifests_secrets_path)
-        FileUtils.mkdir_p(config.manifests_secrets_path)
+      unless File.directory?(File.join(config.manifests_path, 'secrets'))
+        FileUtils.mkdir_p(File.join(config.manifests_path, 'secrets'))
       end
       lb = global_config.lb
       cni = global_config.cni
@@ -30,19 +27,21 @@ module Porkadot; module Assets
       render_erb "manifests/000-#{lb.type}.yaml"
       render_erb "manifests/#{lb.type}.yaml"
       render_erb "manifests/#{lb.type}.config.yaml"
-      render_secrets_erb "manifests/#{lb.type}.secrets.yaml"
+      render_erb "manifests/secrets/#{lb.type}.yaml"
       render_erb "manifests/#{cni.type}.yaml"
       render_erb "manifests/coredns.yaml"
       render_erb "manifests/dns-horizontal-autoscaler.yaml"
       render_erb "manifests/kube-apiserver.yaml"
-      render_secrets_erb "manifests/kube-apiserver.secrets.yaml"
+      render_erb "manifests/secrets/kube-apiserver.yaml"
       render_erb "manifests/kube-proxy.yaml"
       render_erb "manifests/kube-scheduler.yaml"
       render_erb "manifests/kube-controller-manager.yaml"
-      render_secrets_erb "manifests/kube-controller-manager.secrets.yaml"
+      render_erb "manifests/secrets/kube-controller-manager.yaml"
       render_erb "manifests/kubelet-rubber-stamp.yaml"
       render_erb "manifests/storage-version-migrator.yaml"
       render_secrets_erb "kubeconfig.yaml"
+      render_erb 'manifests/kustomization.yaml'
+      render_erb 'kustomization.yaml'
       render_erb 'install.sh'
     end
 
