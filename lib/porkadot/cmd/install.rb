@@ -26,6 +26,21 @@ module Porkadot; module Cmd; module Install
       ""
     end
 
+    desc "kubernetes", "Install kubernetes"
+    option :node, type: :string
+    def kubernetes
+      logger.info "Installing kubernetes"
+      kubelets = Porkadot::Install::KubeletList.new(self.config)
+      if node = options[:node]
+        nodes = kubelets[node]
+      else
+        nodes = Porkadot::Install::Bootstrap.new(self.config).host
+      end
+      k8s = Porkadot::Install::Kubernetes.new(self.config)
+      k8s.install(nodes)
+      ""
+    end
+
     desc "bootstrap", "Install bootstrap components"
     subcommand "bootstrap", Porkadot::Cmd::Install::Bootstrap::Cli
 
