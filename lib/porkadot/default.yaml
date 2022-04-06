@@ -10,8 +10,9 @@ nodes: {}
 
 bootstrap: {}
 
-cni:
-  type: flannel
+addons:
+  enabled: [flannel, coredns, metallb, kubelet-rubber-stamp, storage-version-migrator]
+
   flannel:
     backend: vxlan
     plugin_image_repository: rancher/mirrored-flannelcni-flannel-cni-plugin
@@ -26,8 +27,8 @@ cni:
         cpu: "100m"
         memory: "50Mi"
 
-lb:
-  type: metallb
+  coredns: {}
+
   metallb:
     config: |
       address-pools:
@@ -35,6 +36,10 @@ lb:
         protocol: layer2
         addresses:
         - 192.168.1.240-192.168.1.250
+
+  kubelet-rubber-stamp: {}
+
+  storage-version-migrator: {}
 
 etcd:
   image_repository: gcr.io/etcd-development/etcd

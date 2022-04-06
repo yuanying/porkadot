@@ -1,4 +1,3 @@
-<% k8s = global_config.k8s -%>
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -9,5 +8,5 @@ metadata:
   namespace: metallb-system
 data:
   config: |
-<%= u.indent(global_config.lb.lb_config, 4) %>
+<%= u.indent(config.metallb.config, 4) %>
 

@@ -31,14 +31,13 @@ module Porkadot
       self.raw.connection
     end
 
+    def addons
+      @addons ||= Porkadot::Configs::Addons.new(self)
+    end
+
     def lb
       @lb ||= Porkadot::Configs::Lb.new(self)
       return @lb
-    end
-
-    def cni
-      @cni ||= Porkadot::Configs::Cni.new(self)
-      return @cni
     end
 
     def bootstrap

@@ -23,8 +23,11 @@ module Porkadot::Assets
     opts[:u] = ErbUtils.new
 
     logger.info "----> #{file}"
+    asset = config.asset_path(file)
+    asset_dir = File.dirname(asset)
+    FileUtils.mkdir_p(asset_dir) unless File.directory?(asset_dir)
     open(File.join(self.class::TEMPLATE_DIR, "#{file}.erb")) do |io|
-      open(config.asset_path(file), 'w') do |out|
+      open(asset, 'w') do |out|
         out.write ERB.new(io.read, trim_mode: '-').result_with_hash(opts)
       end
     end
@@ -38,8 +41,11 @@ module Porkadot::Assets
     opts[:u] = ErbUtils.new
 
     logger.info "----> #{file}"
+    secret = config.secrets_path(file)
+    secret_dir = File.dirname(secret)
+    FileUtils.mkdir_p(secret_dir) unless File.directory?(secret_dir)
     open(File.join(self.class::TEMPLATE_DIR, "#{file}.erb")) do |io|
-      open(config.secrets_path(file), 'w') do |out|
+      open(secret, 'w') do |out|
         out.write ERB.new(io.read, trim_mode: '-').result_with_hash(opts)
       end
     end
