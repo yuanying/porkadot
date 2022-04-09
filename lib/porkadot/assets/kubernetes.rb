@@ -27,7 +27,7 @@ module Porkadot; module Assets
       render_secrets_erb "manifests/kube-controller-manager.secrets.yaml"
       render_secrets_erb "kubeconfig.yaml"
       render_erb 'manifests/kustomization.yaml'
-      render_erb 'kustomization.yaml'
+      render_erb 'kustomization.yaml', force: false
       render_erb 'install.sh'
       render_secrets_erb 'install.secrets.sh'
 

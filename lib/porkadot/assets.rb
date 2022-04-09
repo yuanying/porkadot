@@ -15,7 +15,7 @@ module Porkadot::Assets
     end
   end
 
-  def render_erb file, opts={}
+  def render_erb file, **opts
     file = file.to_s
     opts[:config] = self.config
     opts[:global_config] = self.global_config
@@ -24,6 +24,10 @@ module Porkadot::Assets
 
     logger.info "----> #{file}"
     asset = config.asset_path(file)
+    if opts[:force] != nil && File.file?(asset)
+      logger.debug "------> Already exists: skipping #{file}"
+      return
+    end
     asset_dir = File.dirname(asset)
     FileUtils.mkdir_p(asset_dir) unless File.directory?(asset_dir)
     open(File.join(self.class::TEMPLATE_DIR, "#{file}.erb")) do |io|
