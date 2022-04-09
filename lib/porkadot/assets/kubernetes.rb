@@ -28,11 +28,29 @@ module Porkadot; module Assets
       render_secrets_erb "kubeconfig.yaml"
       render_erb 'manifests/kustomization.yaml'
       render_erb 'kustomization.yaml', force: false
-      render_erb 'install.sh'
+      render_erb 'install.sh', prune_allowlist: prune_allowlist
       render_secrets_erb 'install.secrets.sh'
 
       addons = Addons.new(global_config)
       addons.render
+    end
+
+    def prune_allowlist
+      return %w[
+        apiextensions.k8s.io/v1/customresourcedefinition
+        apps/v1/daemonset
+        apps/v1/deployment
+        core/v1/configmap
+        core/v1/namespace
+        core/v1/service
+        core/v1/serviceaccount
+        policy/v1/poddisruptionbudget
+        policy/v1beta1/podsecuritypolicy
+        rbac.authorization.k8s.io/v1/clusterrole
+        rbac.authorization.k8s.io/v1/clusterrolebinding
+        rbac.authorization.k8s.io/v1/role
+        rbac.authorization.k8s.io/v1/rolebinding
+      ]
     end
   end
 
