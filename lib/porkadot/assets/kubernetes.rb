@@ -106,8 +106,6 @@ module Porkadot; module Assets
       'metallb/metallb.yaml',
       'metallb/metallb.config.yaml',
       'metallb/kustomization.yaml'
-    ], secrets: [
-      'metallb/metallb.secrets.yaml'
     ])
 
 
