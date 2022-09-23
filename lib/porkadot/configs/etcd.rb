@@ -39,6 +39,33 @@ module Porkadot; module Configs
       return (self.raw.labels && self.raw.labels[Porkadot::ETCD_ADDRESS_LABEL]) || self.raw.hostname || self.name
     end
 
+    def listen_address label_key
+      listen_address = nil
+      if self.raw.labels
+        listen_address = self.raw.labels[label_key] || self.raw.labels[Porkadot::ETCD_LISTEN_ADDRESS_LABEL]
+      end
+
+      if !listen_adress
+        if self.ipaddr?(self.raw.hostname)
+          listen_address = self.raw.hostname
+        elsif self.ipaddr?(self.raw.name)
+          listen_address = self.raw.name
+        else
+          listen_address = '0.0.0.0'
+        end
+      end
+
+      return listen_address
+    end
+
+    def listen_client_address
+      return self.listen_address(Porkadot::ETCD_LISTEN_CLIENT_ADDRESS_LABEL)
+    end
+
+    def listen_peer_address
+      return self.listen_address(Porkadot::ETCD_LISTEN_PEER_ADDRESS_LABEL)
+    end
+
     def advertise_client_urls
      ["https://#{member_address}:2379"]
     end
@@ -48,11 +75,16 @@ module Porkadot; module Configs
     end
 
     def listen_client_urls
-      self.advertise_client_urls + ["https://127.0.0.1:2379"]
+      address = self.listen_client_address
+      if address != '0.0.0.0'
+        return  ["https://#{address}:2379", "https://127.0.0.1:2379"]
+      else
+        return  ["https://#{address}:2379"]
+      end
     end
 
     def listen_peer_urls
-      self.advertise_peer_urls
+      ["https://#{self.listen_client_address}:2380"]
     end
 
     def initial_cluster

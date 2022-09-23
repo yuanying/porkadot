@@ -9,6 +9,9 @@ module Porkadot; module Configs
     end
 
     def ipaddr?(addr)
+      if addr.nil?
+        return false
+      end
       IPAddr.new(addr)
       return true
     rescue IPAddr::InvalidAddressError
