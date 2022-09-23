@@ -13,6 +13,9 @@ module Porkadot; module Cmd
     desc "install", "Install kubernetes"
     subcommand "install", Porkadot::Cmd::Install::Cli
 
+    desc "etcd", "Interact with etcd"
+    subcommand "etcd", Porkadot::Cmd::Etcd::Cli
+
     desc "setup-containerd", "Setup containerd"
     option :node, type: :string
     option :force, type: :boolean, default: false

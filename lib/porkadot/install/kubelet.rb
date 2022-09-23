@@ -93,6 +93,36 @@ module Porkadot; module Install
       end
     end
 
+    def backup_etcd host: nil, path: "./backup/etcd.db"
+      unless host
+        self.kubelets.each do |_, v|
+          if v.etcd?
+            host = v
+          end
+        end
+      end
+
+      on(:local) do |local|
+        execute(:mkdir, '-p', File.dirname(path))
+      end
+
+      options = self.etcd_options
+      on(host) do |host|
+        execute(:mkdir, '-p', KUBE_TEMP)
+        execute("/opt/bin/etcdctl", *options, "snapshot", "save", "#{KUBE_TEMP}/etcd.db")
+        download! "#{KUBE_TEMP}/etcd.db", path
+      end
+    end
+
+    def etcd_options
+      %w(
+        --cacert /etc/etcd/pki/ca.crt
+        --cert /etc/etcd/pki/etcd.crt
+        --key /etc/etcd/pki/etcd.key
+        --endpoints=https://127.0.0.1:2379
+      )
+    end
+
     def [](name)
       self.kubelets[name]
     end
@@ -112,5 +142,8 @@ module Porkadot; module Install
       super(@connection)
     end
 
+    def etcd?
+      return self.config.raw.labels && self.config.raw.labels[Porkadot::ETCD_MEMBER_LABEL]
+    end
   end
 end; end

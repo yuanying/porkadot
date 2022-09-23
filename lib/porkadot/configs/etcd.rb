@@ -104,6 +104,7 @@ module Porkadot; module Configs
           sans << "DNS:#{san}"
         end
       end
+      sans << "IP:127.0.0.1"
       return sans
     end
 
