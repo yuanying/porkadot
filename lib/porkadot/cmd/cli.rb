@@ -16,12 +16,16 @@ module Porkadot; module Cmd
     desc "setup-containerd", "Setup containerd"
     option :node, type: :string
     option :force, type: :boolean, default: false
+    option :bootstrap, type: :boolean, default: false
     def setup_containerd
       logger.info "Setup containerd"
       kubelets = Porkadot::Install::KubeletList.new(self.config)
       nodes = []
       if node = options[:node]
         nodes = kubelets[node]
+      elsif options[:bootstrap]
+        bootstrap = Porkadot::Install::Bootstrap.new(self.config)
+        nodes = bootstrap.host
       else
         nodes = kubelets.kubelets.values
       end
@@ -32,12 +36,16 @@ module Porkadot; module Cmd
     desc "setup-node", "Setup node default settings"
     option :node, type: :string
     option :force, type: :boolean, default: false
+    option :bootstrap, type: :boolean, default: false
     def setup_node
       logger.info "Setup node default"
       kubelets = Porkadot::Install::KubeletList.new(self.config)
       nodes = []
       if node = options[:node]
         nodes = kubelets[node]
+      elsif options[:bootstrap]
+        bootstrap = Porkadot::Install::Bootstrap.new(self.config)
+        nodes = bootstrap.host
       else
         nodes = kubelets.kubelets.values
       end
