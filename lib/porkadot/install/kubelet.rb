@@ -3,6 +3,7 @@ module Porkadot; module Install
     KUBE_TEMP = File.join(Porkadot::Install::KUBE_TEMP, 'kubelet')
     KUBE_SECRETS_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.kubelet')
     KUBE_DEFAULT_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.default')
+    ETCD_TEMP = '/opt/porkadot'
     include SSHKit::DSL
     attr_reader :global_config
     attr_reader :logger
@@ -109,8 +110,86 @@ module Porkadot; module Install
       options = self.etcd_options
       on(host) do |host|
         execute(:mkdir, '-p', KUBE_TEMP)
-        execute("/opt/bin/etcdctl", *options, "snapshot", "save", "#{KUBE_TEMP}/etcd.db")
+        execute(:"/opt/bin/etcdctl", *options, "snapshot", "save", "#{KUBE_TEMP}/etcd.db")
         download! "#{KUBE_TEMP}/etcd.db", path
+      end
+    end
+
+    def restore_etcd path: "./backup/etcd.db"
+      require 'date'
+      hosts = []
+      self.kubelets.each do |_, v|
+        hosts << v if v.etcd?
+      end
+
+      options = self.etcd_options
+      on(hosts) do |host|
+        if test("[ -d #{KUBE_TEMP} ]")
+          execute(:rm, '-rf', KUBE_TEMP)
+          execute(:rm, '-rf', KUBE_SECRETS_TEMP)
+        end
+        execute(:mkdir, '-p', KUBE_TEMP)
+        upload! path, "#{KUBE_TEMP}/etcd.db"
+
+        as user: 'root' do
+          execute(:mkdir, '-p', ETCD_TEMP)
+          if test('[ -d /var/lib/etcd ]')
+            execute(:mv, '/var/lib/etcd', "${ETCD_TEMP}/data-#{DateTime.now.to_s}")
+          end
+          execute(:"/opt/bin/etcdctl", *options, "snapshot", "restore", "#{KUBE_TEMP}/etcd.db")
+        end
+      end
+    end
+
+    def start_etcd hosts: nil
+      unless hosts
+        hosts = []
+        self.kubelets.each do |_, v|
+          hosts << v if v.etcd?
+        end
+      end
+
+      on(hosts) do |host|
+        as user: 'root' do
+          execute(:mkdir, '-p', ETCD_TEMP)
+
+          result = capture(:"/opt/bin/crictl", 'ps', '-q', '--name', 'etcd')
+          with(container_runtime_endpoint: "unix:///run/containerd/containerd.sock") do
+            if result.empty?
+              info 'Trying to start etcd'
+              execute(:mv, "${ETCD_TEMP}/etcd-server.yaml", "/etc/kubernetes/manifests/etcd-server.yaml")
+            else
+              info 'etcd is already started...'
+            end
+          end
+        end
+      end
+    end
+
+    def stop_etcd hosts: nil
+      unless hosts
+        hosts = []
+        self.kubelets.each do |_, v|
+          hosts << v if v.etcd?
+        end
+      end
+
+      on(hosts) do |host|
+        as user: 'root' do
+          execute(:mkdir, '-p', ETCD_TEMP)
+
+          info "Waiting for etcd to stop..."
+          with(container_runtime_endpoint: "unix:///run/containerd/containerd.sock") do
+            unless capture(:"/opt/bin/crictl", 'ps', '-q', '--name', 'etcd').empty?
+              execute(:mv, "/etc/kubernetes/manifests/etcd-server.yaml", "${ETCD_TEMP}/etcd-server.yaml")
+              while capture(:"/opt/bin/crictl", 'ps', '-q', '--name', 'etcd') != ''
+                info 'Still waiting for stopping etcd...'
+                sleep 5
+              end
+            end
+          end
+          info 'etcd was stopped.'
+        end
       end
     end
 
