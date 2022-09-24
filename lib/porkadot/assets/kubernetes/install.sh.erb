@@ -5,7 +5,7 @@ export LC_ALL=C
 ROOT=$(dirname "${BASH_SOURCE}")
 KUBECTL_OPTS=${KUBECTL_OPTS:-""}
 
-KUBECTL_OPTS="${KUBECTL_OPTS} --server-side --force-conflicts --prune"
+KUBECTL_OPTS="${KUBECTL_OPTS} --prune"
 KUBECTL_OPTS="${KUBECTL_OPTS} -l kubernetes.unstable.cloud/installed-by=porkadot"
 <%- prune_allowlist.each do |a| -%>
 KUBECTL_OPTS="${KUBECTL_OPTS} --prune-whitelist=<%= a %>"

@@ -13,25 +13,48 @@ spec:
     image: <%= etcd.image_repository %>:<%= etcd.image_tag %>
     command:
     - /usr/local/bin/etcd
-    - --name=<%= config.member_name %>
     - --advertise-client-urls=<%= config.advertise_client_urls.join(',') %>
+    - --cert-file=/etc/etcd/pki/etcd.crt
+    - --client-cert-auth=true
+    - --data-dir=/var/lib/etcd
+    - --election-timeout=10000
+    - --experimental-initial-corrupt-check=true
+    - --experimental-watch-progress-notify-interval=5s
+    - --heartbeat-interval=1000
     - --initial-advertise-peer-urls=<%= config.advertise_peer_urls.join(',') %>
     - --initial-cluster=<%= config.initial_cluster.map{|k,v| "#{k}=#{v}"}.join(',') %>
+    - --key-file=/etc/etcd/pki/etcd.key
     - --listen-client-urls=<%= config.listen_client_urls.join(',') %>
     - --listen-peer-urls=<%= config.listen_peer_urls.join(',') %>
-    - --client-cert-auth=true
-    - --cert-file=/etc/etcd/pki/etcd.crt
-    - --key-file=/etc/etcd/pki/etcd.key
-    - --trusted-ca-file=/etc/etcd/pki/ca.crt
-    - --peer-client-cert-auth=true
+    - --name=<%= config.member_name %>
     - --peer-cert-file=/etc/etcd/pki/etcd.crt
+    - --peer-client-cert-auth=true
     - --peer-key-file=/etc/etcd/pki/etcd.key
     - --peer-trusted-ca-file=/etc/etcd/pki/ca.crt
-    - --data-dir=/var/lib/etcd
-    - --heartbeat-interval=1000
-    - --election-timeout=10000
+    - --snapshot-count=10000
+    - --trusted-ca-file=/etc/etcd/pki/ca.crt
     env:
 <%= u.to_yaml(etcd.extra_env, 4) -%>
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /health?exclude=NOSPACE&serializable=true
+        port: 2381
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 15
+    startupProbe:
+      failureThreshold: 24
+      httpGet:
+        host: 127.0.0.1
+        path: /health?serializable=false
+        port: 2381
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 15
     volumeMounts:
     - mountPath: /var/lib/etcd
       name: etcd
@@ -44,6 +67,10 @@ spec:
     - mountPath: /etc/etcd/pki
       name: etcd-certs-host
       readOnly: true
+  priorityClassName: system-node-critical
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
   volumes:
   - hostPath:
       path: /var/lib/etcd
