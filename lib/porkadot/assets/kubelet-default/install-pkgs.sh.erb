@@ -41,9 +41,7 @@ net.ipv4.ip_forward                 = 1
 net.bridge.bridge-nf-call-iptables  = 1
 EOF
 
-cat <<EOF > /etc/iscsi/initiatorname.iscsi
-InitiatorName=iqn.2020-04.cloud.unstable:<%= config.hostname %>
-EOF
+cp ${ROOT}/initiatorname.iscsi /etc/iscsi/
 
 systemctl restart iscsid.service
 

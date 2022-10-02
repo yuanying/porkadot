@@ -56,8 +56,23 @@ module Porkadot; module Assets
       unless File.directory?(config.addon_secrets_path)
         FileUtils.mkdir_p(config.addon_secrets_path)
       end
+      ca_data = certs.ca_cert.to_pem
+      ca_data = Base64.strict_encode64(ca_data)
 
+      render_erb 'bootstrap-kubelet.conf', ca_data: ca_data
+      render_ca_crt
+      render_erb 'setup-node.sh'
+      render_erb 'setup-containerd.sh'
       render_erb 'install.sh'
+      render_erb 'install-deps.sh'
+      render_erb 'install-pkgs.sh'
+    end
+
+    def render_ca_crt
+      logger.info "----> ca.crt"
+      open(config.ca_crt_path, 'w') do |out|
+        out.write self.certs.ca_cert(false).to_pem
+      end
     end
   end
 
@@ -85,31 +100,18 @@ module Porkadot; module Assets
       unless File.directory?(config.target_secrets_path)
         FileUtils.mkdir_p(config.target_secrets_path)
       end
-      ca_data = certs.ca_cert.to_pem
-      ca_data = Base64.strict_encode64(ca_data)
 
-      render_erb 'bootstrap-kubelet.conf', ca_data: ca_data
       render_bootstrap_certs
       render_erb 'config.yaml'
       render_erb 'kubelet.service'
-      render_ca_crt
-      render_erb 'install.sh'
-      render_erb 'install-deps.sh'
-      render_erb 'install-pkgs.sh'
-      render_erb 'setup-containerd.sh'
+      render_erb 'initiatorname.iscsi'
+      render_erb 'metadata.json'
     end
 
     def render_bootstrap_certs
       logger.info "----> bootstrap certs"
       self.bootstrap_key
       self.bootstrap_cert(true)
-    end
-
-    def render_ca_crt
-      logger.info "----> ca.crt"
-      open(config.ca_crt_path, 'w') do |out|
-        out.write self.certs.ca_cert(false).to_pem
-      end
     end
 
     def bootstrap_key

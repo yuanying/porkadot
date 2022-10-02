@@ -1,5 +1,6 @@
 require 'thor'
 require 'sshkit'
+require 'json'
 
 require "porkadot/version"
 

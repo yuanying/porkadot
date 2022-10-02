@@ -32,7 +32,7 @@ module Porkadot; module Install
           execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
         end
 
-       endpoint = "https://127.0.0.1:#{global_config.k8s.apiserver.bind_port}/healthz"
+       endpoint = "https://127.0.0.1:#{global_config.k8s.apiserver.bind_port}/readyz"
        info "Start to wait for Bootstrapping Kubernetes API: #{endpoint}"
         while !test('curl', '-skf', endpoint)
           info "Still wating for Bootstrapping Kubernetes API..."

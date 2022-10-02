@@ -10,6 +10,7 @@ module Porkadot; module Cmd; module Install; module Bootstrap
     default_task :all
     desc "all", "Install all bootstrap components"
     def all
+      invoke :setup_containerd
       invoke :node
       invoke :kubernetes
       invoke :cleanup

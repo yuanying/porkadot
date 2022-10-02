@@ -23,6 +23,14 @@ module Porkadot; module Configs
       File.join(self.target_secrets_path, 'addons')
     end
 
+    def ca_crt_path
+      File.join(self.target_path, 'ca.crt')
+    end
+
+    def control_plane_endpoint
+      (self.raw.kubernetes && self.raw.kubernetes.control_plane_endpoint) || self.config.k8s.control_plane_endpoint
+    end
+
   end
 
   class Kubelet
@@ -54,6 +62,14 @@ module Porkadot; module Configs
       return self.raw.labels.map{|v| v.compact.join('=')}.join(',')
     end
 
+    def labels
+      return self.raw.labels || {}
+    end
+
+    def annotations
+      return self.raw.annotations || {}
+    end
+
     def taints_string
       return '' unless self.raw.taints
       return self.raw.taints.map{|v| v.compact.join('=')}.join(',')
@@ -77,10 +93,6 @@ module Porkadot; module Configs
 
     def addon_secrets_path
       File.join(self.target_secrets_path, 'addons')
-    end
-
-    def ca_crt_path
-      File.join(self.target_path, 'ca.crt')
     end
 
     def bootstrap_key_path

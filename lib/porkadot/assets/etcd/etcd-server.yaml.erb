@@ -35,26 +35,6 @@ spec:
     - --trusted-ca-file=/etc/etcd/pki/ca.crt
     env:
 <%= u.to_yaml(etcd.extra_env, 4) -%>
-    livenessProbe:
-      failureThreshold: 8
-      httpGet:
-        host: 127.0.0.1
-        path: /health?exclude=NOSPACE&serializable=true
-        port: 2381
-        scheme: HTTP
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      timeoutSeconds: 15
-    startupProbe:
-      failureThreshold: 24
-      httpGet:
-        host: 127.0.0.1
-        path: /health?serializable=false
-        port: 2381
-        scheme: HTTP
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      timeoutSeconds: 15
     volumeMounts:
     - mountPath: /var/lib/etcd
       name: etcd
