@@ -15,10 +15,10 @@ addons:
 
   flannel:
     backend: vxlan
-    plugin_image_repository: rancher/mirrored-flannelcni-flannel-cni-plugin
-    plugin_image_tag: v1.0.1
-    daemon_image_repository: rancher/mirrored-flannelcni-flannel
-    daemon_image_tag: v0.17.0
+    plugin_image_repository: flannelcni/flannel-cni-plugin
+    plugin_image_tag: v1.2.0
+    daemon_image_repository: flannelcni/flannel
+    daemon_image_tag: v0.20.2
     resources:
       requests:
         cpu: "100m"
