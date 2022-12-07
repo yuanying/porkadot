@@ -56,10 +56,7 @@ module Porkadot; module Assets
       unless File.directory?(config.addon_secrets_path)
         FileUtils.mkdir_p(config.addon_secrets_path)
       end
-      ca_data = certs.ca_cert.to_pem
-      ca_data = Base64.strict_encode64(ca_data)
 
-      render_erb 'bootstrap-kubelet.conf', ca_data: ca_data
       render_ca_crt
       render_erb 'setup-node.sh'
       render_erb 'setup-containerd.sh'
@@ -100,7 +97,10 @@ module Porkadot; module Assets
       unless File.directory?(config.target_secrets_path)
         FileUtils.mkdir_p(config.target_secrets_path)
       end
+      ca_data = certs.ca_cert.to_pem
+      ca_data = Base64.strict_encode64(ca_data)
 
+      render_erb 'bootstrap-kubelet.conf', ca_data: ca_data
       render_bootstrap_certs
       render_erb 'config.yaml'
       render_erb 'kubelet.service'
