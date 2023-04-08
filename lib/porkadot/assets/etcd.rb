@@ -56,6 +56,7 @@ module Porkadot; module Assets
       render_ca_crt
       render_etcd_crt
       render_erb 'etcd-server.yaml', etcd: global_config.etcd
+      render_erb 'etcd.env', etcd: global_config.etcd
       render_erb 'install.sh', etcd: global_config.etcd
     end
 

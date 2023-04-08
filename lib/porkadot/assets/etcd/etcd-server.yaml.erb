@@ -26,6 +26,7 @@ spec:
     - --key-file=/etc/etcd/pki/etcd.key
     - --listen-client-urls=<%= config.listen_client_urls.join(',') %>
     - --listen-peer-urls=<%= config.listen_peer_urls.join(',') %>
+    - --listen-metrics-urls=<%= config.listen_metrics_urls.join(',') %>
     - --name=<%= config.member_name %>
     - --peer-cert-file=/etc/etcd/pki/etcd.crt
     - --peer-client-cert-auth=true

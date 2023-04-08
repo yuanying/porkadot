@@ -87,6 +87,15 @@ module Porkadot; module Configs
       ["https://#{self.listen_client_address}:2380"]
     end
 
+    def listen_metrics_urls
+      address = self.listen_client_address
+      if address != '0.0.0.0'
+        return  ["http://#{address}:2381", "http://127.0.0.1:2381"]
+      else
+        return  ["http://#{address}:2381"]
+      end
+    end
+
     def initial_cluster
       return {}.tap do |rtn|
         self.config.etcd_nodes.each do |_, v|
