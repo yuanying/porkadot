@@ -16,6 +16,10 @@ module Porkadot; module Configs
       File.join(self.config.secrets_root_dir, 'kubernetes', 'manifests', 'addons')
     end
 
+    def target_crd_dir_path
+      File.join(self.config.assets_dir, 'kubernetes', 'manifests', 'crds')
+    end
+
   end
 end; end
 

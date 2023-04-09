@@ -80,14 +80,28 @@ module Porkadot; module Assets
         secrets.each do |m|
           render_secrets_erb(m)
         end
+        crds = @@crds[name]
+        crds.each do |m|
+          copy_crds(m)
+        end
       end
     end
 
-    def self.register_manifests name, manifests, secrets: []
+    def copy_crds file
+      logger.info "----> #{file}"
+      crd_path = File.join(config.target_crd_dir_path, file)
+      crd_dir = File.dirname(crd_path)
+      FileUtils.mkdir_p(crd_dir) unless File.directory?(crd_dir)
+      FileUtils.copy(File.join(TEMPLATE_DIR, file), crd_path)
+    end
+
+    def self.register_manifests name, manifests, secrets: [], crds: []
       @@manifests ||= {}
       @@manifests[name] = manifests
       @@secrets_manifests ||= {}
       @@secrets_manifests[name] = secrets
+      @@crds ||= {}
+      @@crds[name] = crds
     end
 
     register_manifests('flannel', [
@@ -106,6 +120,8 @@ module Porkadot; module Assets
       'metallb/metallb.yaml',
       'metallb/metallb.config.yaml',
       'metallb/kustomization.yaml'
+    ], crds: [
+      'metallb/crds.yaml'
     ])
 
 

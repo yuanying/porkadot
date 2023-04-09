@@ -11,4 +11,6 @@ KUBECTL_OPTS="${KUBECTL_OPTS} -l kubernetes.unstable.cloud/installed-by=porkadot
 KUBECTL_OPTS="${KUBECTL_OPTS} --prune-whitelist=<%= a %>"
 <%- end -%>
 
+/opt/bin/kubectl apply --force-conflicts --server-side -R -f ${ROOT}/manifests/crds
+/opt/bin/kubectl wait --for condition=established --timeout=60s crd --all
 /opt/bin/kubectl apply ${KUBECTL_OPTS} -k ${ROOT}
