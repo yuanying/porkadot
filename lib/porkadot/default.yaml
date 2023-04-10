@@ -52,7 +52,7 @@ kubernetes:
   image_repository: registry.k8s.io
 
   networking:
-    cni_version: v1.1.1
+    cni_version: v1.2.0
     service_subnet: '10.254.0.0/24'
     pod_subnet: '10.244.0.0/16'
     dns_domain: 'cluster.local'
