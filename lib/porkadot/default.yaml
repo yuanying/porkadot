@@ -106,7 +106,6 @@ kubernetes:
   kubelet:
     config:
       apiVersion: kubelet.config.k8s.io/v1beta1
-      kind: KubeletConfiguration
       authentication:
         anonymous:
           enabled: false
@@ -122,7 +121,7 @@ kubernetes:
           cacheUnauthorizedTTL: 0s
       cgroupDriver: systemd
       clusterDNS: []
-      clusterDomain: cluster.local
+      clusterDomain: ""
       cpuManagerReconcilePeriod: 0s
       evictionPressureTransitionPeriod: 0s
       fileCheckFrequency: 0s
@@ -130,13 +129,16 @@ kubernetes:
       healthzPort: 10248
       httpCheckFrequency: 0s
       imageMinimumGCAge: 0s
+      kind: KubeletConfiguration
       nodeStatusReportFrequency: 0s
       nodeStatusUpdateFrequency: 0s
       resolvConf: /run/systemd/resolve/resolv.conf
       rotateCertificates: true
       runtimeRequestTimeout: 0s
-      serverTLSBootstrap: true
       staticPodPath: /etc/kubernetes/manifests
       streamingConnectionIdleTimeout: 0s
       syncFrequency: 0s
       volumeStatsAggPeriod: 0s
+      serverTLSBootstrap: true
+      featureGates:
+        CSIMigration: false

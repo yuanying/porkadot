@@ -28,6 +28,10 @@ nodes:
     connection:
       user: core
       port: 11222
+    config:
+      failSwapOn: true
+      featureGates:
+        NodeSwap: true
   192.168.33.115:
 
 bootstrap:

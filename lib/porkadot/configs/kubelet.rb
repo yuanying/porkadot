@@ -75,6 +75,14 @@ module Porkadot; module Configs
       return self.raw.taints.map{|v| v.compact.join('=')}.join(',')
     end
 
+    def kubelet_config
+      kc = self.raw.config || ::Porkadot::Raw.new
+      kc = kc.merge(self.config.kubernetes.kubelet.config)
+      kc.clusterDNS << self.config.k8s.networking.dns_ip.to_s
+      kc.clusterDomain = self.config.k8s.networking.dns_domain
+      return kc
+    end
+
     def hostname
       self.raw.hostname || self.name
     end

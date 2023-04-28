@@ -60,4 +60,22 @@ class PorkadotConfigsKubeletTest < Minitest::Test
     node = config.nodes['node04']
     assert_equal '', node.labels_string
   end
+
+  def test_kubelet_config_cluster_domain
+    config = self.mock_config('porkadot2.yaml')
+    node = config.nodes['node04']
+    assert_equal 'cluster.local', node.kubelet_config['clusterDomain']
+    assert_equal '10.254.0.10', node.kubelet_config['clusterDNS'][0]
+  end
+
+  def test_kubelet_config_override
+    config = self.mock_config('porkadot2.yaml')
+    node01 = config.nodes['node01']
+    node04 = config.nodes['node04']
+
+    assert_nil node01.kubelet_config['failSwapOn']
+    assert_equal true, node04.kubelet_config['failSwapOn']
+    assert_equal true, node04.kubelet_config['featureGates']['NodeSwap']
+    assert_equal false, node04.kubelet_config['featureGates']['CSIMigration']
+  end
 end
