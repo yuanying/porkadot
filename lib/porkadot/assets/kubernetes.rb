@@ -135,5 +135,10 @@ module Porkadot; module Assets
       'storage-version-migrator/kustomization.yaml'
     ])
 
+    register_manifests('kubelet-serving-cert-approver', [
+      'kubelet-serving-cert-approver/src.yaml',
+      'kubelet-serving-cert-approver/kustomization.yaml'
+    ])
+
   end
 end; end

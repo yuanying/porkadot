@@ -11,7 +11,7 @@ nodes: {}
 bootstrap: {}
 
 addons:
-  enabled: [flannel, coredns, metallb, kubelet-rubber-stamp, storage-version-migrator]
+  enabled: [flannel, coredns, metallb, kubeler-serving-cert-approver, storage-version-migrator]
 
   flannel:
     backend: vxlan
@@ -38,6 +38,8 @@ addons:
         - 192.168.1.240-192.168.1.250
 
   kubelet-rubber-stamp: {}
+
+  kubeler-serving-cert-approver: {}
 
   storage-version-migrator: {}
 
