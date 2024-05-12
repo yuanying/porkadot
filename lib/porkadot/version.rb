@@ -1,3 +1,3 @@
 module Porkadot
-  VERSION = "0.23.0"
+  VERSION = "0.25.0"
 end
