@@ -8,7 +8,7 @@ KUBECTL_OPTS=${KUBECTL_OPTS:-""}
 KUBECTL_OPTS="${KUBECTL_OPTS} --prune"
 KUBECTL_OPTS="${KUBECTL_OPTS} -l kubernetes.unstable.cloud/installed-by=porkadot"
 <%- prune_allowlist.each do |a| -%>
-KUBECTL_OPTS="${KUBECTL_OPTS} --prune-whitelist=<%= a %>"
+KUBECTL_OPTS="${KUBECTL_OPTS} --prune-allowlist=<%= a %>"
 <%- end -%>
 
 /opt/bin/kubectl apply --force-conflicts --server-side -R -f ${ROOT}/manifests/crds

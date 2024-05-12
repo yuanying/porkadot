@@ -45,7 +45,6 @@ module Porkadot; module Assets
         core/v1/service
         core/v1/serviceaccount
         policy/v1/poddisruptionbudget
-        policy/v1beta1/podsecuritypolicy
         rbac.authorization.k8s.io/v1/clusterrole
         rbac.authorization.k8s.io/v1/clusterrolebinding
         rbac.authorization.k8s.io/v1/role
