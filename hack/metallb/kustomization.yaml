@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: metallb-system
 
 resources:
-- https://github.com/metallb/metallb/config/rbac/?ref=v0.13.9
-- https://github.com/metallb/metallb/config/controllers/?ref=v0.13.9
-- https://github.com/metallb/metallb/config/webhook/?ref=v0.13.9
+- https://github.com/metallb/metallb/config/rbac/?ref=v0.14.5
+- https://github.com/metallb/metallb/config/controllers/?ref=v0.14.5
+- https://github.com/metallb/metallb/config/webhook/?ref=v0.14.5
 - exclude-l2-config.yaml

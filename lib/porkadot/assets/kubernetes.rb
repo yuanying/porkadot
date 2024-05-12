@@ -43,12 +43,14 @@ module Porkadot; module Assets
         core/v1/configmap
         core/v1/namespace
         core/v1/service
+        core/v1/secret
         core/v1/serviceaccount
         policy/v1/poddisruptionbudget
         rbac.authorization.k8s.io/v1/clusterrole
         rbac.authorization.k8s.io/v1/clusterrolebinding
         rbac.authorization.k8s.io/v1/role
         rbac.authorization.k8s.io/v1/rolebinding
+        admissionregistration.k8s.io/v1/validatingwebhookconfiguration
       ]
     end
   end
