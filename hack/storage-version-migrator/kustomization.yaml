@@ -1,18 +1,18 @@
 namespace: kube-system
 
 resources:
-- https://github.com/kubernetes-sigs/kube-storage-version-migrator/manifests/?ref=acdee30ced218b79e39c6a701985e8cd8bd33824
+- https://github.com/kubernetes-sigs/kube-storage-version-migrator/manifests/?ref=v0.0.5
 
 images:
 - name: REGISTRY/storage-version-migration-initializer:VERSION
   newName: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-initializer
-  newTag: v0.0.3
+  newTag: v0.0.5
 - name: REGISTRY/storage-version-migration-migrator:VERSION
   newName: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-migrator
-  newTag: v0.0.3
+  newTag: v0.0.5
 - name: REGISTRY/storage-version-migration-trigger:VERSION
   newName: asia.gcr.io/k8s-artifacts-prod/storage-migrator/storage-version-migration-trigger
-  newTag: v0.0.3
+  newTag: v0.0.5
 patchesJson6902:
 - target:
     group: apps
@@ -21,8 +21,6 @@ patchesJson6902:
     name: migrator
     namespace: kube-system
   patch: |-
-    - op: remove
-      path: /spec/template/spec/containers/0/livenessProbe
     - op: add
       path: /spec/template/spec/containers/0/command/-
       value: --kubeconfig=/etc/migrator/kubeconfig
@@ -33,8 +31,6 @@ patchesJson6902:
     name: trigger
     namespace: kube-system
   patch: |-
-    - op: remove
-      path: /spec/template/spec/containers/0/livenessProbe
     - op: add
       path: /spec/template/spec/containers/0/args
       value: ["--kubeconfig=/etc/migrator/kubeconfig"]
