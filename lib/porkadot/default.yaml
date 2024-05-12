@@ -11,14 +11,14 @@ nodes: {}
 bootstrap: {}
 
 addons:
-  enabled: [flannel, coredns, metallb, kubeler-serving-cert-approver, storage-version-migrator]
+  enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver, storage-version-migrator]
 
   flannel:
     backend: vxlan
-    plugin_image_repository: flannelcni/flannel-cni-plugin
-    plugin_image_tag: v1.2.0
-    daemon_image_repository: flannelcni/flannel
-    daemon_image_tag: v0.20.2
+    plugin_image_repository: flannel/flannel-cni-plugin
+    plugin_image_tag: v1.4.1-flannel1
+    daemon_image_repository: flannel/flannel
+    daemon_image_tag: v0.25.1
     resources:
       requests:
         cpu: "100m"
@@ -39,7 +39,7 @@ addons:
 
   kubelet-rubber-stamp: {}
 
-  kubeler-serving-cert-approver: {}
+  kubelet-serving-cert-approver: {}
 
   storage-version-migrator: {}
 

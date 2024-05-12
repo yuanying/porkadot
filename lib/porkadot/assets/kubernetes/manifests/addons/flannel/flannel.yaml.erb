@@ -1,62 +1,13 @@
 <% cni = config.flannel -%>
 <% k8s = global_config.k8s -%>
 ---
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: psp.flannel.unprivileged
-  annotations:
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default
-    seccomp.security.alpha.kubernetes.io/defaultProfileName: docker/default
-    apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
-    apparmor.security.beta.kubernetes.io/defaultProfileName: runtime/default
-spec:
-  privileged: false
-  volumes:
-  - configMap
-  - secret
-  - emptyDir
-  - hostPath
-  allowedHostPaths:
-  - pathPrefix: "/etc/cni/net.d"
-  - pathPrefix: "/etc/kube-flannel"
-  - pathPrefix: "/run/flannel"
-  readOnlyRootFilesystem: false
-  # Users and groups
-  runAsUser:
-    rule: RunAsAny
-  supplementalGroups:
-    rule: RunAsAny
-  fsGroup:
-    rule: RunAsAny
-  # Privilege Escalation
-  allowPrivilegeEscalation: false
-  defaultAllowPrivilegeEscalation: false
-  # Capabilities
-  allowedCapabilities: ['NET_ADMIN', 'NET_RAW']
-  defaultAddCapabilities: []
-  requiredDropCapabilities: []
-  # Host namespaces
-  hostPID: false
-  hostIPC: false
-  hostNetwork: true
-  hostPorts:
-  - min: 0
-    max: 65535
-  # SELinux
-  seLinux:
-    # SELinux is unused in CaaSP
-    rule: 'RunAsAny'
----
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
+  labels:
+    k8s-app: flannel
   name: flannel
 rules:
-- apiGroups: ['extensions']
-  resources: ['podsecuritypolicies']
-  verbs: ['use']
-  resourceNames: ['psp.flannel.unprivileged']
 - apiGroups:
   - ""
   resources:
@@ -68,6 +19,7 @@ rules:
   resources:
   - nodes
   verbs:
+  - get
   - list
   - watch
 - apiGroups:
@@ -80,6 +32,8 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
+  labels:
+    k8s-app: flannel
   name: flannel
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -93,6 +47,8 @@ subjects:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  labels:
+    k8s-app: flannel
   name: flannel
   namespace: kube-system
 ---
@@ -103,6 +59,7 @@ metadata:
   namespace: kube-system
   labels:
     tier: node
+    k8s-app: flannel
     app: flannel
 data:
   cni-conf.json: |
@@ -134,6 +91,7 @@ data:
       "EnableIPv6": true,
       "IPv6Network": "<%= k8s.networking.pod_v6subnet %>",
       <%- end -%>
+      "EnableNFTables": false,
       "Backend": {
         "Type": "<%= cni.backend %>"
       }
@@ -147,6 +105,7 @@ metadata:
   labels:
     tier: node
     app: flannel
+    k8s-app: flannel
 spec:
   selector:
     matchLabels:
@@ -221,6 +180,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: EVENT_QUEUE_DEPTH
+          value: "5000"
         volumeMounts:
         - name: run
           mountPath: /run/flannel
