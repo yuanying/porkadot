@@ -4,7 +4,7 @@ require 'logger'
 
 module Porkadot
   class Raw < ::Hashie::Mash
-    disable_warnings :keys, :min
+    disable_warnings :keys, :key, :min
   end
 
   class Config
