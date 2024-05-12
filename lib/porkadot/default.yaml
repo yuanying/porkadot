@@ -45,12 +45,12 @@ addons:
 
 etcd:
   image_repository: registry.k8s.io/etcd
-  image_tag: 3.5.4-0
+  image_tag: 3.5.5-0
   extra_env: []
 
 kubernetes:
-  kubernetes_version: v1.24.6
-  crictl_version: v1.24.2
+  kubernetes_version: v1.25.15
+  crictl_version: v1.25.0
   image_repository: registry.k8s.io
 
   networking:
