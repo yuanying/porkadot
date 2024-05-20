@@ -45,16 +45,16 @@ addons:
 
 etcd:
   image_repository: registry.k8s.io/etcd
-  image_tag: 3.5.5-0
+  image_tag: 3.5.12-0
   extra_env: []
 
 kubernetes:
-  kubernetes_version: v1.26.15
-  crictl_version: v1.26.0
+  kubernetes_version: v1.27.14
+  crictl_version: v1.27.1
   image_repository: registry.k8s.io
 
   networking:
-    cni_version: v1.2.0
+    cni_version: v1.4.1
     service_subnet: '10.254.0.0/24'
     pod_subnet: '10.244.0.0/16'
     dns_domain: 'cluster.local'
