@@ -13,7 +13,7 @@ module Porkadot; module Install
       @logger = global_config.logger
     end
 
-    def install host
+    def install host, target=''
       # global_config = self.global_config
       config = self.config
       on(host) do |host|
@@ -26,9 +26,12 @@ module Porkadot; module Install
         upload! config.target_secrets_path, KUBE_SECRETS_TEMP, recursive: true
 
         # as user: 'root' do
-        with KUBECONFIG: File.join(KUBE_SECRETS_TEMP, 'kubeconfig.yaml') do
-          execute(:bash, File.join(KUBE_SECRETS_TEMP, 'install.secrets.sh'))
-          execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
+        with KUBE_TARGET: target do
+          with KUBECONFIG: File.join(KUBE_SECRETS_TEMP, 'kubeconfig.yaml') do
+            execute(:bash, File.join(KUBE_SECRETS_TEMP, 'install.secrets.sh'))
+            # execute(:bash, File.join(KUBE_TEMP, 'install.sh'), interaction_handler: SSHKit::MappingInteractionHandler.new({}, :info))
+            info capture(:bash, File.join(KUBE_TEMP, 'install.sh'))
+          end
         end
       end
     end

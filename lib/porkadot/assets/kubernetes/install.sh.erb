@@ -5,12 +5,18 @@ export LC_ALL=C
 ROOT=$(dirname "${BASH_SOURCE}")
 KUBECTL_OPTS=${KUBECTL_OPTS:-""}
 
-KUBECTL_OPTS="${KUBECTL_OPTS} --prune"
-KUBECTL_OPTS="${KUBECTL_OPTS} -l kubernetes.unstable.cloud/installed-by=porkadot"
-<%- prune_allowlist.each do |a| -%>
-KUBECTL_OPTS="${KUBECTL_OPTS} --prune-allowlist=<%= a %>"
-<%- end -%>
+KUBE_TARGET=${KUBE_TARGET:-""}
 
-/opt/bin/kubectl apply --force-conflicts --server-side -R -f ${ROOT}/manifests/crds
-/opt/bin/kubectl wait --for condition=established --timeout=60s crd --all
+if [ -n "${KUBE_TARGET}" ]; then
+  KUBECTL_OPTS="${KUBECTL_OPTS} -l=app.kubernetes.io/component=${KUBE_TARGET}"
+else
+  KUBECTL_OPTS="${KUBECTL_OPTS} --prune"
+  KUBECTL_OPTS="${KUBECTL_OPTS} -l kubernetes.unstable.cloud/installed-by=porkadot"
+  <%- prune_allowlist.each do |a| -%>
+  KUBECTL_OPTS="${KUBECTL_OPTS} --prune-allowlist=<%= a %>"
+  <%- end -%>
+  /opt/bin/kubectl apply --force-conflicts --server-side -R -f ${ROOT}/manifests/crds
+  /opt/bin/kubectl wait --for condition=established --timeout=60s crd --all
+fi
+
 /opt/bin/kubectl apply ${KUBECTL_OPTS} -k ${ROOT}
