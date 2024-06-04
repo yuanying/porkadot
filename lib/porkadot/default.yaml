@@ -49,8 +49,8 @@ etcd:
   extra_env: []
 
 kubernetes:
-  kubernetes_version: v1.27.14
-  crictl_version: v1.27.1
+  kubernetes_version: v1.28.10
+  crictl_version: v1.28.0
   image_repository: registry.k8s.io
 
   networking:
