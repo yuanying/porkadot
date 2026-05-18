@@ -32,6 +32,7 @@ nodes:
       failSwapOn: true
       featureGates:
         NodeSwap: true
+        CSIMigration: false
   192.168.33.115:
 
 bootstrap:
