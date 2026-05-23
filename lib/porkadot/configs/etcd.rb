@@ -42,14 +42,18 @@ module Porkadot; module Configs
     def listen_address label_key
       listen_address = nil
       if self.raw.labels
-        listen_address = self.raw.labels[label_key] || self.raw.labels[Porkadot::ETCD_LISTEN_ADDRESS_LABEL]
+        listen_address = self.raw.labels[label_key]
+        if !listen_address && label_key == Porkadot::ETCD_LISTEN_PEER_ADDRESS_LABEL
+          listen_address = self.raw.labels[Porkadot::ETCD_LEGACY_LISTEN_PEER_ADDRESS_LABEL]
+        end
+        listen_address ||= self.raw.labels[Porkadot::ETCD_LISTEN_ADDRESS_LABEL]
       end
 
-      if !listen_adress
+      if !listen_address
         if self.ipaddr?(self.raw.hostname)
           listen_address = self.raw.hostname
-        elsif self.ipaddr?(self.raw.name)
-          listen_address = self.raw.name
+        elsif self.ipaddr?(self.name)
+          listen_address = self.name
         else
           listen_address = '0.0.0.0'
         end
@@ -84,7 +88,7 @@ module Porkadot; module Configs
     end
 
     def listen_peer_urls
-      ["https://#{self.listen_client_address}:2380"]
+      ["https://#{self.listen_peer_address}:2380"]
     end
 
     def listen_metrics_urls
