@@ -33,6 +33,7 @@ porkadot の現在の `Config -> Assets -> Install` の3層構造は維持しつ
 | 6 | [06-add-addon-registry.md](06-add-addon-registry.md) | addon manifest 登録を明示的な registry にする |
 | 7 | [07-introduce-install-plan.md](07-introduce-install-plan.md) | install の操作列を dry-run 可能な計画として表現する |
 | 8 | [08-clean-docs-and-spec-sync.md](08-clean-docs-and-spec-sync.md) | 実装後の仕様差分を既存docsへ反映する |
+| 9 | [09-support-containerd-v1-v2.md](09-support-containerd-v1-v2.md) | containerd v1/v2 の設定差分を安全に扱う |
 
 ## 推奨順序
 
@@ -41,6 +42,8 @@ porkadot の現在の `Config -> Assets -> Install` の3層構造は維持しつ
 最初に etcd の明確なバグを修正し、次に設定オブジェクトの可変状態を減らす。その後で validator と明示アクセサを追加すると、後続の renderer / registry / install plan の変更で前提が安定する。
 
 `07-introduce-install-plan` は最も影響範囲が大きいため、config と assets の境界整理後に実施する。
+
+`09-support-containerd-v1-v2` は既存 node の containerd 設定を壊さないことが重要なため、`setup-containerd` の現状挙動を確認したうえで独立して実施できる。
 
 ## 全体テスト方針
 
@@ -51,8 +54,7 @@ porkadot の現在の `Config -> Assets -> Install` の3層構造は維持しつ
 
 ## 完了条件
 
-- 8本の詳細設計に沿って実装されている。
+- 9本の詳細設計に沿って実装されている。
 - 既存CLI互換を壊す変更は、各設計書の互換性欄に記載された範囲に収まっている。
 - `bundle exec rake test` が通る。
 - `docs/spec/` と実装の差分が `08-clean-docs-and-spec-sync` で解消されている。
-
