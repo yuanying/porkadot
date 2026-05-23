@@ -100,7 +100,7 @@ porkadot はノードの役割をラベルで識別する。
 | `ETCD_ADDRESS_LABEL` | `etcd.unstable.cloud/address` | etcd advertise アドレスの上書き |
 | `ETCD_LISTEN_ADDRESS_LABEL` | `etcd.unstable.cloud/listen-address` | etcd peer リッスンアドレスの上書き |
 | `ETCD_LISTEN_CLIENT_ADDRESS_LABEL` | `etcd.unstable.cloud/listen-client-address` | etcd クライアントリッスンアドレスの上書き |
-| `ETCD_LISTEN_PEER_ADDRESS_LABEL` | `etcd.unstable.cloud/listen-peer-address` | etcd peer リッスンアドレスの上書き |
+| `ETCD_LISTEN_PEER_ADDRESS_LABEL` | `etcd.unstable.cloud/listen-client-address` | etcd peer リッスンアドレスの上書き（現状実装値。`listen-peer-address` ではない） |
 
 ### ラベルの設定例
 

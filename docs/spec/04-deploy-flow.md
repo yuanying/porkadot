@@ -11,7 +11,7 @@
    5a. install bootstrap node       ← 一時コントロールプレーン起動
    5b. install bootstrap kubernetes ← DaemonSet/アドオンデプロイ
    5c. install bootstrap cleanup    ← 一時コントロールプレーン削除
-   5d. install kubelet              ← ブートストラップノードの kubelet 設定復旧
+6. porkadot install kubelet     ← ブートストラップノードの kubelet 設定復旧
 ```
 
 ---
@@ -22,13 +22,13 @@
 
 ### 1. `render certs`
 
-PKI 全体を生成します。証明書は `assets/` の `secrets/` サブディレクトリに格納されます。
+PKI 全体を生成します。証明書は `assets/secrets/certs/` サブディレクトリに格納されます。
 
 - Kubernetes PKI（CA、apiserver、kubelet クライアント、admin、service account）
 - etcd PKI（CA、各メンバー証明書）
 - front-proxy PKI（CA、クライアント証明書）
 
-既存の証明書ファイルが存在する場合はスキップします（べき等）。
+既存の秘密鍵ファイルは再利用されます。`render certs` は証明書生成時に refresh=true を渡すため、証明書ファイル自体は再発行されます。
 
 ### 2. `render kubelet`
 
@@ -126,9 +126,9 @@ MetalLB が VIP を確立すると、コントロールプレーンエンドポ�
 ブートストラップ静的 Pod が削除されると、ブートストラップ apiserver が停止します。
 この時点でブートストラップノードの kubelet は `127.0.0.1` を見ていますが、実際のコントロールプレーン（DaemonSet）は VIP 経由で動作しています。
 
-### ステップ 2d: ブートストラップノードの kubelet 設定復旧
+### ステップ 3: ブートストラップノードの kubelet 設定復旧
 
-`porkadot install kubelet` を再実行して、ブートストラップノードの kubelet 設定を `127.0.0.1` から VIP に戻します。
+`porkadot install bootstrap all` は `node` → `kubernetes` → `cleanup` までを実行します。ブートストラップノードの kubelet 設定を `127.0.0.1` から VIP に戻すには、完了後に `porkadot install kubelet` を再実行します。
 
 ```bash
 bundle exec porkadot install kubelet --config ../porkadot.yaml

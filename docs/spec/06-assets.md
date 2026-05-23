@@ -26,6 +26,7 @@ assets/
 │   │   ├── kubelet.service     # systemd サービスユニット
 │   │   ├── config.yaml         # KubeletConfiguration
 │   │   ├── bootstrap-kubelet.conf   # TLS ブートストラップ用 kubeconfig
+│   │   ├── bootstrap.crt            # TLS ブートストラップ用クライアント証明書
 │   │   ├── initiatorname.iscsi      # iSCSI 設定
 │   │   └── metadata.json            # ノードメタデータ
 │   └── {node2}/
@@ -53,6 +54,9 @@ assets/
         ├── kube-controller-manager.yaml    # DaemonSet
         ├── kube-scheduler.yaml             # DaemonSet
         ├── kube-proxy.yaml                 # DaemonSet
+        ├── crds/
+        │   └── metallb/
+        │       └── crds.yaml               # MetalLB CRD
         └── addons/
             ├── kustomization.yaml
             ├── flannel/
@@ -77,31 +81,31 @@ assets/
 
 ## secrets/ ディレクトリ
 
-TLS 証明書・秘密鍵・kubeconfig 等の秘密情報は `assets/` とは別の `secrets/` ディレクトリ（`local.assets_dir/../secrets/` 相当）に格納されます。
+TLS 証明書・秘密鍵・kubeconfig 等の秘密情報は `local.assets_dir/secrets/` に格納されます。デフォルトでは `./assets/secrets/` です。
 
 ```
-secrets/
-├── kubernetes/
-│   ├── ca.key / ca.crt
-│   ├── apiserver.key / apiserver.crt
-│   ├── apiserver-kubelet-client.key / apiserver-kubelet-client.crt
-│   ├── admin.key / admin.crt
-│   ├── sa.key / sa.pub
-│   └── front-proxy/
+assets/secrets/
+├── certs/
+│   ├── kubernetes/
+│   │   ├── ca.key / ca.crt
+│   │   ├── apiserver.key / apiserver.crt
+│   │   ├── kubelet-client.key / kubelet-client.crt
+│   │   ├── admin.key / admin.crt
+│   │   ├── sa.key / sa.pub
+│   │   └── front-proxy/
+│   │       ├── ca.key / ca.crt
+│   │       └── client.key / client.crt
+│   └── etcd/
 │       ├── ca.key / ca.crt
-│       └── client.key / client.crt
-├── etcd/
-│   ├── ca.key / ca.crt
-│   ├── client.key / client.crt
-│   └── {node}/
-│       └── etcd.key / etcd.crt
+│       ├── client.key / client.crt
+│       └── {node}/
+│           └── etcd.key / etcd.crt
 ├── kubelet-default/
 │   └── addons/etcd/{node}/
 │       └── ca.crt
 ├── kubelet/
 │   └── {node}/
-│       ├── bootstrap.key
-│       └── bootstrap.crt
+│       └── bootstrap.key
 ├── bootstrap/
 │   ├── bootstrap/
 │   │   └── kubeconfig-bootstrap.yaml
@@ -183,7 +187,7 @@ kubelet の systemd サービスユニットです。
 kubelet の初回起動時に使用する kubeconfig です。
 
 - サーバー: `{control_plane_endpoint}`（通常は VIP）
-- クライアント証明書: `/etc/kubernetes/pki/bootstrap.{crt,key}`
+- クライアント証明書: `/etc/kubernetes/pki/bootstrap.{crt,key}`（生成時は証明書が `assets/kubelet/{node}/bootstrap.crt`、秘密鍵が `assets/secrets/kubelet/{node}/bootstrap.key`）
 - CA データ: Kubernetes CA 証明書（Base64 エンコード埋め込み）
 
 ### `bootstrap/manifests/kube-apiserver.bootstrap.yaml`

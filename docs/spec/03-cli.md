@@ -44,9 +44,8 @@ porkadot render [all]
 
 ```
 porkadot render certs [all]
-porkadot render certs kubernetes    # Kubernetes PKI のみ
+porkadot render certs kubernetes    # Kubernetes PKI + front-proxy PKI
 porkadot render certs etcd          # etcd PKI のみ
-porkadot render certs front-proxy   # front-proxy PKI のみ
 ```
 
 ### `porkadot render kubelet`
@@ -138,6 +137,8 @@ porkadot install kubelet [--node <node-name>] [--force]
 porkadot install bootstrap [all]
 ```
 
+ブートストラップ完了後、ブートストラップノードの kubelet 設定を通常のコントロールプレーンエンドポイントへ戻すには、別途 `porkadot install kubelet` を再実行します。
+
 #### `porkadot install bootstrap node`
 
 ブートストラップノードに一時的なコントロールプレーン（静的 Pod）をデプロイし、起動を待ちます。
@@ -215,7 +216,7 @@ porkadot etcd backup [--node <node-name>] [--path <backup-dir>]
 | `--node` | — | バックアップ取得ノード（省略時は最初の etcd メンバー） |
 | `--path` | `./backup` | バックアップ保存先ディレクトリ |
 
-出力ファイル: `{path}/etcd-{YYYYMMDD-HHMMSS}.db`
+出力ファイル: `{path}/etcd-{DateTime.now.to_s}.db`
 
 ### `porkadot etcd restore`
 

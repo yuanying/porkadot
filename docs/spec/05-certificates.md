@@ -5,22 +5,23 @@
 porkadot は 3 種類の独立した PKI を管理します。
 
 ```
-secrets/
-├── kubernetes/        # Kubernetes PKI
-│   ├── ca.key / ca.crt           # Kubernetes CA
-│   ├── apiserver.key / apiserver.crt
-│   ├── apiserver-kubelet-client.key / apiserver-kubelet-client.crt
-│   ├── admin.key / admin.crt     # kubectl 用クライアント証明書
-│   ├── sa.key / sa.pub           # Service Account 署名鍵
-│   └── front-proxy/              # front-proxy PKI（別 CA）
-│       ├── ca.key / ca.crt
-│       └── client.key / client.crt
-├── etcd/              # etcd PKI
-│   ├── ca.key / ca.crt           # etcd CA
-│   ├── client.key / client.crt   # apiserver → etcd 通信用
-│   └── {node}/
-│       ├── etcd.key / etcd.crt   # etcd メンバー証明書
-│       └── ca.crt                # （CA のコピー）
+assets/secrets/
+├── certs/
+│   ├── kubernetes/        # Kubernetes PKI
+│   │   ├── ca.key / ca.crt           # Kubernetes CA
+│   │   ├── apiserver.key / apiserver.crt
+│   │   ├── kubelet-client.key / kubelet-client.crt
+│   │   ├── admin.key / admin.crt     # kubectl 用クライアント証明書
+│   │   ├── sa.key / sa.pub           # Service Account 署名鍵
+│   │   └── front-proxy/              # front-proxy PKI（別 CA）
+│   │       ├── ca.key / ca.crt
+│   │       └── client.key / client.crt
+│   └── etcd/              # etcd PKI
+│       ├── ca.key / ca.crt           # etcd CA
+│       ├── client.key / client.crt   # apiserver → etcd 通信用
+│       └── {node}/
+│           ├── etcd.key / etcd.crt   # etcd メンバー証明書
+│           └── ca.crt                # （CA のコピー）
 └── bootstrap/         # ブートストラップ用（secrets のコピー）
 ```
 
@@ -38,7 +39,7 @@ secrets/
 
 | 項目 | 値 |
 |------|-----|
-| Subject | `CN=kubernetes-ca` |
+| Subject | `CN=kube-ca` |
 | 用途 | Kubernetes 全体の信頼アンカー |
 | キー種別 | RSA 2048 |
 
@@ -46,9 +47,9 @@ secrets/
 
 | 項目 | 値 |
 |------|-----|
-| Subject | `O=porkadot:apiserver / CN=kube-apiserver` |
+| Subject | `CN=apiserver` |
 | 用途 | kube-apiserver のサーバー証明書 |
-| 拡張 | `serverAuth` |
+| 拡張 | `clientAuth` + `serverAuth` |
 
 **Subject Alternative Names（SAN）:**
 
@@ -57,7 +58,7 @@ secrets/
 | SAN | 内容 |
 |-----|------|
 | コントロールプレーンエンドポイントホスト | `control_plane_endpoint` の host 部分 |
-| 全マスターノードのホスト名/IP | `k8s.unstable.cloud/master` ラベルを持つ全ノード |
+| 全マスターノードのノード名とホスト名/IP | `k8s.unstable.cloud/master` ラベルを持つ全ノード |
 | Kubernetes サービス IP | service_subnet の最初の IP（例: `10.254.0.1`） |
 | DNS: `kubernetes` | — |
 | DNS: `kubernetes.default` | — |
@@ -66,14 +67,17 @@ secrets/
 | DNS: `porkadot-kubernetes` | — |
 | DNS: `porkadot-kubernetes.kube-system` | — |
 | DNS: `porkadot-kubernetes.kube-system.svc` | — |
-| DNS: `porkadot-kubernetes.kube-system.svc.{dns_domain}` | — |
+| DNS: `porkadot-kubernetes-latest` | — |
+| DNS: `porkadot-kubernetes-latest.kube-system` | — |
+| DNS: `porkadot-kubernetes-latest.kube-system.svc` | — |
+| DNS: `localhost` | ローカルホスト |
 | IP: `127.0.0.1` | ローカルホスト |
 
-### apiserver-kubelet-client 証明書
+### kubelet-client 証明書
 
 | 項目 | 値 |
 |------|-----|
-| Subject | `O=system:masters / CN=kube-apiserver-kubelet-client` |
+| Subject | `O=system:masters / CN=kube-kubelet-client` |
 | 用途 | apiserver → kubelet 通信（クライアント認証） |
 | 拡張 | `clientAuth` |
 
@@ -81,7 +85,7 @@ secrets/
 
 | 項目 | 値 |
 |------|-----|
-| Subject | `O=system:masters / CN=porkadot-admin` |
+| Subject | `O=system:masters / CN=admin` |
 | 用途 | kubectl（管理者）用クライアント証明書 |
 | 拡張 | `clientAuth` |
 
@@ -160,6 +164,6 @@ kubelet はこの証明書で apiserver に接続し、正式な kubelet サー�
 
 ## 証明書のべき等性
 
-- 証明書ファイルが既に存在する場合、`render certs` はスキップします（上書きしません）
-- `render certs` に `--refresh` オプションを渡すと強制再生成できます（将来対応）
+- 秘密鍵ファイルが既に存在する場合、`render certs` は既存の鍵を再利用します
+- `render certs` は証明書生成時に refresh=true を渡すため、証明書ファイルは再発行されます
 - CA 証明書は一度生成したら変更しないことを推奨します（全証明書の再発行が必要になります）

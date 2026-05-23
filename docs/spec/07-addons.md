@@ -84,7 +84,7 @@ addons:
         namespace: metallb-system
 ```
 
-MetalLB は CRD を使用するため、`assets/kubernetes/manifests/addons/metallb/crds.yaml` として CRD が出力されます。インストール時は CRD が先に適用されます。
+MetalLB は CRD を使用するため、`assets/kubernetes/manifests/crds/metallb/crds.yaml` として CRD が出力されます。インストール時は CRD が先に適用されます。
 
 ---
 
@@ -135,7 +135,7 @@ porkadot etcd backup --path /mnt/backup
 porkadot etcd backup --node 192.168.22.111
 ```
 
-出力ファイル: `{path}/etcd-{YYYYMMDD-HHMMSS}.db`
+出力ファイル: `{path}/etcd-{DateTime.now.to_s}.db`
 
 etcdctl のオプション（証明書パス等）は設定から自動的に構築されます。
 
@@ -179,10 +179,10 @@ etcdctl コマンドは以下の証明書ファイルを使用します:
 
 | オプション | ファイル |
 |-----------|---------|
-| `--cacert` | etcd CA 証明書 |
-| `--cert` | etcd クライアント証明書 |
-| `--key` | etcd クライアント秘密鍵 |
-| `--endpoints` | 全 etcd メンバーのクライアント URL |
+| `--cacert` | `/etc/etcd/pki/ca.crt` |
+| `--cert` | `/etc/etcd/pki/etcd.crt` |
+| `--key` | `/etc/etcd/pki/etcd.key` |
+| `--endpoints` | `https://127.0.0.1:2379` |
 
 ### etcd メンバーの URL 構成
 
