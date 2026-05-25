@@ -5,6 +5,8 @@
 `ConfigUtils#method_missing` による `raw` への暗黙アクセスを減らし、主要な設定値を明示アクセサとして定義する。
 
 このコミットでは互換性維持のため `method_missing` は削除しない。
+`Hashie::Mash` と `method_missing` の完全撤廃は、後続の
+`10-remove-hashie-and-method-missing.md` で扱う。
 
 ## 背景 / 現状の問題
 
@@ -105,4 +107,4 @@ end
 - `method_missing` の削除はしない。
 - 全設定項目のアクセサ化はしない。
 - typed struct やdry-types等の導入はしない。
-
+- `Hashie::Mash` 依存の完全撤廃はしない。

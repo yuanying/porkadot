@@ -34,6 +34,7 @@ porkadot の現在の `Config -> Assets -> Install` の3層構造は維持しつ
 | 7 | [07-introduce-install-plan.md](07-introduce-install-plan.md) | install の操作列を dry-run 可能な計画として表現する |
 | 8 | [08-clean-docs-and-spec-sync.md](08-clean-docs-and-spec-sync.md) | 実装後の仕様差分を既存docsへ反映する |
 | 9 | [09-support-containerd-v1-v2.md](09-support-containerd-v1-v2.md) | containerd v1/v2 の設定差分を安全に扱う |
+| 10 | [10-remove-hashie-and-method-missing.md](10-remove-hashie-and-method-missing.md) | `Hashie::Mash` と `method_missing` 依存を完全に撤廃する |
 
 ## 推奨順序
 
@@ -45,6 +46,8 @@ porkadot の現在の `Config -> Assets -> Install` の3層構造は維持しつ
 
 `09-support-containerd-v1-v2` は既存 node の containerd 設定を壊さないことが重要なため、`setup-containerd` の現状挙動を確認したうえで独立して実施できる。
 
+`10-remove-hashie-and-method-missing` は `04-replace-implicit-config-access` で主要な明示アクセサが揃った後に実施する。Hashie 由来の暗黙アクセスと `raw` 直接参照をなくす破壊的な内部変更になるため、互換準備とは別コミットで扱う。
+
 ## 全体テスト方針
 
 - 各コミットで `bundle exec rake test` を実行する。
@@ -54,7 +57,7 @@ porkadot の現在の `Config -> Assets -> Install` の3層構造は維持しつ
 
 ## 完了条件
 
-- 9本の詳細設計に沿って実装されている。
+- 10本の詳細設計に沿って実装されている。
 - 既存CLI互換を壊す変更は、各設計書の互換性欄に記載された範囲に収まっている。
 - `bundle exec rake test` が通る。
 - `docs/spec/` と実装の差分が `08-clean-docs-and-spec-sync` で解消されている。
