@@ -30,6 +30,25 @@ class PorkadotConfigsK8sTest < Minitest::Test
     assert_includes proxy.proxy_config, "clusterCIDR: #{k8s.networking.pod_subnet}"
   end
 
+  def test_proxy_config_does_not_mutate_raw_config
+    proxy.proxy_config
+
+    assert_nil proxy.raw.config['clusterCIDR']
+  end
+
+  def test_proxy_config_kubeconfig_argument_only_changes_returned_yaml
+    returned = YAML.load(proxy.proxy_config('/tmp/kube-proxy.conf'))
+
+    assert_equal '/tmp/kube-proxy.conf', returned['clientConnection']['kubeconfig']
+    assert_equal '/var/lib/kube-proxy/kubeconfig.conf', proxy.raw.config['clientConnection']['kubeconfig']
+  end
+
+  def test_proxy_config_without_kubeconfig_preserves_default
+    returned = YAML.load(proxy.proxy_config)
+
+    assert_equal '/var/lib/kube-proxy/kubeconfig.conf', returned['clientConnection']['kubeconfig']
+  end
+
   def test_apiserver_default_args
     assert_includes apiserver.default_args, '--v'
     assert_includes apiserver.default_args, '--advertise-address'

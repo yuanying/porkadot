@@ -68,6 +68,25 @@ class PorkadotConfigsKubeletTest < Minitest::Test
     assert_equal '10.254.0.10', node.kubelet_config['clusterDNS'][0]
   end
 
+  def test_kubelet_config_cluster_dns_is_not_duplicated
+    config = self.mock_config('porkadot2.yaml')
+    node = config.nodes['node04']
+
+    assert_equal ['10.254.0.10'], node.kubelet_config['clusterDNS']
+    assert_equal ['10.254.0.10'], node.kubelet_config['clusterDNS']
+  end
+
+  def test_kubelet_config_does_not_mutate_raw_config
+    config = self.mock_config('porkadot2.yaml')
+    node = config.nodes['node04']
+
+    node.kubelet_config
+
+    assert_equal [], config.kubernetes.kubelet.config['clusterDNS']
+    assert_nil node.raw.config['clusterDNS']
+    assert_nil node.raw.config['clusterDomain']
+  end
+
   def test_kubelet_config_override
     config = self.mock_config('porkadot2.yaml')
     node01 = config.nodes['node01']
@@ -77,5 +96,14 @@ class PorkadotConfigsKubeletTest < Minitest::Test
     assert_equal true, node04.kubelet_config['failSwapOn']
     assert_equal true, node04.kubelet_config['featureGates']['NodeSwap']
     assert_equal false, node04.kubelet_config['featureGates']['CSIMigration']
+  end
+
+  def test_kubelet_config_registers_taints_only_for_tainted_nodes
+    config = self.mock_config('porkadot2.yaml')
+    node01 = config.nodes['node01']
+    node04 = config.nodes['node04']
+
+    assert_equal node01.raw.taints, node01.kubelet_config['registerWithTaints']
+    assert_nil node04.kubelet_config['registerWithTaints']
   end
 end

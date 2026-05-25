@@ -71,9 +71,12 @@ module Porkadot; module Configs
     end
 
     def kubelet_config
-      kc = self.raw.config || ::Porkadot::Raw.new
-      kc = kc.merge(self.config.kubernetes.kubelet.config)
-      kc.clusterDNS << self.config.k8s.networking.dns_ip.to_s
+      base = self.config.kubernetes.kubelet.config.to_hash
+      node = self.raw.config ? self.raw.config.to_hash : {}
+      kc = ::Porkadot::Raw.new(base.rmerge(node))
+      kc.clusterDNS = Array(kc.clusterDNS).dup
+      dns_ip = self.config.k8s.networking.dns_ip.to_s
+      kc.clusterDNS << dns_ip unless kc.clusterDNS.include?(dns_ip)
       kc.clusterDomain = self.config.k8s.networking.dns_domain
       if self.raw.taints
         kc.registerWithTaints = self.raw.taints
@@ -110,4 +113,3 @@ module Porkadot; module Configs
     end
   end
 end; end
-

@@ -210,11 +210,13 @@ module Porkadot; module Configs
       end
 
       def proxy_config kubeconfig=nil
-        self.raw.config['clusterCIDR'] = config.k8s.networking.pod_subnet
+        proxy_config = ::Porkadot::Raw.new(self.raw.config.to_hash)
+        proxy_config['clusterCIDR'] = config.k8s.networking.pod_subnet
         if kubeconfig
-          self.raw.config['clientConnection']['kubeconfig'] = kubeconfig
+          proxy_config['clientConnection'] ||= {}
+          proxy_config['clientConnection']['kubeconfig'] = kubeconfig
         end
-        self.raw.config.to_hash.to_yaml
+        proxy_config.to_hash.to_yaml
       end
 
       def component_name
