@@ -89,6 +89,10 @@ module Porkadot
       File.join(self.assets_dir, 'secrets')
     end
 
+    def validate!
+      Porkadot::ConfigValidator.new(self).validate!
+    end
+
   end
 
   module ConfigUtils

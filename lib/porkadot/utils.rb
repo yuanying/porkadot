@@ -13,7 +13,8 @@ module Porkadot::Utils
     unless defined?(@config)
       opts = options.dup
       opts = opts.merge(parent_options) if parent_options
-      @config = Porkadot::Config.new(options[:config])
+      @config = Porkadot::Config.new(opts[:config])
+      @config.validate!
     end
     @config
   end
@@ -22,4 +23,3 @@ module Porkadot::Utils
     self.config.logger
   end
 end
-
