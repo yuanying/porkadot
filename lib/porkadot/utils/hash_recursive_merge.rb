@@ -34,7 +34,7 @@ module Porkadot::HashRecursiveMerge
   # 
   def rmerge!(other_hash)
     merge!(other_hash) do |key, oldval, newval|
-      oldval.class == self.class ? oldval.rmerge!(newval) : newval
+      oldval.class == self.class && newval.class == self.class ? oldval.rmerge!(newval) : newval
     end
   end
 
@@ -61,7 +61,7 @@ module Porkadot::HashRecursiveMerge
   # 
   def rmerge(other_hash)
     merge(other_hash) do |key, oldval, newval|
-      oldval.class == self.class ? oldval.rmerge(newval) : newval
+      oldval.class == self.class && newval.class == self.class ? oldval.rmerge(newval) : newval
     end
   end
 

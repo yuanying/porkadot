@@ -105,6 +105,10 @@ module Porkadot; module Assets
       @@crds[name] = crds
     end
 
+    def self.manifest_names
+      @@manifests.keys
+    end
+
     register_manifests('flannel', [
       'flannel/flannel.yaml',
       'flannel/kustomization.yaml'
