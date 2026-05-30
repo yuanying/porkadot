@@ -11,6 +11,12 @@ class PorkadotConfigsEtcdTest < Minitest::Test
   def test_advertise_urls
     assert_equal ["https://192.168.33.111:2379", "https://192.168.33.112:2379"], etcd.advertise_client_urls
   end
+
+  def test_explicit_accessors
+    assert_equal "registry.k8s.io/etcd", etcd.image_repository
+    assert_equal "3.5.12-0", etcd.image_tag
+    assert_equal [], etcd.extra_env
+  end
 end
 
 class PorkadotConfigsEtcdNodeTest < Minitest::Test

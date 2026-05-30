@@ -26,6 +26,39 @@ class PorkadotConfigsK8sTest < Minitest::Test
     assert_equal ['192.168.33.101', '6443'], k8s.control_plane_endpoint_host_and_port
   end
 
+  def test_explicit_accessors
+    assert_equal 'porkadot', k8s.cluster_name
+    assert_equal '192.168.33.101:6443', k8s.control_plane_endpoint
+    assert_equal 'v1.17.2', k8s.kubernetes_version
+    assert_equal 'v1.28.0', k8s.crictl_version
+    assert_equal 'registry.k8s.io', k8s.image_repository
+    assert_nil k8s.log_level
+  end
+
+  def test_networking_explicit_accessors
+    assert_equal '10.254.0.0/24', networking.service_subnet
+    assert_equal '10.244.0.0/16', networking.pod_subnet
+    assert_equal 'cluster.local', networking.dns_domain
+    assert_equal [], networking.additional_domains
+    assert_equal 'v0.9.1', networking.cni_version
+  end
+
+  def test_apiserver_explicit_accessors
+    assert_equal 6443, apiserver.bind_port
+    assert_equal ['--bind-address=127.0.0.1'], apiserver.extra_args
+    assert_equal 2, apiserver.log_level
+  end
+
+  def test_scheduler_explicit_accessors
+    assert_nil k8s.scheduler.extra_args
+    assert_equal 2, k8s.scheduler.log_level
+  end
+
+  def test_controller_manager_explicit_accessors
+    assert_nil k8s.controller_manager.extra_args
+    assert_equal 2, k8s.controller_manager.log_level
+  end
+
   def test_proxy_config_has_cluster_cidr
     assert_includes proxy.proxy_config, "clusterCIDR: #{k8s.networking.pod_subnet}"
   end

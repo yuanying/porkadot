@@ -55,6 +55,20 @@ class PorkadotConfigsKubeletTest < Minitest::Test
     assert_equal 'k8s.unstable.cloud/master,etcd.unstable.cloud/member=node01', node.labels_string
   end
 
+  def test_explicit_accessors
+    config = self.mock_config('porkadot2.yaml')
+    node = config.nodes['node01']
+
+    assert_equal({
+      'k8s.unstable.cloud/master' => nil,
+      'etcd.unstable.cloud/member' => 'node01'
+    }, node.labels.to_hash)
+    assert_equal({}, node.annotations)
+    assert_equal({ 'node-role.kubernetes.io/master' => ':NoSchedule' }, node.taints.to_hash)
+    assert_equal '192.168.33.111', node.hostname
+    assert_equal '192.168.33.115', config.nodes['192.168.33.115'].hostname
+  end
+
   def test_node04_labels_string_should_be_blank
     config = self.mock_config('porkadot2.yaml')
     node = config.nodes['node04']

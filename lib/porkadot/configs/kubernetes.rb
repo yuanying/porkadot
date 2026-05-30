@@ -22,6 +22,26 @@ module Porkadot; module Configs
       self.raw.cluster_name || 'porkadot'
     end
 
+    def control_plane_endpoint
+      self.raw.control_plane_endpoint
+    end
+
+    def kubernetes_version
+      self.raw.kubernetes_version
+    end
+
+    def crictl_version
+      self.raw.crictl_version
+    end
+
+    def image_repository
+      self.raw.image_repository
+    end
+
+    def log_level
+      self.raw.log_level
+    end
+
     def target_path
       File.join(self.config.assets_dir, 'kubernetes')
     end
@@ -94,6 +114,18 @@ module Porkadot; module Configs
         'kube-apiserver'
       end
 
+      def bind_port
+        self.raw.bind_port
+      end
+
+      def extra_args
+        self.raw.extra_args
+      end
+
+      def log_level
+        config.kubernetes.log_level || raw.log_level || 2
+      end
+
       def bootstrap_args
         return {}
       end
@@ -148,6 +180,14 @@ module Porkadot; module Configs
         'kube-scheduler'
       end
 
+      def extra_args
+        self.raw.extra_args
+      end
+
+      def log_level
+        config.kubernetes.log_level || raw.log_level || 2
+      end
+
       def bootstrap_args
         return %W(
           --kubeconfig=/etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml
@@ -175,6 +215,14 @@ module Porkadot; module Configs
 
       def component_name
         'kube-controller-manager'
+      end
+
+      def extra_args
+        self.raw.extra_args
+      end
+
+      def log_level
+        config.kubernetes.log_level || raw.log_level || 2
       end
 
       def bootstrap_args
@@ -243,6 +291,26 @@ module Porkadot; module Configs
       def initialize config
         @config = config
         @raw = config.raw.kubernetes.networking
+      end
+
+      def service_subnet
+        self.raw.service_subnet
+      end
+
+      def pod_subnet
+        self.raw.pod_subnet
+      end
+
+      def dns_domain
+        self.raw.dns_domain
+      end
+
+      def additional_domains
+        self.raw.additional_domains
+      end
+
+      def cni_version
+        self.raw.cni_version
       end
 
       def kubernetes_ip
