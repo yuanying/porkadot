@@ -118,6 +118,8 @@ module Porkadot
       File.join(self.target_secrets_path, file.to_s)
     end
 
+    # Compatibility fallback for legacy implicit config access.
+    # Prefer explicit accessors on config classes for public settings.
     def method_missing name, *args
       return nil if self.raw.nil?
       self.raw[name]

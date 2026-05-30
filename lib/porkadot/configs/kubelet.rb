@@ -70,6 +70,10 @@ module Porkadot; module Configs
       return self.raw.annotations || {}
     end
 
+    def taints
+      return self.raw.taints
+    end
+
     def kubelet_config
       base = self.config.kubernetes.kubelet.config.to_hash
       node = self.raw.config ? self.raw.config.to_hash : {}

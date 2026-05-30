@@ -8,6 +8,18 @@ module Porkadot; module Configs
       @raw = config.raw.etcd
     end
 
+    def image_repository
+      self.raw.image_repository
+    end
+
+    def image_tag
+      self.raw.image_tag
+    end
+
+    def extra_env
+      self.raw.extra_env
+    end
+
     def advertise_client_urls
       urls = []
       config.etcd_nodes.each do |_, v|
