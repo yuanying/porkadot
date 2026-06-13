@@ -1,0 +1,26 @@
+{
+  "skill_name": "porkadot",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "クラスターを再起動したらノードが NotReady のまま VIP（192.168.23.101）も上がってこない。どうすればいい？config は ./porkadot.yaml にある。",
+      "expected_output": "MetalLB デッドロックパターンを認識し、bootstrap node 再実行 → MetalLB pod 削除 → cleanup → kubelet 復旧 の手順を提案する。実行前に確認を取る。"
+    },
+    {
+      "id": 2,
+      "prompt": "porkadot で新しいクラスターをフルセットアップしたい。porkadot.yaml はカレントディレクトリにある。",
+      "expected_output": "render → setup-node → setup-containerd → install kubelet → install bootstrap node → install bootstrap kubernetes → install bootstrap cleanup → install kubelet（bootstrapノードのみ） → set-config の順でプランを提示し、破壊的操作の前に確認を取る。"
+    },
+    {
+      "id": 3,
+      "prompt": "install bootstrap kubernetes が途中で止まった気がする。bootstrap node は動いている。次どうすればいい？",
+      "expected_output": "現在の状態調査（bootstrap pod 確認、MetalLB/Flannel 状態確認）を提案し、状態に応じた再実行プランを提示する。install kubelet を全台再実行するリスクについて警告を含める。"
+    }
+    ,
+    {
+      "id": 4,
+      "prompt": "証明書の有効期限が近づいている。クラスターを止めずに証明書を更新したい。config は ./porkadot.yaml にある。",
+      "expected_output": "render certs → render（kubelet/etcd/bootstrap/kubernetes）→ install kubelet → install kubernetes の順で手順を提示する。各ステップの目的を説明し、実行前に確認を取る。"
+    }
+  ]
+}
