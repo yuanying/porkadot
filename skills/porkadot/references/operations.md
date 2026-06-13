@@ -167,6 +167,11 @@ porkadot --config ./porkadot.yaml install kubernetes controller-manager
 porkadot --config ./porkadot.yaml install kubernetes scheduler
 ```
 
+> **注意**: API サーバーの TLS 証明書自体が期限切れで `install kubernetes` が失敗する場合は、
+> bootstrap 経由での復旧が必要。`references/troubleshooting.md` の
+> 「API サーバー証明書が期限切れでクラスターに接続できない」を参照。
+> bootstrap 経由で復旧した後は `porkadot set-config` で kubeconfig を VIP に切り替えること。
+
 ---
 
 ## アセット回帰確認（render 後の差分チェック）

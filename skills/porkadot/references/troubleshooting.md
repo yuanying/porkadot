@@ -100,6 +100,150 @@ porkadot --config ./porkadot.yaml install bootstrap node
 
 ---
 
+## API サーバー証明書が期限切れでクラスターに接続できない
+
+### 症状
+
+- `kubectl get nodes` が `x509: certificate has expired or not yet valid` で失敗する
+- VIP には接続できるが API 呼び出しが全て TLS エラーになる
+
+### 原因
+
+kube-apiserver の TLS サーバー証明書自体が期限切れになっている。
+`install bootstrap kubernetes` で DaemonSet を更新しても、kube-controller-manager も
+API に接続できないためローリングアップデートが進まず、古い Pod が残り続ける。
+
+### 復旧手順
+
+**Step 1**: 証明書を再生成し、bootstrap 経由で DaemonSet を更新する
+
+```bash
+porkadot --config ./porkadot.yaml render certs kubernetes
+porkadot --config ./porkadot.yaml render kubelet
+porkadot --config ./porkadot.yaml render bootstrap
+porkadot --config ./porkadot.yaml render kubernetes
+porkadot --config ./porkadot.yaml install kubelet
+porkadot --config ./porkadot.yaml install bootstrap node
+porkadot --config ./porkadot.yaml install bootstrap kubernetes
+```
+
+**Step 2**: 古い kube-apiserver Pod を bootstrap kubeconfig を使って手動削除する
+
+```bash
+# bootstrap ノード上で実行
+ssh <user>@<bootstrap-node-ip> \
+  "kubectl --kubeconfig /etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml \
+   -n kube-system get pod | grep kube-apiserver"
+
+ssh <user>@<bootstrap-node-ip> \
+  "kubectl --kubeconfig /etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml \
+   -n kube-system delete pod <old-kube-apiserver-pod-name>"
+```
+
+Pod を削除すると kubelet が新しい DaemonSet spec から Pod を再生成し、新しい証明書が読み込まれる。
+
+**Step 3**: cleanup と set-config を実行する
+
+```bash
+porkadot --config ./porkadot.yaml install bootstrap cleanup
+porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node-ip>
+porkadot --config ./porkadot.yaml set-config
+```
+
+bootstrap 経由の復旧後は kubeconfig が `127.0.0.1:6443` を向いたままになるため、
+`set-config` で VIP に切り替える。
+
+---
+
+## kube-proxy が "too many open files" で CrashLoopBackOff
+
+### 症状
+
+- kube-proxy が CrashLoopBackOff
+- ログに `too many open files` または `failed to create inotify instance`
+- kube-proxy が落ちているノードでは Service IP（ClusterIP）への通信が不通になる
+
+### 原因
+
+`fs.inotify.max_user_instances` が Linux デフォルト (128) のまま。
+kube-proxy はサービスや Endpoints の変化を監視するために多数の inotify インスタンスを使用する。
+
+### 対処
+
+```bash
+# 即時反映
+ssh <user>@<node-ip> "sudo sysctl -w fs.inotify.max_user_instances=8192"
+
+# 永続化
+ssh <user>@<node-ip> "echo 'fs.inotify.max_user_instances = 8192' | sudo tee /etc/sysctl.d/99-inotify.conf"
+```
+
+設定後、kube-proxy Pod を削除して再起動させる。kube-proxy が回復すれば、
+そのノードでの Service IP 経由通信（kube-state-metrics 等）も自動回復する。
+
+---
+
+## Longhorn VolumeAttachment がスタックして Pod が ContainerCreating のまま
+
+### 症状
+
+- Pod が ContainerCreating から進まない
+- `kubectl describe pod` の Events に `FailedAttachVolume: DeadlineExceeded`
+- `kubectl get volumeattachment` で `ATTACHED=false` のエントリが長時間残っている
+
+### 原因
+
+長時間のクラスター停止後、Longhorn が管理する VolumeAttachment が `attached=false` のまま
+スタックする。Longhorn が再アタッチを試みても古い VolumeAttachment が残っているため
+新しいアタッチリクエストを処理できない。
+
+### 確認
+
+```bash
+kubectl get volumeattachment
+# ATTACHED=false かつ長時間経過しているものを特定
+kubectl describe volumeattachment <name>
+# AttachError に DeadlineExceeded が含まれていれば該当
+```
+
+### 対処
+
+実行前に Longhorn の manager/engine DaemonSet が全ノードで Running か確認する。
+
+```bash
+kubectl delete volumeattachment <stuck-attachment-name>
+```
+
+削除後、Kubernetes が新しい VolumeAttachment を作成し、Longhorn が再アタッチを開始する。
+
+---
+
+## porkadot 実行時に SSH 接続が fingerprint mismatch で失敗する
+
+### 症状
+
+- porkadot 実行時に特定ノードで SSH 接続が失敗する
+- エラーメッセージに `fingerprint` や `known_hosts` が含まれる
+
+### 原因
+
+porkadot が使用する net-ssh (Ruby) は `~/.ssh/known_hosts` のエントリを直接検証する。
+以下の場合に不一致が発生する:
+- ノードを再インストールしてホスト鍵が変わった
+- `ssh-keyscan -H`（ハッシュ形式）で登録されており net-ssh が認識できない
+
+### 対処
+
+```bash
+# 古いエントリを削除
+ssh-keygen -R <node-ip>
+
+# 平文形式で再登録（-H フラグなし）
+ssh-keyscan <node-ip> >> ~/.ssh/known_hosts
+```
+
+---
+
 ## ノードが NotReady のまま
 
 ### 確認コマンド
