@@ -57,13 +57,25 @@ CONFIG="<user-specified-path>"
 クラスター完全停止後の再起動時は MetalLB 特死に注意する。
 詳細は `references/troubleshooting.md` の「クラスター再起動後に MetalLB が起動しない」を参照。
 
+### バージョンアップ（k8s バージョン更新）
+
+```
+1. render kubelet / etcd / bootstrap / kubernetes（render 済みの場合は不要）
+2. install kubelet（全ノードに新しい設定・etcd マニフェストを配布）
+3. install kubernetes --node <control-plane-ip>（コントロールプレーンを更新）
+```
+
+詳細は `references/operations.md` の「バージョンアップ」セクションを参照。
+
+**確認が必要なステップ**: install kubelet, install kubernetes
+
 ### 証明書更新
 
 ```
 1. render certs（all または対象の kubernetes/etcd）
 2. render kubelet / etcd / bootstrap / kubernetes（依存マニフェストを再生成）
 3. install kubelet（新しい証明書を全ノードに配布）
-4. install kubernetes（コントロールプレーンに新しい証明書を読み込ませる）
+4. install kubernetes --node <control-plane-ip>（コントロールプレーンに証明書を読み込ませる）
 ```
 
 詳細は `references/operations.md` の「証明書更新」セクションを参照。
@@ -73,7 +85,7 @@ CONFIG="<user-specified-path>"
 ### render（アセット生成）
 
 ```bash
-porkadot --config $CONFIG render <group>
+porkadot render <group> --config $CONFIG
 # group: kubelet / etcd / bootstrap / kubernetes / all
 ```
 
@@ -83,11 +95,11 @@ deterministic なグループ（kubelet, etcd, bootstrap, kubernetes）のみ re
 ### install
 
 ```bash
-porkadot --config $CONFIG install kubelet
-porkadot --config $CONFIG install bootstrap node
-porkadot --config $CONFIG install bootstrap kubernetes
-porkadot --config $CONFIG install bootstrap cleanup
-porkadot --config $CONFIG install kubelet --node <bootstrap-node-ip>
+porkadot install kubelet --config $CONFIG
+porkadot install bootstrap node --config $CONFIG
+porkadot install bootstrap kubernetes --config $CONFIG
+porkadot install bootstrap cleanup --config $CONFIG
+porkadot install kubelet --config $CONFIG --node <bootstrap-node-ip>
 ```
 
 **重要**: bootstrap 完了前に `install kubelet` を全台再実行すると bootstrap ノードの

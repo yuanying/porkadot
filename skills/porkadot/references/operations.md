@@ -3,8 +3,11 @@
 ## コマンド体系
 
 ```
-porkadot --config <config.yaml> <subcommand> [options]
+porkadot <subcommand> [options] --config <config.yaml>
 ```
+
+> **重要**: `--config` は Thor の制約によりサブコマンドの **後**に置く必要がある。
+> `porkadot --config ./porkadot.yaml install kubelet` は動作しない。
 
 主なサブコマンド:
 - `render <group>` — アセット（証明書・マニフェスト等）を生成
@@ -26,10 +29,10 @@ porkadot --config <config.yaml> <subcommand> [options]
 ### Step 1: render
 
 ```bash
-porkadot --config ./porkadot.yaml render kubelet
-porkadot --config ./porkadot.yaml render etcd
-porkadot --config ./porkadot.yaml render bootstrap
-porkadot --config ./porkadot.yaml render kubernetes
+porkadot render kubelet --config ./porkadot.yaml
+porkadot render etcd --config ./porkadot.yaml
+porkadot render bootstrap --config ./porkadot.yaml
+porkadot render kubernetes --config ./porkadot.yaml
 ```
 
 `render all` や `render certs` は証明書が毎回再生成されるため使わないこと。
@@ -37,34 +40,34 @@ porkadot --config ./porkadot.yaml render kubernetes
 ### Step 2: setup-node（全ノード）
 
 ```bash
-porkadot --config ./porkadot.yaml setup-node
+porkadot setup-node --config ./porkadot.yaml
 ```
 
 ### Step 3: setup-containerd（全ノード）
 
 ```bash
-porkadot --config ./porkadot.yaml setup-containerd
+porkadot setup-containerd --config ./porkadot.yaml
 ```
 
 ### Step 4: install
 
 ```bash
 # 全ノードに kubelet をインストール（apiserver = VIP に設定）
-porkadot --config ./porkadot.yaml install kubelet
+porkadot install kubelet --config ./porkadot.yaml
 
 # bootstrap フェーズ
-porkadot --config ./porkadot.yaml install bootstrap node
-porkadot --config ./porkadot.yaml install bootstrap kubernetes
-porkadot --config ./porkadot.yaml install bootstrap cleanup
+porkadot install bootstrap node --config ./porkadot.yaml
+porkadot install bootstrap kubernetes --config ./porkadot.yaml
+porkadot install bootstrap cleanup --config ./porkadot.yaml
 
 # bootstrap ノードの kubelet を VIP に戻す
-porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node-ip>
+porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
 ```
 
 ### Step 5: set-config
 
 ```bash
-porkadot --config ./porkadot.yaml set-config
+porkadot set-config --config ./porkadot.yaml
 ```
 
 ---
@@ -96,7 +99,7 @@ cleanup 後は bootstrap ノードの kubelet が `127.0.0.1` を向いたまま
 `--node` で bootstrap ノードのみ指定して kubelet 設定を VIP に戻す:
 
 ```bash
-porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node-ip>
+porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
 ```
 
 ---
@@ -108,10 +111,10 @@ bootstrap ノードの apiserver が VIP を向いてしまう。
 bootstrap のみ再実行する場合は以下の順で個別実行する:
 
 ```bash
-porkadot --config ./porkadot.yaml install bootstrap node
-porkadot --config ./porkadot.yaml install bootstrap kubernetes
-porkadot --config ./porkadot.yaml install bootstrap cleanup
-porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node-ip>
+porkadot install bootstrap node --config ./porkadot.yaml
+porkadot install bootstrap kubernetes --config ./porkadot.yaml
+porkadot install bootstrap cleanup --config ./porkadot.yaml
+porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
 ```
 
 ---
@@ -135,42 +138,94 @@ porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node-ip>
 
 ```bash
 # 全証明書
-porkadot --config ./porkadot.yaml render certs all
+porkadot render certs all --config ./porkadot.yaml
 
 # または個別に
-porkadot --config ./porkadot.yaml render certs kubernetes
-porkadot --config ./porkadot.yaml render certs etcd
+porkadot render certs kubernetes --config ./porkadot.yaml
+porkadot render certs etcd --config ./porkadot.yaml
 ```
 
 **Step 2**: 依存するマニフェストを再生成する
 
 ```bash
-porkadot --config ./porkadot.yaml render kubelet
-porkadot --config ./porkadot.yaml render etcd
-porkadot --config ./porkadot.yaml render bootstrap
-porkadot --config ./porkadot.yaml render kubernetes
+porkadot render kubelet --config ./porkadot.yaml
+porkadot render etcd --config ./porkadot.yaml
+porkadot render bootstrap --config ./porkadot.yaml
+porkadot render kubernetes --config ./porkadot.yaml
 ```
 
 **Step 3**: 新しい証明書・bootstrap certs を全ノードに配布する
 
 ```bash
-porkadot --config ./porkadot.yaml install kubelet
+porkadot install kubelet --config ./porkadot.yaml
 ```
 
 **Step 4**: Kubernetes マニフェストを再適用する（コントロールプレーンに新しい証明書を読み込ませる）
 
 ```bash
-porkadot --config ./porkadot.yaml install kubernetes
+porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-ip>
 # または個別コンポーネント
-porkadot --config ./porkadot.yaml install kubernetes apiserver
-porkadot --config ./porkadot.yaml install kubernetes controller-manager
-porkadot --config ./porkadot.yaml install kubernetes scheduler
+porkadot install kubernetes apiserver --config ./porkadot.yaml --node <control-plane-ip>
+porkadot install kubernetes controller-manager --config ./porkadot.yaml --node <control-plane-ip>
+porkadot install kubernetes scheduler --config ./porkadot.yaml --node <control-plane-ip>
 ```
 
 > **注意**: API サーバーの TLS 証明書自体が期限切れで `install kubernetes` が失敗する場合は、
 > bootstrap 経由での復旧が必要。`references/troubleshooting.md` の
 > 「API サーバー証明書が期限切れでクラスターに接続できない」を参照。
-> bootstrap 経由で復旧した後は `porkadot set-config` で kubeconfig を VIP に切り替えること。
+> bootstrap 経由で復旧した後は `porkadot set-config --config ./porkadot.yaml` で kubeconfig を VIP に切り替えること。
+
+---
+
+## バージョンアップ（k8s バージョン更新）
+
+前提: render 済み（assets/ に新バージョンのマニフェストが生成されている）
+
+**Step 1**: 全ノードに新しい kubelet 設定・etcd マニフェストを配布
+
+```bash
+porkadot install kubelet --config ./porkadot.yaml
+```
+
+**Step 2**: コントロールプレーンのマニフェストを更新
+
+```bash
+porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-ip>
+# 例: porkadot install kubernetes --config ./porkadot.yaml --node 192.168.1.111
+```
+
+**Step 3**: rollout 完了確認
+
+```bash
+kubectl rollout status daemonset/kube-apiserver -n kube-system
+kubectl get nodes -o wide
+kubectl version
+```
+
+**Step 4**: 削除されたワーカーノードがある場合（porkadot.yaml から削除済み）
+
+```bash
+kubectl get nodes
+kubectl delete node <node-name>
+```
+
+---
+
+## `install kubernetes` の注意点
+
+`install kubernetes` はデフォルトで **bootstrap ノード**上で kubectl を実行する。
+kubeconfig の server は `https://127.0.0.1:6443` を使用するため、
+bootstrap ノードにローカルの kube-apiserver が動いている必要がある。
+
+| bootstrap ノードの種別 | 動作 |
+|---|---|
+| コントロールプレーンノード | そのまま動作（localhost に apiserver が動いている） |
+| ワーカーノード（pablo 等） | **`--node <control-plane-ip>` が必須** |
+
+```bash
+# bootstrap ノードがワーカーの場合は --node でコントロールプレーンを指定
+porkadot install kubernetes --config ./porkadot.yaml --node 192.168.1.111
+```
 
 ---
 
@@ -182,10 +237,10 @@ tmp_before=$(mktemp -d /tmp/porkadot-assets-before.XXXXXX)
 cp -a assets "$tmp_before/assets"
 
 # render
-porkadot --config ./porkadot.yaml render kubelet
-porkadot --config ./porkadot.yaml render etcd
-porkadot --config ./porkadot.yaml render bootstrap
-porkadot --config ./porkadot.yaml render kubernetes
+porkadot render kubelet --config ./porkadot.yaml
+porkadot render etcd --config ./porkadot.yaml
+porkadot render bootstrap --config ./porkadot.yaml
+porkadot render kubernetes --config ./porkadot.yaml
 
 # 差分確認
 diff -ru "$tmp_before/assets" assets
