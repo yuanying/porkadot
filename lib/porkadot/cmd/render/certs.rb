@@ -9,10 +9,11 @@ module Porkadot; module Cmd; module Render; module Certs
     end
 
     default_task :all
+    class_option :ca, type: :boolean, default: true, desc: 'Render CA certificates'
     desc "all", "Render all certificates to deploy Kubernetes cluster"
     def all
-      invoke :etcd
-      invoke :kubernetes
+      invoke :etcd, [], options
+      invoke :kubernetes, [], options
     end
 
     desc 'etcd', "Render certificates to deploy Etcd"
@@ -21,7 +22,7 @@ module Porkadot; module Cmd; module Render; module Certs
       certs = Porkadot::Assets::Certs.new(config).etcd
       logger.info "--> CA key and certs"
       certs.ca_key
-      certs.ca_cert(true)
+      certs.ca_cert(options[:ca])
       logger.info "--> Client key and certs"
       certs.client_key
       certs.client_cert(true)
@@ -34,7 +35,7 @@ module Porkadot; module Cmd; module Render; module Certs
       certs = Porkadot::Assets::Certs.new(config).kubernetes
       logger.info "--> CA key and certs"
       certs.ca_key
-      certs.ca_cert(true)
+      certs.ca_cert(options[:ca])
       logger.info "--> API server key and certs"
       certs.apiserver_key
       certs.apiserver_cert(true)
@@ -54,7 +55,7 @@ module Porkadot; module Cmd; module Render; module Certs
       front_proxy_certs = Porkadot::Assets::Certs.new(config).front_proxy
       logger.info "--> Front-proxy CA key and certs"
       front_proxy_certs.ca_key
-      front_proxy_certs.ca_cert(true)
+      front_proxy_certs.ca_cert(options[:ca])
       logger.info "--> Front-proxy client key and certs"
       front_proxy_certs.client_key
       front_proxy_certs.client_cert(true)

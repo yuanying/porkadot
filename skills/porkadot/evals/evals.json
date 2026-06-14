@@ -20,7 +20,7 @@
     {
       "id": 4,
       "prompt": "証明書の有効期限が近づいている。クラスターを止めずに証明書を更新したい。config は ./porkadot.yaml にある。",
-      "expected_output": "render certs → render（kubelet/etcd/bootstrap/kubernetes）→ install kubelet → install kubernetes の順で手順を提示する。各ステップの目的を説明し、実行前に確認を取る。"
+      "expected_output": "render certs --no-ca → render（kubelet/etcd/bootstrap/kubernetes）→ rotate-certs all の順で手順を提示する。admin kubeconfig 更新が必要な場合は最後に set-config を案内する。rotate-certs は運用影響があるため実行前に確認を取る。"
     }
   ]
 }

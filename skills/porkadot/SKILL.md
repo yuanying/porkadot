@@ -72,15 +72,15 @@ CONFIG="<user-specified-path>"
 ### 証明書更新
 
 ```
-1. render certs（all または対象の kubernetes/etcd）
+1. render certs --no-ca（既存CAでリーフ証明書を再発行）
 2. render kubelet / etcd / bootstrap / kubernetes（依存マニフェストを再生成）
-3. install kubelet（新しい証明書を全ノードに配布）
-4. install kubernetes --node <control-plane-ip>（コントロールプレーンに証明書を読み込ませる）
+3. rotate-certs all（etcd → kubernetes → kubelet-ca の順に適用）
+4. admin kubeconfig を更新する場合のみ set-config
 ```
 
 詳細は `references/operations.md` の「証明書更新」セクションを参照。
 
-**確認が必要なステップ**: install kubelet, install kubernetes
+**確認が必要なステップ**: rotate-certs
 
 ### render（アセット生成）
 
@@ -138,7 +138,7 @@ curl -k https://192.168.23.101:6443/healthz
 [完了報告] 最終状態を確認して報告
 ```
 
-破壊的操作（install, setup-node, setup-containerd, cleanup）の前には
+破壊的操作（install, setup-node, setup-containerd, cleanup, rotate-certs）の前には
 **必ず確認を取る**こと。調査・render・状態確認は確認不要。
 
 ## 参照ファイル
