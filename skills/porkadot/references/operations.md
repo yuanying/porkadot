@@ -11,11 +11,12 @@ porkadot <subcommand> [options] --config <config.yaml>
 
 主なサブコマンド:
 - `render <group>` — アセット（証明書・マニフェスト等）を生成
-- `render certs [all|kubernetes|etcd]` — 証明書のみ再生成（秘密鍵は保持）
+- `render certs [all|kubernetes|etcd] [--no-ca]` — 証明書のみ再生成（秘密鍵は保持）
 - `setup-node` — ノードの初期設定
 - `setup-containerd` — containerd の設定
 - `install <target>` — クラスター構成要素のインストール
 - `install kubernetes [all|apiserver|controller-manager|scheduler|proxy]` — kubernetes マニフェストの再適用
+- `rotate-certs [all|etcd|kubernetes|kubelet-ca]` — レンダリング済み証明書を安全順に反映
 - `set-config` — kubeconfig のエンドポイントを VIP に切り替え
 
 オプション:
@@ -128,21 +129,23 @@ porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
 
 ### render certs の挙動
 
-- 証明書は常に再生成される（`refresh=true`）
+- リーフ証明書は常に再生成される（`refresh=true`）
 - **秘密鍵は既存ファイルを再利用**（ローテーションなし）
-- CA 証明書も再生成されるが、CA 変更時は依存する全証明書の再発行が必要
+- デフォルトでは CA 証明書も再生成される
+- `--no-ca` 指定時は CA 証明書を変更せず、既存CAでリーフ証明書だけ再発行する
+- CA 秘密鍵変更は対象外。将来の CA ローテーションとして扱う
 
 ### 証明書更新手順
 
 **Step 1**: 証明書を再生成する
 
 ```bash
-# 全証明書
-porkadot render certs all --config ./porkadot.yaml
+# 推奨: CA は維持し、リーフ証明書だけ更新
+porkadot render certs --no-ca --config ./porkadot.yaml
 
 # または個別に
-porkadot render certs kubernetes --config ./porkadot.yaml
-porkadot render certs etcd --config ./porkadot.yaml
+porkadot render certs kubernetes --no-ca --config ./porkadot.yaml
+porkadot render certs etcd --no-ca --config ./porkadot.yaml
 ```
 
 **Step 2**: 依存するマニフェストを再生成する
@@ -154,26 +157,35 @@ porkadot render bootstrap --config ./porkadot.yaml
 porkadot render kubernetes --config ./porkadot.yaml
 ```
 
-**Step 3**: 新しい証明書・bootstrap certs を全ノードに配布する
+**Step 3**: レンダリング済み証明書をクラスターへ反映する
+
+`etcd` → `kubernetes` → `kubelet-ca` の順に実行する。
+`rotate-certs kubernetes` は `--node` でコントロールプレーンノードを指定する必要がある。
+(`install kubernetes` と同様に、node 未指定時は bootstrap ノードで kubectl を実行するため、
+bootstrap ノードがワーカーの場合は 127.0.0.1:6443 に kube-apiserver がおらず失敗する)
 
 ```bash
-porkadot install kubelet --config ./porkadot.yaml
+porkadot rotate-certs etcd --config ./porkadot.yaml
+porkadot rotate-certs kubernetes --config ./porkadot.yaml --node <control-plane-node>
+porkadot rotate-certs kubelet-ca --config ./porkadot.yaml
 ```
 
-**Step 4**: Kubernetes マニフェストを再適用する（コントロールプレーンに新しい証明書を読み込ませる）
+CA 証明書を更新した場合も、CA を維持した場合も、反映手順は同じ。
+この操作は etcd と control-plane Pod を再起動するため、実行前に必ず確認を取る。
+
+**Step 4**: admin kubeconfig を更新する場合のみ実行する
 
 ```bash
-porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-ip>
-# または個別コンポーネント
-porkadot install kubernetes apiserver --config ./porkadot.yaml --node <control-plane-ip>
-porkadot install kubernetes controller-manager --config ./porkadot.yaml --node <control-plane-ip>
-porkadot install kubernetes scheduler --config ./porkadot.yaml --node <control-plane-ip>
+porkadot set-config --config ./porkadot.yaml
 ```
+
+`rotate-certs all` は `set-config` を自動実行しない。
 
 > **注意**: API サーバーの TLS 証明書自体が期限切れで `install kubernetes` が失敗する場合は、
 > bootstrap 経由での復旧が必要。`references/troubleshooting.md` の
 > 「API サーバー証明書が期限切れでクラスターに接続できない」を参照。
-> bootstrap 経由で復旧した後は `porkadot set-config --config ./porkadot.yaml` で kubeconfig を VIP に切り替えること。
+> bootstrap 経由で復旧した後、admin kubeconfig も更新する場合は
+> `porkadot set-config --config ./porkadot.yaml` を実行すること。
 
 ---
 

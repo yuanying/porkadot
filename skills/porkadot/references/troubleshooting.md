@@ -110,48 +110,58 @@ porkadot --config ./porkadot.yaml install bootstrap node
 ### 原因
 
 kube-apiserver の TLS サーバー証明書自体が期限切れになっている。
-`install bootstrap kubernetes` で DaemonSet を更新しても、kube-controller-manager も
-API に接続できないためローリングアップデートが進まず、古い Pod が残り続ける。
+通常の API がまだ使える場合は `rotate-certs kubernetes` で更新できる。
+API が TLS エラーで使えない場合は、bootstrap 経由で復旧する必要がある。
 
 ### 復旧手順
 
-**Step 1**: 証明書を再生成し、bootstrap 経由で DaemonSet を更新する
+**Step 1**: 証明書と依存マニフェストを再生成する
 
 ```bash
-porkadot --config ./porkadot.yaml render certs kubernetes
-porkadot --config ./porkadot.yaml render kubelet
-porkadot --config ./porkadot.yaml render bootstrap
-porkadot --config ./porkadot.yaml render kubernetes
-porkadot --config ./porkadot.yaml install kubelet
-porkadot --config ./porkadot.yaml install bootstrap node
-porkadot --config ./porkadot.yaml install bootstrap kubernetes
+porkadot render certs kubernetes --no-ca --config ./porkadot.yaml
+porkadot render kubelet --config ./porkadot.yaml
+porkadot render bootstrap --config ./porkadot.yaml
+porkadot render kubernetes --config ./porkadot.yaml
 ```
 
-**Step 2**: 古い kube-apiserver Pod を bootstrap kubeconfig を使って手動削除する
+**Step 2**: API が使える場合は通常のローテーションを実行する
+
+```bash
+porkadot rotate-certs kubernetes --config ./porkadot.yaml --node <control-plane-node>
+```
+
+**Step 3**: 通常APIが使えない場合は bootstrap 経由で DaemonSet を更新する
+
+```bash
+porkadot install bootstrap node --config ./porkadot.yaml
+porkadot install bootstrap kubernetes --config ./porkadot.yaml
+```
+
+**Step 4**: 古い kube-apiserver Pod を bootstrap kubeconfig を使って手動削除する
 
 ```bash
 # bootstrap ノード上で実行
 ssh <user>@<bootstrap-node-ip> \
-  "kubectl --kubeconfig /etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml \
+  "/opt/bin/kubectl --kubeconfig /etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml \
    -n kube-system get pod | grep kube-apiserver"
 
 ssh <user>@<bootstrap-node-ip> \
-  "kubectl --kubeconfig /etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml \
+  "/opt/bin/kubectl --kubeconfig /etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml \
    -n kube-system delete pod <old-kube-apiserver-pod-name>"
 ```
 
 Pod を削除すると kubelet が新しい DaemonSet spec から Pod を再生成し、新しい証明書が読み込まれる。
 
-**Step 3**: cleanup と set-config を実行する
+**Step 5**: cleanup と必要な kubeconfig 更新を実行する
 
 ```bash
-porkadot --config ./porkadot.yaml install bootstrap cleanup
-porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node-ip>
-porkadot --config ./porkadot.yaml set-config
+porkadot install bootstrap cleanup --config ./porkadot.yaml
+porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
+porkadot set-config --config ./porkadot.yaml
 ```
 
-bootstrap 経由の復旧後は kubeconfig が `127.0.0.1:6443` を向いたままになるため、
-`set-config` で VIP に切り替える。
+admin kubeconfig を更新した場合、または bootstrap 経由の復旧後に kubeconfig が
+`127.0.0.1:6443` を向いたままの場合は、`set-config` で VIP に切り替える。
 
 ---
 

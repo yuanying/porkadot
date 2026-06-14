@@ -16,6 +16,9 @@ module Porkadot; module Cmd
     desc "etcd", "Interact with etcd"
     subcommand "etcd", Porkadot::Cmd::Etcd::Cli
 
+    desc "rotate-certs", "Rotate rendered certificates"
+    subcommand "rotate_certs", Porkadot::Cmd::RotateCerts::Cli
+
     desc "setup-containerd", "Setup containerd"
     option :node, type: :string
     option :force, type: :boolean, default: false
