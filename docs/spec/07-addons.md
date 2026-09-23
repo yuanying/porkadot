@@ -41,6 +41,34 @@ Pod CIDR は `kubernetes.networking.pod_subnet` から自動設定されます�
 
 ---
 
+### cnidaria（CNI ネットワーク・NetworkPolicy）
+
+[cnidaria-cni](https://github.com/yuanying/cnidaria-cni) は flannel の `host-gw` 相当のデータプレーン（ノードごとに 1 本の bridge、ノード間はホストの経路表）に加え、NetworkPolicy とノード向けポリシー（`NodeNetworkPolicy` CRD）を nftables で enforce する CNI です。
+
+既定では無効です（opt-in）。有効にするには `addons.enabled` の `flannel` を `cnidaria` に置き換えます。**flannel と cnidaria を同時に有効にした設定は検証エラーになります。** cnidaria を有効にすると flannel のマニフェストは出力されません。
+
+```yaml
+addons:
+  enabled: [cnidaria, coredns, metallb, kubelet-serving-cert-approver, storage-version-migrator]
+```
+
+| 設定キー | デフォルト | 説明 |
+|------|-----------|------|
+| `image_repository` | `ghcr.io/yuanying/cnidaria-cni` | cnidaria イメージ（init container とデーモンで共通） |
+| `image_tag` | `v0.1.0` | cnidaria イメージタグ |
+| `network_name` | `cnidaria` | conflist のネットワーク名（`--network-name`）。host-local の IP 割り当ては `/var/lib/cni/networks/<name>` に保存される |
+| `resources.requests.cpu` | `50m` | CPU リクエスト |
+| `resources.requests.memory` | `64Mi` | メモリリクエスト |
+| `resources.limits.memory` | `256Mi` | メモリリミット |
+
+Pod CIDR はテンプレートに埋め込みません。cnidaria は各 Node の `spec.podCIDRs`（kube-controller-manager が `kubernetes.networking.pod_subnet` から割り当てたもの）を読みます。デュアルスタックの場合も追加設定は不要です。
+
+コントロールプレーンの taint（`node-role.kubernetes.io/control-plane` と旧名の `node-role.kubernetes.io/master`）は DaemonSet で tolerate しています。
+
+`NodeNetworkPolicy` の CRD は `assets/kubernetes/manifests/crds/cnidaria/crds.yaml` として出力され、インストール時に他のリソースより先に適用されます。
+
+---
+
 ### coredns（クラスター DNS）
 
 Kubernetes クラスター内の DNS サービスを提供します。

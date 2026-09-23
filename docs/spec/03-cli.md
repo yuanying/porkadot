@@ -161,7 +161,7 @@ porkadot install bootstrap node
 porkadot install bootstrap kubernetes
 ```
 
-実行内容: MetalLB, Flannel, kube-apiserver DaemonSet, kube-controller-manager DaemonSet, kube-scheduler DaemonSet をデプロイ
+実行内容: MetalLB, CNI（Flannel または cnidaria）, kube-apiserver DaemonSet, kube-controller-manager DaemonSet, kube-scheduler DaemonSet をデプロイ
 
 #### `porkadot install bootstrap cleanup`
 

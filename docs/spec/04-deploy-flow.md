@@ -105,7 +105,7 @@ kubelet が静的 Pod マニフェストを読み込み、ブートストラッ�
 `porkadot install bootstrap kubernetes` がブートストラップ apiserver 経由で以下をデプロイします。
 
 - **MetalLB**: LoadBalancer サービスを有効化し、VIP（例: `192.168.23.101`）を確立
-- **Flannel（CNI）**: Pod ネットワークを確立
+- **CNI（Flannel または cnidaria）**: Pod ネットワークを確立
 - **kube-apiserver DaemonSet**: 全コントロールプレーンノードに永続的 apiserver をデプロイ
 - **kube-controller-manager DaemonSet**
 - **kube-scheduler DaemonSet**

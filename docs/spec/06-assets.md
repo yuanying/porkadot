@@ -55,12 +55,17 @@ assets/
         ├── kube-scheduler.yaml             # DaemonSet
         ├── kube-proxy.yaml                 # DaemonSet
         ├── crds/
+        │   ├── cnidaria/
+        │   │   └── crds.yaml               # cnidaria NodeNetworkPolicy CRD（cnidaria 有効時）
         │   └── metallb/
         │       └── crds.yaml               # MetalLB CRD
         └── addons/
             ├── kustomization.yaml
-            ├── flannel/
+            ├── flannel/                   # flannel 有効時
             │   ├── flannel.yaml
+            │   └── kustomization.yaml
+            ├── cnidaria/                  # cnidaria 有効時（flannel と排他）
+            │   ├── cnidaria.yaml
             │   └── kustomization.yaml
             ├── coredns/
             │   ├── coredns.yaml

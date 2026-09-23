@@ -217,6 +217,19 @@ addons:
 | `resources.limits.cpu` | `100m` | CPU リミット |
 | `resources.limits.memory` | `50Mi` | メモリリミット |
 
+#### `addons.cnidaria`
+
+flannel の代わりに使える CNI（opt-in）。使うときは `addons.enabled` の `flannel` を `cnidaria` に置き換える。flannel と同時に有効にした設定は検証エラーになる。
+
+| キー | デフォルト | 説明 |
+|------|-----------|------|
+| `image_repository` | `ghcr.io/yuanying/cnidaria-cni` | cnidaria イメージ（init container とデーモンで共通） |
+| `image_tag` | `v0.1.0` | cnidaria イメージタグ |
+| `network_name` | `cnidaria` | conflist のネットワーク名（`--network-name`）。host-local の IP 割り当ては `/var/lib/cni/networks/<name>` に保存される |
+| `resources.requests.cpu` | `50m` | CPU リクエスト |
+| `resources.requests.memory` | `64Mi` | メモリリクエスト |
+| `resources.limits.memory` | `256Mi` | メモリリミット |
+
 #### `addons.coredns`
 
 追加設定なし（デフォルト値のみ）。
