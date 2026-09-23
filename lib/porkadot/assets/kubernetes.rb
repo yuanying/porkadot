@@ -114,6 +114,13 @@ module Porkadot; module Assets
       'flannel/kustomization.yaml'
     ])
 
+    register_manifests('cnidaria', [
+      'cnidaria/cnidaria.yaml',
+      'cnidaria/kustomization.yaml'
+    ], crds: [
+      'cnidaria/crds.yaml'
+    ])
+
     register_manifests('coredns', [
       'coredns/coredns.yaml',
       'coredns/dns-horizontal-autoscaler.yaml',
