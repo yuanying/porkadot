@@ -27,6 +27,18 @@ addons:
         cpu: "100m"
         memory: "50Mi"
 
+  # Opt-in replacement for flannel: swap flannel for cnidaria in addons.enabled.
+  cnidaria:
+    image_repository: ghcr.io/yuanying/cnidaria-cni
+    image_tag: v0.1.0
+    network_name: cnidaria
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        memory: "256Mi"
+
   coredns: {}
 
   metallb:

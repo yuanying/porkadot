@@ -55,6 +55,28 @@ class PorkadotConfigValidatorTest < Minitest::Test
       'addons.enabled contains unknown addon: unknown-addon'
   end
 
+  def test_cnidaria_instead_of_flannel_is_valid
+    config = config_with do |data|
+      data['addons'] ||= {}
+      data['addons']['enabled'] = ['cnidaria', 'coredns']
+    end
+
+    assert_equal true, config.validate!
+  end
+
+  def test_flannel_and_cnidaria_together_raises_error
+    config = config_with do |data|
+      data['addons'] ||= {}
+      data['addons']['enabled'] = ['flannel', 'coredns', 'cnidaria']
+    end
+
+    error = assert_raises(Porkadot::ConfigValidator::Error) do
+      config.validate!
+    end
+    assert_includes error.message,
+      'addons.enabled must not contain both flannel and cnidaria'
+  end
+
   def test_empty_etcd_member_label_raises_error
     config = config_with do |data|
       data['nodes']['node01']['labels'][Porkadot::ETCD_MEMBER_LABEL] = nil

@@ -63,7 +63,7 @@ ssh ubuntu@<bootstrap-node-ip> \
   "/opt/bin/kubectl --kubeconfig /etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml get pods -A"
 ```
 
-2. MetalLB, Flannel が正常に動作しているか確認
+2. MetalLB, CNI（Flannel または cnidaria）が正常に動作しているか確認
 
 3. etcd が healthy か確認
 
@@ -272,4 +272,4 @@ ssh ubuntu@<bootstrap-node-ip> \
 
 - containerd が起動していない → `systemctl status containerd` で確認
 - kubelet の設定に誤りがある（apiserver 向き先）
-- CNI（Flannel）が起動していない
+- CNI（Flannel または cnidaria）が起動していない

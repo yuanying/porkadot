@@ -114,6 +114,10 @@ module Porkadot
 
         errors << "addons.enabled contains unknown addon: #{name}"
       end
+
+      if enabled.include?('flannel') && enabled.include?('cnidaria')
+        errors << 'addons.enabled must not contain both flannel and cnidaria'
+      end
     end
 
     def validate_connection(errors)

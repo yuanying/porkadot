@@ -85,7 +85,7 @@ porkadot set-config --config ./porkadot.yaml
 
 bootstrap API 経由で以下をデプロイ:
 - MetalLB（VIP を有効化）
-- Flannel（CNI）
+- CNI（Flannel、または `addons.enabled` で選んだ cnidaria）
 - Kubernetes コントロールプレーン（kube-apiserver, controller-manager, scheduler）
 
 ### install bootstrap cleanup
