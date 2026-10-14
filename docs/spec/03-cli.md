@@ -213,7 +213,7 @@ porkadot etcd backup [--node <node-name>] [--path <backup-dir>]
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
-| `--node` | — | バックアップ取得ノード（省略時は最初の etcd メンバー） |
+| `--node` | — | バックアップ取得ノード。`porkadot.yaml` の `nodes` のキーで指定する（省略時は最初の etcd メンバー） |
 | `--path` | `./backup` | バックアップ保存先ディレクトリ |
 
 出力ファイル: `{path}/etcd-{DateTime.now.to_s}.db`
@@ -232,6 +232,9 @@ porkadot etcd restore [--path <backup-dir>]
 
 実行順序: etcd 停止 → 最新バックアップをリストア → etcd 起動
 
+各 etcd メンバーで、既存の `/var/lib/etcd` を `/opt/porkadot/data-<日時>` に退避し、
+`etcd-server.yaml` と同じメンバー名・peer URL・initial-cluster を使って `/var/lib/etcd` に復元する。
+
 バックアップが見つからない場合はエラーで終了します。
 
 ### `porkadot etcd start`
@@ -241,6 +244,9 @@ etcd を起動します（`etcd-server.yaml` を manifests ディレクトリに
 ```
 porkadot etcd start [--node <node-name>]
 ```
+
+`--node` には `porkadot.yaml` の `nodes` のキーを指定する。そのノードの接続設定（`connection`）で接続する。
+定義にないノードや etcd メンバーでないノードを指定するとエラーになる。stop / backup も同じ。
 
 ### `porkadot etcd stop`
 

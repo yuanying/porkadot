@@ -180,7 +180,8 @@ porkadot etcd restore --path /mnt/backup
 リストア手順（内部処理）:
 1. etcd を停止（全メンバーノード）
 2. 指定ディレクトリ内の最新バックアップファイルを選択
-3. etcd データをリストア（全メンバーノード）
+3. etcd データをリストア（全メンバーノード）。既存の `/var/lib/etcd` は `/opt/porkadot/data-<日時>` に退避し、
+   そのノードのメンバー名・peer URL と全メンバーの initial-cluster（`etcd-server.yaml` と同じ値）で `/var/lib/etcd` に復元する
 4. etcd を起動（全メンバーノード）
 
 バックアップファイルが見つからない場合はエラーで終了します。
@@ -199,7 +200,9 @@ porkadot etcd stop --node 192.168.22.111
 porkadot etcd start --node 192.168.22.111
 ```
 
-etcd の停止/起動は `etcd-server.yaml` を `/etc/kubernetes/manifests/` に対して移動・退避することで行われます（kubelet が静的 Pod として管理するため）。
+etcd の停止/起動は `etcd-server.yaml` を `/etc/kubernetes/manifests/` と `/opt/porkadot/` の間で移動することで行われます（kubelet が静的 Pod として管理するため）。
+
+`--node` には `porkadot.yaml` の `nodes` のキーを指定します。そのノードの接続設定（`connection`）で接続し、定義にないノードや etcd メンバーでないノードを指定するとエラーになります。
 
 ### etcd 接続設定
 

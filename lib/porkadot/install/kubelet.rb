@@ -5,6 +5,7 @@ module Porkadot; module Install
     KUBE_DEFAULT_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.default')
     KUBE_SECRETS_DEFAULT_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.default.kubelet')
     ETCD_TEMP = '/opt/porkadot'
+    ETCD_DATA_DIR = '/var/lib/etcd'
     include SSHKit::DSL
     attr_reader :global_config
     attr_reader :logger
@@ -79,13 +80,7 @@ module Porkadot; module Install
     end
 
     def backup_etcd host: nil, path: "./backup/etcd.db"
-      unless host
-        self.kubelets.each do |_, v|
-          if v.etcd?
-            host = v
-          end
-        end
-      end
+      host = self.etcd_hosts(host).first
 
       on(:local) do |local|
         execute(:mkdir, '-p', File.dirname(path))
@@ -101,13 +96,11 @@ module Porkadot; module Install
 
     def restore_etcd path: "./backup/etcd.db"
       require 'date'
-      hosts = []
-      self.kubelets.each do |_, v|
-        hosts << v if v.etcd?
-      end
+      hosts = self.etcd_hosts
 
-      options = self.etcd_options
+      etcd_nodes = self.global_config.etcd_nodes
       on(hosts) do |host|
+        etcd_node = etcd_nodes[host.config.name]
         if test("[ -d #{KUBE_TEMP} ]")
           execute(:rm, '-rf', KUBE_TEMP)
           execute(:rm, '-rf', KUBE_SECRETS_TEMP)
@@ -117,31 +110,30 @@ module Porkadot; module Install
 
         as user: 'root' do
           execute(:mkdir, '-p', ETCD_TEMP)
-          if test('[ -d /var/lib/etcd ]')
-            execute(:mv, '/var/lib/etcd', "${ETCD_TEMP}/data-#{DateTime.now.to_s}")
+          if test("[ -d #{ETCD_DATA_DIR} ]")
+            execute(:mv, ETCD_DATA_DIR, "#{ETCD_TEMP}/data-#{DateTime.now.to_s}")
           end
-          execute(:"/opt/bin/etcdctl", *options, "snapshot", "restore", "#{KUBE_TEMP}/etcd.db")
+          execute(:"/opt/bin/etcdctl", "snapshot", "restore", "#{KUBE_TEMP}/etcd.db",
+            "--data-dir", ETCD_DATA_DIR,
+            "--name", etcd_node.member_name,
+            "--initial-cluster", etcd_node.initial_cluster.map{|k,v| "#{k}=#{v}"}.join(','),
+            "--initial-advertise-peer-urls", etcd_node.advertise_peer_urls.join(','))
         end
       end
     end
 
     def start_etcd hosts: nil
-      unless hosts
-        hosts = []
-        self.kubelets.each do |_, v|
-          hosts << v if v.etcd?
-        end
-      end
+      hosts = self.etcd_hosts(hosts)
 
       on(hosts) do |host|
         as user: 'root' do
           execute(:mkdir, '-p', ETCD_TEMP)
 
-          result = capture(:"/opt/bin/crictl", 'ps', '-q', '--name', 'etcd')
           with(container_runtime_endpoint: "unix:///run/containerd/containerd.sock") do
+            result = capture(:"/opt/bin/crictl", 'ps', '-q', '--name', 'etcd')
             if result.empty?
               info 'Trying to start etcd'
-              execute(:mv, "${ETCD_TEMP}/etcd-server.yaml", "/etc/kubernetes/manifests/etcd-server.yaml")
+              execute(:mv, "#{ETCD_TEMP}/etcd-server.yaml", "/etc/kubernetes/manifests/etcd-server.yaml")
             else
               info 'etcd is already started...'
             end
@@ -151,12 +143,7 @@ module Porkadot; module Install
     end
 
     def stop_etcd hosts: nil
-      unless hosts
-        hosts = []
-        self.kubelets.each do |_, v|
-          hosts << v if v.etcd?
-        end
-      end
+      hosts = self.etcd_hosts(hosts)
 
       on(hosts) do |host|
         as user: 'root' do
@@ -165,7 +152,7 @@ module Porkadot; module Install
           info "Waiting for etcd to stop..."
           with(container_runtime_endpoint: "unix:///run/containerd/containerd.sock") do
             unless capture(:"/opt/bin/crictl", 'ps', '-q', '--name', 'etcd').empty?
-              execute(:mv, "/etc/kubernetes/manifests/etcd-server.yaml", "${ETCD_TEMP}/etcd-server.yaml")
+              execute(:mv, "/etc/kubernetes/manifests/etcd-server.yaml", "#{ETCD_TEMP}/etcd-server.yaml")
               while capture(:"/opt/bin/crictl", 'ps', '-q', '--name', 'etcd') != ''
                 info 'Still waiting for stopping etcd...'
                 sleep 5
@@ -175,6 +162,19 @@ module Porkadot; module Install
           info 'etcd was stopped.'
         end
       end
+    end
+
+    # Returns etcd member hosts. When node is given, it is looked up by its
+    # name in porkadot.yaml so that the node's connection settings are used.
+    def etcd_hosts node=nil
+      if node
+        host = self[node]
+        raise Porkadot::Error, "Unknown node: #{node}" unless host
+        raise Porkadot::Error, "Node is not an etcd member: #{node}" unless host.etcd?
+        return [host]
+      end
+
+      self.kubelets.values.select(&:etcd?)
     end
 
     def etcd_options
