@@ -36,7 +36,7 @@ module Porkadot; module Cmd; module Etcd
     desc "stop", "Stop etcd"
     option :node, type: :string
     def stop
-      logger.info "Start etcd"
+      logger.info "Stop etcd"
       kubelets = Porkadot::Install::KubeletList.new(self.config)
       kubelets.stop_etcd hosts: options[:node]
       ""
