@@ -1,0 +1,6 @@
+version = 3
+imports = ['/etc/containerd/conf.d/*.toml']
+
+[plugins]
+  [plugins.'io.containerd.cri.v1.runtime']
+    enable_selinux = false
