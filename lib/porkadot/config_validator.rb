@@ -4,6 +4,13 @@ module Porkadot
   class ConfigValidator
     Error = Class.new(StandardError)
 
+    # Addons that porkadot used to ship. Listing one in addons.enabled is an
+    # error so that users notice the removal and clean up the cluster.
+    REMOVED_ADDONS = {
+      'storage-version-migrator' =>
+        'Kubernetes provides storage version migration natively',
+    }.freeze
+
     def initialize(config)
       @config = config
     end
@@ -111,6 +118,13 @@ module Porkadot
       known_addons = Porkadot::Assets::Addons.manifest_names
       enabled.each do |name|
         next if known_addons.include?(name)
+
+        if REMOVED_ADDONS.key?(name)
+          errors << "addons.enabled contains removed addon: #{name} " \
+            "(#{REMOVED_ADDONS[name]}); remove it from addons.enabled " \
+            "and delete its resources from the cluster (see docs/spec/07-addons.md)"
+          next
+        end
 
         errors << "addons.enabled contains unknown addon: #{name}"
       end

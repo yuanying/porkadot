@@ -69,6 +69,21 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert namespaced.all? { |d| d['metadata']['namespace'] == 'kube-system' }
   end
 
+  def test_default_addons_do_not_render_storage_version_migrator
+    config = YAML.load_file(File.join(TEST_FIXTURES_DIR, 'config', 'porkadot.yaml'))
+    config['local'] = { 'assets_dir' => File.join(@tmpdir, 'assets') }
+    config_path = File.join(@tmpdir, 'porkadot.yaml')
+    File.write(config_path, YAML.dump(config))
+
+    capture_io do
+      Porkadot::Assets::Addons.new(Porkadot::Config.new(config_path)).render
+    end
+
+    refute File.exist?(addon_path('storage-version-migrator'))
+    kustomization = YAML.load_file(addon_path('kustomization.yaml'))
+    assert_equal %w[flannel coredns metallb kubelet-serving-cert-approver], kustomization['resources']
+  end
+
   private
 
   def render_addons(enabled, extra = {})
