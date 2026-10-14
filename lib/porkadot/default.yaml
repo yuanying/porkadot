@@ -11,7 +11,7 @@ nodes: {}
 bootstrap: {}
 
 addons:
-  enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver, storage-version-migrator]
+  enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver]
 
   flannel:
     backend: vxlan
@@ -52,8 +52,6 @@ addons:
   kubelet-rubber-stamp: {}
 
   kubelet-serving-cert-approver: {}
-
-  storage-version-migrator: {}
 
 etcd:
   image_repository: registry.k8s.io/etcd

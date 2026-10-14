@@ -55,6 +55,26 @@ class PorkadotConfigValidatorTest < Minitest::Test
       'addons.enabled contains unknown addon: unknown-addon'
   end
 
+  def test_removed_storage_version_migrator_raises_explanatory_error
+    config = config_with do |data|
+      data['addons'] ||= {}
+      data['addons']['enabled'] = ['flannel', 'coredns', 'storage-version-migrator']
+    end
+
+    error = assert_raises(Porkadot::ConfigValidator::Error) do
+      config.validate!
+    end
+    assert_includes error.message,
+      'addons.enabled contains removed addon: storage-version-migrator'
+    assert_includes error.message, 'remove it from addons.enabled'
+    refute_includes error.message, 'unknown addon: storage-version-migrator'
+  end
+
+  def test_default_addons_do_not_include_storage_version_migrator
+    refute_includes mock_config.addons.enabled, 'storage-version-migrator'
+    refute_includes Porkadot::Assets::Addons.manifest_names, 'storage-version-migrator'
+  end
+
   def test_cnidaria_instead_of_flannel_is_valid
     config = config_with do |data|
       data['addons'] ||= {}
