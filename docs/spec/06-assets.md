@@ -76,11 +76,8 @@ assets/
             │   ├── metallb.yaml           # Deployment/DaemonSet
             │   ├── metallb.config.yaml    # IPAddressPool/L2Advertisement
             │   └── kustomization.yaml
-            ├── kubelet-serving-cert-approver/
-            │   ├── src.yaml
-            │   └── kustomization.yaml
-            └── storage-version-migrator/
-                ├── storage-version-migrator.yaml
+            └── kubelet-serving-cert-approver/
+                ├── src.yaml
                 └── kustomization.yaml
 ```
 

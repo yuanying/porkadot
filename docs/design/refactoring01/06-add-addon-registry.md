@@ -41,7 +41,6 @@ module Porkadot
       "coredns" => Definition.new(...),
       "metallb" => Definition.new(...),
       "kubelet-rubber-stamp" => Definition.new(...),
-      "storage-version-migrator" => Definition.new(...),
       "kubelet-serving-cert-approver" => Definition.new(...),
     }.freeze
 

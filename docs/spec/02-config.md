@@ -198,8 +198,10 @@ Kubernetes アドオンの設定です。
 デフォルト:
 ```yaml
 addons:
-  enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver, storage-version-migrator]
+  enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver]
 ```
+
+未知のアドオン名や、削除済みのアドオン（`storage-version-migrator`）を含めると、設定の検証エラーになります。削除済みのアドオンの扱いは [07-addons.md](07-addons.md) の「削除済みのアドオン」を参照してください。
 
 ### アドオン別設定
 
@@ -275,10 +277,6 @@ metallb:
 #### `addons.kubelet-serving-cert-approver`
 
 追加設定なし。kubelet サービング証明書を自動承認する。
-
-#### `addons.storage-version-migrator`
-
-追加設定なし。Kubernetes API ストレージバージョンの移行を行う。
 
 #### `addons.kubelet-rubber-stamp`（非推奨）
 

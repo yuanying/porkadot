@@ -7,7 +7,7 @@ porkadot は `addons.enabled` リストに基づいてアドオンをデプロ�
 デフォルトで有効なアドオン:
 ```yaml
 addons:
-  enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver, storage-version-migrator]
+  enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver]
 ```
 
 ---
@@ -49,7 +49,7 @@ Pod CIDR は `kubernetes.networking.pod_subnet` から自動設定されます�
 
 ```yaml
 addons:
-  enabled: [cnidaria, coredns, metallb, kubelet-serving-cert-approver, storage-version-migrator]
+  enabled: [cnidaria, coredns, metallb, kubelet-serving-cert-approver]
 ```
 
 | 設定キー | デフォルト | 説明 |
@@ -126,19 +126,30 @@ kubelet のサービング証明書 CSR を自動承認します。`serverTLSBoo
 
 ---
 
-### storage-version-migrator（ストレージバージョン移行）
-
-Kubernetes API リソースのストレージバージョン移行を管理します。Kubernetes のアップグレード時に使用されます。
-
-追加設定なし。
-
----
-
 ### kubelet-rubber-stamp（証明書自動承認・旧）
 
 `kubelet-serving-cert-approver` の旧バージョン相当です。新規インストールでは `kubelet-serving-cert-approver` を使用してください。
 
 追加設定なし。デフォルトでは無効（`addons.enabled` に含まれていない）。
+
+---
+
+## 削除済みのアドオン
+
+### storage-version-migrator
+
+[kube-storage-version-migrator](https://github.com/kubernetes-sigs/kube-storage-version-migrator) v0.0.5 を外付けでデプロイするアドオンでした。Kubernetes 本体が storage version migration を機能として持つようになったため削除しました。
+
+`addons.enabled` に残っていると、設定の検証エラー（`addons.enabled contains removed addon: storage-version-migrator ...`）になります。`addons.enabled` から外してください。
+
+既存のクラスタには次のリソースが残ります。古い生成マニフェストには `Namespace kube-system` が含まれるので、`kubectl delete -f` / `kubectl delete -k` で消すと kube-system ごと消えます。使わずに、名前を指定して消してください。
+
+| 種類 | 名前 |
+|------|------|
+| Deployment（kube-system） | `migrator`、`trigger` |
+| ClusterRoleBinding | `storage-version-migration-crd-creator`、`storage-version-migration-initializer`、`storage-version-migration-migrator`、`storage-version-migration-trigger` |
+| ClusterRole | `storage-version-migration-crd-creator`、`storage-version-migration-initializer`、`storage-version-migration-trigger` |
+| CustomResourceDefinition | `storagestates.migration.k8s.io`、`storageversionmigrations.migration.k8s.io` |
 
 ---
 
