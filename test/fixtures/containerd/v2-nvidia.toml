@@ -1,0 +1,18 @@
+version = 3
+imports = ['/etc/containerd/conf.d/*.toml', '/etc/containerd/conf.d/99-nvidia.toml']
+
+[plugins]
+  [plugins.'io.containerd.cri.v1.runtime']
+    [plugins.'io.containerd.cri.v1.runtime'.containerd]
+      default_runtime_name = 'runc'
+      [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes]
+        [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc]
+          runtime_type = 'io.containerd.runc.v2'
+          [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]
+            BinaryName = ''
+            SystemdCgroup = false
+        [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.nvidia]
+          runtime_type = 'io.containerd.runc.v2'
+          [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.nvidia.options]
+            BinaryName = '/usr/bin/nvidia-container-runtime'
+            SystemdCgroup = false

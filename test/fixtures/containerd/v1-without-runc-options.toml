@@ -1,0 +1,6 @@
+version = 2
+imports = ["/etc/containerd/conf.d/*.toml"]
+
+[plugins]
+  [plugins."io.containerd.grpc.v1.cri"]
+    sandbox_image = "registry.k8s.io/pause:3.9"

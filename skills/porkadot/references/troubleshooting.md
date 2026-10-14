@@ -271,5 +271,28 @@ ssh ubuntu@<bootstrap-node-ip> \
 ### よくある原因
 
 - containerd が起動していない → `systemctl status containerd` で確認
+- containerd と kubelet の cgroup driver が食い違っている（kubelet は `systemd`）→ `containerd config dump | grep SystemdCgroup` で runc の値が `true` か確認する。`false` なら `setup-containerd` をやり直す（→「setup-containerd が runc options セクションが無いと言って止まる」）
 - kubelet の設定に誤りがある（apiserver 向き先）
 - CNI（Flannel または cnidaria）が起動していない
+
+## setup-containerd が runc options セクションが無いと言って止まる
+
+### 症状
+
+`porkadot setup-containerd` が `ERROR: [plugins.... .containerd.runtimes.runc.options] is not found in /etc/containerd/config.toml.` を出して失敗する。containerd は再起動されない。
+
+### 原因
+
+既存の `/etc/containerd/config.toml` に、runc の options セクションが無い。kubelet は cgroup driver に `systemd` を使うので、`SystemdCgroup = true` を設定できないまま続けると、containerd と cgroup driver が食い違う。そのため `setup-containerd` は止まる。
+
+- config version 2: `[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]`
+- config version 3: `[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]`
+
+runc の options を inline table（`[...runtimes.runc]` の下の `options = { SystemdCgroup = false }`）で書いている場合も、セクションが無い扱いになる。`setup-containerd` は inline table を書き換えない。セクションのヘッダ行の末尾にコメントがあるだけなら止まらない。
+
+### 対処
+
+次のどちらかを行い、`setup-containerd` を再実行する。
+
+- `/etc/containerd/config.toml` に、エラーに出たセクションを `SystemdCgroup = true` 付きで足す。inline table で書いている場合は、そのセクションの形に書き直す。
+- `/etc/containerd/config.toml` を退避（例: `config.toml.porkadot-bak`）して消す。`setup-containerd` が `containerd config default` で作り直す。退避した config に独自の設定（registry mirror、NVIDIA の runtime など）があれば、作り直した config に戻す。

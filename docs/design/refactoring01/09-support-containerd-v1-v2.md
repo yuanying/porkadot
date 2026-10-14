@@ -29,8 +29,9 @@
 ## 変更対象
 
 - `lib/porkadot/assets/kubelet-default/setup-containerd.sh.erb`
-- `test/assets/kubelet_test.rb` または新規 `test/assets/kubelet_default_test.rb`
-- 必要に応じて `test/fixtures/`
+- `test/assets/setup_containerd_test.rb`（新規）
+- `test/fixtures/containerd/`（新規）
+- `skills/porkadot/references/operations.md`、`skills/porkadot/references/troubleshooting.md`
 
 docs/spec の更新は `08-clean-docs-and-spec-sync` で行う。
 
@@ -38,7 +39,7 @@ docs/spec の更新は `08-clean-docs-and-spec-sync` で行う。
 
 `setup-containerd.sh` は `crictl` に依存しない。
 
-containerd の major version は node 上で実行時に判定する。
+containerd の major version は node 上で実行時に判定する。major version が 1 / 2 以外なら失敗させる。
 
 ```bash
 containerd_major_version() {
@@ -48,9 +49,12 @@ containerd_major_version() {
 
 `/etc/containerd/config.toml` の扱いは以下の優先順位にする。
 
-1. `${ROOT}/containerd/config.toml` がある場合は、ユーザーが明示した完全上書きとして従来通りコピーする。
-2. `/etc/containerd/config.toml` がすでにある場合は再生成しない。
-3. `/etc/containerd/config.toml` がない場合のみ `containerd config default` で作成する。
+1. `${ROOT}/containerd/config.toml` がある場合は、ユーザーが明示した完全上書きとして従来通りコピーする。コピーした config の `SystemdCgroup` は書き換えない（従来の挙動と同じ）。
+2. `/etc/containerd/config.toml` がすでにあり、top-level の `version` がある場合は再生成しない。
+3. `/etc/containerd/config.toml` がない場合は `containerd config default` で作成する。
+4. `/etc/containerd/config.toml` があっても `version` がない場合は、元のファイルを `config.toml.porkadot-bak.<YYYYmmddHHMMSS>` に退避してから `containerd config default` で作り直し、作り直したことをログに出す。
+
+4 は Docker の `containerd.io` パッケージに対応するためである。このパッケージは `version` 行がなく `disabled_plugins = ["cri"]` だけの `/etc/containerd/config.toml` を同梱する。旧 script は毎回 `containerd config default` で作り直していたので、このノードでも通っていた。本番の worker と旧 control-plane は `containerd.io`（1.6.x）を使っているため、作り直さないと `setup-containerd` の再実行が止まる。`version` のない config は containerd 1.x では config version 1 として扱われ、CRI plugin も無効なので、残すべき設定はないと判断した。
 
 ```bash
 ensure_containerd_config() {
@@ -83,11 +87,26 @@ containerd v2 の path:
   SystemdCgroup = true
 ```
 
-v2 では、runc runtime class が明示されていない場合 containerd の auto-detection に任せる。つまり、v2 config に v2 の runc runtime section が存在しない場合は、`SystemdCgroup` を無理に追記しない。
+どちらの path を編集するかは、containerd の major version ではなく **config の top-level `version`** で決める。編集対象は config の schema で決まるためである。
 
-v1 では、従来と同じく runc options section がなければ追記する。これは既存の porkadot の挙動を維持するためである。
+| config version | containerd 1.x | containerd 2.x |
+|---|---|---|
+| 2 | v1 path を編集する | v1 path を編集する（containerd 2.x は読み込み時に version 3 へ移行する） |
+| 3 | 失敗させる（containerd 1.x は読めない） | v2 path を編集する |
+| なし | 退避して default で作り直し、作り直した config の version で上の行に従う | 同左 |
+| それ以外（4 など） | 失敗させる | 失敗させる |
 
-実装は大きな TOML parser を導入せず、shell 内の限定的な処理に留める。既存値がある場合は該当行だけを置換し、section があるが `SystemdCgroup` がない場合はその section 直下に追記する。
+`version` のある config は、containerd の版が変わっても作り直さない。apt で containerd を 1.x から 2.x に上げたノードでは version 2 の config が残るが、v1 path に設定した `SystemdCgroup = true` は containerd 2.x の移行で v2 path に引き継がれる（containerd 2.2.1 の `config dump` で確認済み）。
+
+runc options section がない場合は、v1 / v2 とも section を新規作成せず、script を `exit 1` で止める。containerd は再起動しない。エラーメッセージには、見つからなかった section と直し方（section を足す、または config を退避して再実行する）を書く。
+
+- kubelet は `lib/porkadot/default.yaml` で `cgroupDriver: systemd` に固定されている。続行すると containerd は cgroupfs（`SystemdCgroup = false`）のままになり、kubelet と cgroup driver が食い違う。警告だけでは SSHKit の出力の中で見落としやすい。
+
+- runc options section だけを追記すると、containerd の default の runc runtime が置き換わり、`runtime_type` が空になる。containerd 1.7.12 で `config dump` して確認した。
+- 旧 script も、sed の追記先 section が見つからなければ何もしなかった。section を作らないことは従来の挙動の維持でもある。
+- containerd 1.7.12 / 2.2.1 の `containerd config default` は、どちらも runc options section と `SystemdCgroup = false` を含む。porkadot が config を作るノードでは、この分岐に入らない。
+
+実装は大きな TOML parser を導入せず、shell 内の限定的な処理に留める。section header は quote の種類（`"` と `'`）を区別せず、行末のコメント（`# ...`）を無視して照合する。runc の options を inline table（`[...runtimes.runc]` の下の `options = { SystemdCgroup = ... }`）で書いた config には対応しない。この形式では section が見つからない扱いになり、上のとおりエラーで止まる。inline table を書き換えるには TOML の値を解釈する必要があり、shell 内の限定的な処理の範囲を超えるためである。エラーメッセージで、section 形式に書き直すよう案内する。既存値がある場合は該当行だけを置換し、section があるが `SystemdCgroup` がない場合はその section 直下に追記する。他の runtime（`nvidia` など）の `SystemdCgroup` は変更しない。
 
 unsupported major version は明示的に失敗させる。
 
@@ -121,41 +140,54 @@ containerd v2 は Kubernetes v1.32 以降を実用上の下限として扱う。
 ## 互換性
 
 - `${ROOT}/containerd/config.toml` によるユーザー提供 config の優先は維持する。
-- 既存 `/etc/containerd/config.toml` がある node では、無条件再生成しない。
+- 既存 `/etc/containerd/config.toml` がある node では、無条件再生成しない。`version` のない config だけは退避してから作り直す。
 - NVIDIA、gVisor、Kata、registry mirror などの既存設定を消さない。
 - `setup-containerd` の CLI interface は変えない。
 - containerd v1 系 node の既存挙動は、`SystemdCgroup = true` を維持する範囲で変えない。
-- containerd v2 系 node では、v2 の正しい config path だけを対象にする。
+- containerd v2 系 node では、config version 3 なら v2 の正しい config path だけを対象にする。version 2 の config が残っている node では v1 path を対象にする。
+- Ubuntu の `containerd` パッケージ（noble の 1.7.12、noble-updates の 2.2.1）は `/etc/containerd/config.toml` を同梱しない。新規ノードでは porkadot が `containerd config default` で作る。
 
 ## テスト計画
 
-script そのものを直接実行しやすくするため、生成済み script に対する fixture ベースのテストを追加する。
+render した `setup-containerd.sh` を bash で実際に実行し、生成される config を検証する。containerd バイナリが無い環境でも動くように、`containerd`（`--version` と `config default`）と `systemctl` は PATH 上の stub に置き換える。config の置き場所は、テスト専用の環境変数 `PORKADOT_CONTAINERD_CONFIG_DIR`（既定は `/etc/containerd`）で一時ディレクトリに向ける。
 
-追加する fixture:
+追加する fixture（`test/fixtures/containerd/`）:
 
-- containerd v1 config
-- containerd v2 config with runc runtime section
-- containerd v2 config without runc runtime section
-- imports を含む config
-- NVIDIA drop-in を想定した `imports = ["/etc/containerd/conf.d/*.toml"]` を含む config
+- containerd 1.7.12 の `containerd config default` の出力（config version 2）
+- containerd 2.2.1 の `containerd config default` の出力（config version 3）
+- version 2 で runc options に `SystemdCgroup` がなく、NVIDIA runtime と `imports` を含む config
+- version 2 で runc options section がない config
+- version 3 で runc runtime section がない config
+- version 3 で NVIDIA runtime と drop-in の `imports` を含む config
+- `version` がない config
+- v1 / v2 それぞれ、section header の行末にコメントがある config
+- version 3 で runc の options を inline table で書いた config
+- Docker の `containerd.io` が同梱する config（`version` がなく `disabled_plugins = ["cri"]` だけ）
 
 追加するテスト:
 
-- `${ROOT}/containerd/config.toml` がある場合はコピー優先の分岐が残っている。
-- 既存 `/etc/containerd/config.toml` がある場合は `containerd config default` で上書きしない。
-- v1 config では v1 path の `SystemdCgroup = true` が設定される。
-- v2 config では v2 path の `SystemdCgroup = true` が設定される。
-- v2 config に runc runtime section がない場合は `SystemdCgroup` section を新規作成しない。
-- `imports` 行が削除されない。
-- unsupported major version では script が失敗する。
+- config がない場合、v1 / v2 それぞれ default config を作り、正しい path の `SystemdCgroup` が `true` になる。
+- `${ROOT}/containerd/config.toml` がある場合は、そのままコピーする。
+- 既存 `/etc/containerd/config.toml` がある場合は `containerd config default` を呼ばず、`SystemdCgroup` の行以外を変えない。
+- `imports` 行と、他の runtime の `SystemdCgroup` が変わらない。
+- section があり `SystemdCgroup` がない場合は section 直下に追記する。
+- runc options section がない場合は、v1 / v2 とも section を作らずに失敗し、containerd を再起動しない。
+- runc options を inline table で書いた config も、section がない場合と同じく失敗する。
+- section header の行末にコメントがあっても、v1 / v2 とも `SystemdCgroup = true` を設定する。
+- containerd 2.x で version 2 の config は v1 path を編集する。
+- `version` のない config（`containerd.io` 同梱のものを含む）は、v1 / v2 とも default から作り直して `SystemdCgroup = true` を設定し、元のファイルを退避する。`version` のある config は退避しない。
+- containerd 1.x で version 3 の config、未知の config version（4 など）、unsupported major version では失敗し、containerd を再起動しない。
+- 2 回実行しても config が変わらない。
+
+テストとは別に、containerd 1.7.12 / 2.2.1 の実バイナリで生成した config を `containerd config dump` に通し、runc の `SystemdCgroup = true` と `runtime_type = "io.containerd.runc.v2"` が有効になることを確認した。
 
 最低限、`bundle exec rake test` が通ることを確認する。
 
 ## 完了条件
 
-- containerd v1/v2 を実行時に判定して分岐できる。
+- containerd v1/v2 と config version を実行時に判定して分岐できる。
 - `crictl` がない状態でも `setup-containerd` が動作する。
-- 既存 `/etc/containerd/config.toml` を無条件に再生成しない。
+- 既存 `/etc/containerd/config.toml` を無条件に再生成しない（`version` のない config は退避してから作り直す）。
 - v1/v2 それぞれの正しい path で `SystemdCgroup` を扱う。
 - containerd v2 で不要な config section を勝手に作らない。
 - NVIDIA などの外部 runtime 設定を壊さない方針がテストで確認されている。
