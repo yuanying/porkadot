@@ -35,13 +35,14 @@ module Porkadot; module Assets
       addons.render
     end
 
+    # Namespaces are deliberately not pruned: pruning one deletes everything
+    # in it, and addons may share a Namespace such as kube-system.
     def prune_allowlist
       return %w[
         apiextensions.k8s.io/v1/customresourcedefinition
         apps/v1/daemonset
         apps/v1/deployment
         core/v1/configmap
-        core/v1/namespace
         core/v1/service
         core/v1/secret
         core/v1/serviceaccount
