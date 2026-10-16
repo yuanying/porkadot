@@ -20,19 +20,29 @@ module Porkadot; module Assets
       render_erb 'manifests/porkadot.yaml'
       render_erb 'manifests/kubelet.yaml'
       render_erb "manifests/kube-apiserver.yaml"
-      render_secrets_erb "manifests/kube-apiserver.secrets.yaml"
+      render_erb "manifests/kube-apiserver.secrets.yaml", secret: true
       render_erb "manifests/kube-proxy.yaml"
       render_erb "manifests/kube-scheduler.yaml"
       render_erb "manifests/kube-controller-manager.yaml"
-      render_secrets_erb "manifests/kube-controller-manager.secrets.yaml"
-      render_secrets_erb "kubeconfig.yaml"
+      render_erb "manifests/kube-controller-manager.secrets.yaml", secret: true
+      render_erb "kubeconfig.yaml", secret: true
       render_erb 'manifests/kustomization.yaml'
       render_erb 'kustomization.yaml', force: false
       render_erb 'install.sh', prune_allowlist: prune_allowlist
-      render_secrets_erb 'install.secrets.sh'
+      render_erb 'install.secrets.sh', secret: true, secret_manifests: secret_manifests
 
       addons = Addons.new(global_config)
       addons.render
+    end
+
+    # Secret manifests are applied by install.secrets.sh, outside of the
+    # kustomization, so that they are never pruned.
+    def secret_manifests
+      manifests = %w(
+        manifests/kube-apiserver.secrets.yaml
+        manifests/kube-controller-manager.secrets.yaml
+      )
+      manifests + Addons.new(global_config).secret_manifests.map { |m| File.join('manifests', 'addons', m) }
     end
 
     def prune_allowlist
@@ -79,7 +89,7 @@ module Porkadot; module Assets
         end
         secrets = @@secrets_manifests[name]
         secrets.each do |m|
-          render_secrets_erb(m)
+          render_erb(m, secret: true)
         end
         crds = @@crds[name]
         crds.each do |m|
@@ -88,12 +98,16 @@ module Porkadot; module Assets
       end
     end
 
+    def secret_manifests
+      self.config.enabled.flat_map { |name| @@secrets_manifests[name] }
+    end
+
     def copy_crds file
       logger.info "----> #{file}"
       crd_path = File.join(config.target_crd_dir_path, file)
       crd_dir = File.dirname(crd_path)
       FileUtils.mkdir_p(crd_dir) unless File.directory?(crd_dir)
-      FileUtils.copy(File.join(TEMPLATE_DIR, file), crd_path)
+      global_config.asset_store.copy(File.join(TEMPLATE_DIR, file), crd_path)
     end
 
     def self.register_manifests name, manifests, secrets: [], crds: []

@@ -63,6 +63,14 @@ module Porkadot; module Cmd; module Etcd
     def self.subcommand_prefix
       'etcd'
     end
+
+    no_commands do
+      # etcd backup/restore do not read rendered assets, and must keep
+      # working while the assets are being migrated.
+      def assets_layout_check?
+        false
+      end
+    end
   end
 end; end; end
 

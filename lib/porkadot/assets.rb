@@ -15,7 +15,9 @@ module Porkadot::Assets
     end
   end
 
-  def render_erb file, **opts
+  # Renders TEMPLATE_DIR/<file>.erb to the asset path of file.
+  # Pass secret: true for outputs that contain credentials.
+  def render_erb file, secret: false, **opts
     file = file.to_s
     opts[:config] = self.config
     opts[:global_config] = self.global_config
@@ -28,31 +30,10 @@ module Porkadot::Assets
       logger.debug "------> Already exists: skipping #{file}"
       return
     end
-    asset_dir = File.dirname(asset)
-    FileUtils.mkdir_p(asset_dir) unless File.directory?(asset_dir)
-    open(File.join(self.class::TEMPLATE_DIR, "#{file}.erb")) do |io|
-      open(asset, 'w') do |out|
-        out.write ERB.new(io.read, trim_mode: '-').result_with_hash(opts)
-      end
+    content = open(File.join(self.class::TEMPLATE_DIR, "#{file}.erb")) do |io|
+      ERB.new(io.read, trim_mode: '-').result_with_hash(opts)
     end
-  end
-
-  def render_secrets_erb file, opts={}
-    file = file.to_s
-    opts[:config] = self.config
-    opts[:global_config] = self.global_config
-    opts[:certs] = Porkadot::Assets::Certs.new(self.global_config)
-    opts[:u] = ErbUtils.new
-
-    logger.info "----> #{file}"
-    secret = config.secrets_path(file)
-    secret_dir = File.dirname(secret)
-    FileUtils.mkdir_p(secret_dir) unless File.directory?(secret_dir)
-    open(File.join(self.class::TEMPLATE_DIR, "#{file}.erb")) do |io|
-      open(secret, 'w') do |out|
-        out.write ERB.new(io.read, trim_mode: '-').result_with_hash(opts)
-      end
-    end
+    self.global_config.asset_store.write(asset, content, secret: secret)
   end
 
 end

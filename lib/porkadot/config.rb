@@ -85,8 +85,20 @@ module Porkadot
       File.expand_path(raw.local.assets_dir)
     end
 
-    def secrets_root_dir
+    # Directory used by the old layout that kept secrets in a separate tree.
+    # It is only read by `porkadot migrate-secrets`.
+    def legacy_secrets_dir
       File.join(self.assets_dir, 'secrets')
+    end
+
+    def ensure_current_assets_layout!
+      return unless File.exist?(self.legacy_secrets_dir)
+      raise Porkadot::Error, "Legacy secrets layout found: #{self.legacy_secrets_dir}. " \
+        "Run `porkadot migrate-secrets --config <porkadot.yaml>` to move secrets into the assets tree."
+    end
+
+    def asset_store
+      @asset_store ||= Porkadot::AssetStore.new(self)
     end
 
     def validate!
@@ -113,10 +125,6 @@ module Porkadot
       File.join(self.target_path, file.to_s)
     end
     alias path asset_path
-
-    def secrets_path file
-      File.join(self.target_secrets_path, file.to_s)
-    end
 
     # Compatibility fallback for legacy implicit config access.
     # Prefer explicit accessors on config classes for public settings.
