@@ -67,6 +67,8 @@ class PorkadotConfigValidatorTest < Minitest::Test
     assert_includes error.message,
       'addons.enabled contains removed addon: storage-version-migrator'
     assert_includes error.message, 'remove it from addons.enabled'
+    assert_includes error.message, 'the next install kubernetes prunes its resources'
+    refute_includes error.message, 'delete its resources'
     refute_includes error.message, 'unknown addon: storage-version-migrator'
   end
 
