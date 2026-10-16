@@ -10,6 +10,19 @@ addons:
   enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver]
 ```
 
+### アドオンを無効にしたとき
+
+`addons.enabled` からアドオンを外して `render kubernetes` → `install kubernetes` を実行すると、`kubectl apply --prune` がそのアドオンのリソースを削除します（`kubernetes.unstable.cloud/installed-by=porkadot` ラベルが付いていて、prune の対象の種類に含まれるもの。[06-assets.md](06-assets.md) の `kubernetes/install.sh` を参照）。
+
+**Namespace は prune しません。** アドオンが作った Namespace（例: metallb の `metallb-system`）はクラスタに残ります。Namespace を消すと中のリソースもすべて消えるため、不要になったことを確かめてから手で消してください。
+
+```bash
+# 中に何も残っていないことを確かめる
+kubectl get all,configmap,secret,serviceaccount -n metallb-system
+# 消す
+kubectl delete namespace metallb-system
+```
+
 ---
 
 ## アドオン一覧
@@ -150,6 +163,12 @@ kubelet のサービング証明書 CSR を自動承認します。`serverTLSBoo
 | ClusterRoleBinding | `storage-version-migration-crd-creator`、`storage-version-migration-initializer`、`storage-version-migration-migrator`、`storage-version-migration-trigger` |
 | ClusterRole | `storage-version-migration-crd-creator`、`storage-version-migration-initializer`、`storage-version-migration-trigger` |
 | CustomResourceDefinition | `storagestates.migration.k8s.io`、`storageversionmigrations.migration.k8s.io` |
+
+このアドオンを入れたクラスタでは、`kube-system` Namespace に `kubernetes.unstable.cloud/installed-by=porkadot` ラベルが付いています。以前の porkadot は Namespace も prune の対象にしていたため、アドオンを外したあとの `install kubernetes` が `kube-system` を消そうとして失敗しました（`namespaces "kube-system" is forbidden: this namespace may not be deleted`）。現在は Namespace を prune しないので、このラベルが残っていても `install kubernetes` は失敗せず、手作業は要りません。ラベルを外したい場合は次のとおりです。
+
+```bash
+kubectl label namespace kube-system kubernetes.unstable.cloud/installed-by-
+```
 
 ---
 

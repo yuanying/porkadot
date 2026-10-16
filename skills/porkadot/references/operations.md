@@ -251,6 +251,23 @@ bootstrap ノードにローカルの kube-apiserver が動いている必要が
 porkadot install kubernetes --config ./porkadot.yaml --node 192.168.1.111
 ```
 
+### prune と Namespace
+
+`install kubernetes` は `kubectl apply --prune -l kubernetes.unstable.cloud/installed-by=porkadot` で適用するので、
+`addons.enabled` から外したアドオンのリソースは削除される。ただし **Namespace は prune しない**
+（中身ごと消える危険な操作で、`kube-system` のように共有される Namespace もあるため）。
+アドオンを無効にしても、そのアドオンの Namespace（例: `metallb-system`、`kubelet-serving-cert-approver`）は残る。
+不要なら中身が空であることを確かめてから手で消す。
+
+```bash
+kubectl get all,configmap,secret,serviceaccount -n metallb-system
+kubectl delete namespace metallb-system
+```
+
+storage-version-migrator を入れていたクラスタでは `kube-system` に porkadot ラベルが付いている。
+以前は prune が `kube-system` を消そうとして `install kubernetes` が失敗したが、
+現在は Namespace を prune しないので手作業は要らない。
+
 ---
 
 ## アセット回帰確認（render 後の差分チェック）

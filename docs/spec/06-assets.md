@@ -172,6 +172,7 @@ kubectl/kustomize を使って Kubernetes マニフェストを適用します�
 2. CRD が確立するまで待機（最大 60 秒）
 3. kustomize で全マニフェストを適用（プルーニング付き）
    - `kubernetes.unstable.cloud/installed-by=porkadot` ラベルで管理リソースを追跡
+   - prune の対象は `--prune-allowlist` で指定した種類に限る（`Kubernetes#prune_allowlist`）。**Namespace は prune しない**。Namespace を消すと中のリソースもすべて消え、`kube-system` のように複数のアドオンが共有する Namespace もあるため。アドオンを無効にしても、そのアドオンが作った Namespace はクラスタに残る（[07-addons.md](07-addons.md) の「アドオンを無効にしたとき」）
    - `KUBE_TARGET` 環境変数が設定されている場合は特定コンポーネントのみ適用
 
 ### `kubelet/{node}/kubelet.service`
