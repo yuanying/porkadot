@@ -10,8 +10,10 @@ module Porkadot
   class Config
     attr_reader :raw
     attr_reader :logger
+    attr_reader :path
 
     def initialize path
+      @path = File.expand_path(path)
       default_config = {}
       open(File.expand_path(File.join(Porkadot::ROOT, 'porkadot', 'default.yaml'))) do |io|
         default_config = YAML::load(io)
@@ -95,6 +97,29 @@ module Porkadot
       return unless File.exist?(self.legacy_secrets_dir)
       raise Porkadot::Error, "Legacy secrets layout found: #{self.legacy_secrets_dir}. " \
         "Run `porkadot migrate-secrets --config <porkadot.yaml>` to move secrets into the assets tree."
+    end
+
+    # Directory of porkadot.yaml. sops runs here to find .sops.yaml.
+    def config_dir
+      File.dirname(self.path)
+    end
+
+    def sops_enabled?
+      self.sops_raw['enabled'] == true
+    end
+
+    # local.sops.config, resolved relative to porkadot.yaml.
+    def sops_config_path
+      path = self.sops_raw['config']
+      path && File.expand_path(path, self.config_dir)
+    end
+
+    def sops_raw
+      (raw.local && raw.local.sops) || {}
+    end
+
+    def sops
+      @sops ||= Porkadot::Sops.new(cwd: self.config_dir, config_path: self.sops_config_path)
     end
 
     def asset_store

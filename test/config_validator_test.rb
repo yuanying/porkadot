@@ -148,6 +148,33 @@ class PorkadotConfigValidatorTest < Minitest::Test
     assert_operator error.message.lines.size, :>=, 3
   end
 
+  def test_sops_is_disabled_by_default
+    config = mock_config
+
+    assert_equal false, config.sops_enabled?
+    assert_nil config.sops_config_path
+  end
+
+  def test_sops_settings
+    config = config_with do |data|
+      data['local'] = { 'sops' => { 'enabled' => true, 'config' => 'sops/.sops.yaml' } }
+    end
+
+    assert_equal true, config.sops_enabled?
+    assert_equal File.join(config.config_dir, 'sops', '.sops.yaml'), config.sops_config_path
+  end
+
+  def test_sops_enabled_must_be_boolean
+    config = config_with do |data|
+      data['local'] = { 'sops' => { 'enabled' => 'yes' } }
+    end
+
+    error = assert_raises(Porkadot::ConfigValidator::Error) do
+      config.validate!
+    end
+    assert_includes error.message, 'local.sops.enabled must be true or false'
+  end
+
   private
 
   def config_with

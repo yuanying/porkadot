@@ -4,12 +4,17 @@ module Porkadot
   # Reads and writes files under assets_dir.
   #
   # Every asset goes through this class so that secrets are handled in one
-  # place: they are written with SECRET_MODE, and a file whose content has
-  # not changed is left untouched.
+  # place:
+  # - secrets are written with SECRET_MODE, and are encrypted with sops when
+  #   local.sops.enabled is true;
+  # - encrypted files are decrypted in memory when read, whatever the setting;
+  # - a file whose plain content has not changed is left untouched, so that
+  #   re-rendering does not produce a new ciphertext every time.
   class AssetStore
     SECRET_MODE = 0600
 
     attr_reader :config
+    attr_writer :sops
 
     def initialize config
       @config = config
@@ -19,20 +24,28 @@ module Porkadot
       config.logger
     end
 
+    def sops
+      @sops ||= config.sops
+    end
+
     # Returns the plain content of path.
     def read path
-      File.binread(path)
+      content = File.binread(path)
+      return content unless Porkadot::Sops.encrypted?(content)
+      self.sops.decrypt(content, path: path).b
     end
 
     # Writes content to path and returns true, or returns false when path
-    # already holds the same content.
+    # already holds the same content in the expected form.
     def write path, content, secret: false
       content = content.to_s.b
-      if File.file?(path) && self.read(path).b == content
+      encrypt = secret && config.sops_enabled?
+      if File.file?(path) && self.up_to_date?(path, content, encrypt)
         File.chmod(SECRET_MODE, path) if secret
         return false
       end
 
+      content = self.sops.encrypt(content, path: path) if encrypt
       FileUtils.mkdir_p(File.dirname(path))
       self.write_file(path, content, secret: secret)
       return true
@@ -48,6 +61,14 @@ module Porkadot
     end
 
     protected
+
+    def up_to_date? path, content, encrypt
+      current = File.binread(path)
+      encrypted = Porkadot::Sops.encrypted?(current)
+      return false if encrypt && !encrypted
+      current = self.sops.decrypt(current, path: path).b if encrypted
+      current == content
+    end
 
     def write_file path, content, secret: false
       mode = secret ? SECRET_MODE : 0666
