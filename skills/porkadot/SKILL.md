@@ -36,6 +36,13 @@ CONFIG="<user-specified-path>"
 
 設定ファイルが存在しない場合はエラーとし、ユーザーにパスを確認する。
 
+### secret と sops
+
+secret（証明書・鍵・kubeconfig 等）は `assets/<group>/` に通常の asset と一緒に出力される。
+`local.sops.enabled: true` なら sops で暗号化され、install 時にメモリ上で復号して配布される。
+`assets/secrets/` が残っているとほとんどのコマンドが止まるので、`migrate-secrets` で移行する。
+詳細は `references/operations.md` の「secret の扱いと sops による暗号化」を参照。
+
 ## フルライフサイクル操作
 
 詳細な操作手順は `references/operations.md` を参照。
