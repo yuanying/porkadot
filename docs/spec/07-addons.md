@@ -155,7 +155,7 @@ kubelet のサービング証明書 CSR を自動承認します。`serverTLSBoo
 
 `addons.enabled` に残っていると、設定の検証エラー（`addons.enabled contains removed addon: storage-version-migrator ...`）になります。`addons.enabled` から外してください。
 
-既存のクラスタには次のリソースが残ります。古い生成マニフェストには `Namespace kube-system` が含まれるので、`kubectl delete -f` / `kubectl delete -k` で消すと kube-system ごと消えます。使わずに、名前を指定して消してください。
+既存のクラスタでは、アドオンを外して `render kubernetes` → `install kubernetes` を実行すると、prune が次のリソースを削除します。いずれも `kubernetes.unstable.cloud/installed-by=porkadot` ラベルが付いていて prune の対象の種類なので、手で消す必要はありません。CRD が消えると、そのカスタムリソース（`StorageState`、`StorageVersionMigration`）も消えます。
 
 | 種類 | 名前 |
 |------|------|
@@ -164,11 +164,15 @@ kubelet のサービング証明書 CSR を自動承認します。`serverTLSBoo
 | ClusterRole | `storage-version-migration-crd-creator`、`storage-version-migration-initializer`、`storage-version-migration-trigger` |
 | CustomResourceDefinition | `storagestates.migration.k8s.io`、`storageversionmigrations.migration.k8s.io` |
 
-このアドオンを入れたクラスタでは、`kube-system` Namespace に `kubernetes.unstable.cloud/installed-by=porkadot` ラベルが付いています。以前の porkadot は Namespace も prune の対象にしていたため、アドオンを外したあとの `install kubernetes` が `kube-system` を消そうとして失敗しました（`namespaces "kube-system" is forbidden: this namespace may not be deleted`）。現在は Namespace を prune しないので、このラベルが残っていても `install kubernetes` は失敗せず、手作業は要りません。ラベルを外したい場合は次のとおりです。
+古い生成マニフェストにはこれ以外に `Namespace kube-system` が含まれていたため、このアドオンを入れたクラスタでは `kube-system` にも porkadot ラベルが付いています。これは prune されずに残ります（porkadot は Namespace を prune しません。「アドオンを無効にしたとき」を参照）。
+
+Namespace を prune の対象にしていた古い porkadot では、このアドオンを外したあとの `install kubernetes` が、上のリソースを削除したあと `kube-system` を消そうとして失敗しました（`namespaces "kube-system" is forbidden: this namespace may not be deleted`、exit 1）。現在の porkadot ではこのラベルが残っていても `install kubernetes` は失敗せず、手作業は要りません。ラベルを外したい場合は次のとおりです。
 
 ```bash
 kubectl label namespace kube-system kubernetes.unstable.cloud/installed-by-
 ```
+
+`install kubernetes` を使わずに手で消す場合は、上の表のリソースを名前を指定して消してください。古い生成マニフェストに `kubectl delete -f` / `kubectl delete -k` を使うと、`kube-system` ごと消えます。
 
 ---
 
