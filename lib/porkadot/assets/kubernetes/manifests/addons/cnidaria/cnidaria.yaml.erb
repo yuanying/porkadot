@@ -71,19 +71,12 @@ spec:
         app.kubernetes.io/name: cnidaria
     spec:
       hostNetwork: true
+      # The pod network depends on this daemon, so it has to run on every node,
+      # whatever taints the node carries. A node without a CNI config is NotReady
+      # and tainted node.kubernetes.io/not-ready:NoSchedule; not tolerating that
+      # leaves the node waiting for a daemon that can never be scheduled.
       tolerations:
-      - key: node-role.kubernetes.io/control-plane
-        operator: Exists
-        effect: NoSchedule
-      - key: node-role.kubernetes.io/master
-        operator: Exists
-        effect: NoSchedule
-      - key: node.kubernetes.io/not-ready
-        operator: Exists
-        effect: NoExecute
-      - key: node.kubernetes.io/network-unavailable
-        operator: Exists
-        effect: NoSchedule
+      - operator: Exists
       priorityClassName: system-node-critical
       nodeSelector:
         kubernetes.io/os: linux

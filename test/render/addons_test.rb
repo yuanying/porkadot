@@ -58,6 +58,12 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert_equal '10m', container['resources']['requests']['cpu']
   end
 
+  def test_cnidaria_daemonset_tolerates_every_taint
+    render_addons(['cnidaria'])
+
+    assert_equal [{ 'operator' => 'Exists' }], pod_spec(cnidaria_daemonset)['tolerations']
+  end
+
   def test_cnidaria_objects_live_in_kube_system
     render_addons(['cnidaria'])
 
