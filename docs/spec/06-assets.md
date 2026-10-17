@@ -86,7 +86,7 @@ secret として扱うファイルは次のとおりです。ローカルでは�
 
 ```
 assets/
-├── certs/                       # PKI（render certs が生成）
+├── certs/                       # PKI（render certs が生成。不足分は render bootstrap も生成）
 │   ├── kubernetes/              # Kubernetes CA・apiserver・kubelet-client・admin・SA 鍵・front-proxy
 │   └── etcd/                    # etcd CA・etcd-client
 ├── kubelet/
@@ -98,7 +98,7 @@ assets/
 │           └── etcd.key
 ├── bootstrap/
 │   ├── kubelet/bootstrap.key
-│   └── bootstrap/secrets/       # certs/ のコピー（bootstrap node に転送）
+│   └── bootstrap/secrets/       # certs/ の必要分のコピー（bootstrap node に転送）
 └── kubernetes/
     ├── kubeconfig.yaml          # admin kubeconfig
     ├── install.secrets.sh       # secret マニフェストの適用スクリプト

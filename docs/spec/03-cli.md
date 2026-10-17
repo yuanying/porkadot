@@ -86,7 +86,9 @@ porkadot render etcd [--node <node-name>]
 porkadot render bootstrap
 ```
 
-生成内容: ブートストラップ用静的 Pod マニフェスト（apiserver, controller-manager, scheduler, proxy）, `kubeconfig-bootstrap.yaml`, `install.sh`, `cleanup.sh`
+生成内容: ブートストラップ用静的 Pod マニフェスト（apiserver, controller-manager, scheduler, proxy）, `kubeconfig-bootstrap.yaml`, `install.sh`, `cleanup.sh`, `bootstrap/secrets/`（証明書・鍵のコピー）
+
+`assets/certs/` に無い証明書・鍵は生成し、既存のものは作り直しません。`render certs` を先に実行する必要はありません。
 
 ### `porkadot render kubernetes`
 

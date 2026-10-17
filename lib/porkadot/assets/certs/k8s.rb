@@ -19,6 +19,19 @@ class Porkadot::Assets::Certs::Kubernetes
     '/O=system:masters/CN=admin'
   end
 
+  def prepare(refresh_ca: false, refresh: false)
+    super
+    logger.info "--> API server key and certs"
+    self.apiserver_key
+    self.apiserver_cert(refresh)
+    logger.info "--> Kubelet client key and certs"
+    self.kubelet_client_key
+    self.kubelet_client_cert(refresh)
+    logger.info "--> Private key for signing service account tokens"
+    self.sa_private_key
+    self.sa_public_key
+  end
+
   def apiserver_key
     @apiserver_key ||= private_key(config.apiserver_key_path)
     return @apiserver_key

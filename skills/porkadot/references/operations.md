@@ -37,7 +37,8 @@ porkadot render bootstrap --config ./porkadot.yaml
 porkadot render kubernetes --config ./porkadot.yaml
 ```
 
-`render all` や `render certs` は証明書が毎回再生成されるため使わないこと。
+足りない証明書・鍵は render の中で作られる（既にあるものは作り直さない）ので、先に `render certs` を実行する必要はない。
+`render bootstrap` も単独で、bootstrap の secrets に必要な証明書・鍵をすべて揃える。
 
 ### Step 2: setup-node（全ノード）
 
@@ -147,6 +148,9 @@ porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
 - デフォルトでは CA 証明書も再生成される
 - `--no-ca` 指定時は CA 証明書を変更せず、既存CAでリーフ証明書だけ再発行する
 - CA 秘密鍵変更は対象外。将来の CA ローテーションとして扱う
+
+稼働中のクラスターで `render all` や `render certs` を実行すると証明書が再生成される（`--no-ca` を付けなければ CA も作り直す）。
+証明書を更新するとき以外は使わず、`render kubelet` / `etcd` / `bootstrap` / `kubernetes` を個別に実行すること。これらは既存の証明書・鍵を作り直さない。
 
 ### 証明書更新手順
 

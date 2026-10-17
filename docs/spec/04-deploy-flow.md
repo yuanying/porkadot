@@ -57,6 +57,9 @@ etcd メンバーの設定を生成します。
 - ブートストラップ用 kube-proxy
 - `kubeconfig-bootstrap.yaml`（`127.0.0.1:6443` 向け）
 - `install.sh` / `cleanup.sh`
+- `bootstrap/secrets/`（ブートストラップ用コントロールプレーンが読む証明書・鍵のコピー）
+
+secrets にコピーする証明書・鍵は一覧で決まっています（etcd の CA・etcd-client、Kubernetes の CA・apiserver・kubelet-client・admin・SA 鍵、front-proxy の CA・client）。`assets/certs/` に無いものはその場で生成し、既にあるものは作り直さずに使います。そのため `render certs` を先に実行していなくても、`render bootstrap` だけで secrets が揃います。
 
 ### 5. `render kubernetes`
 

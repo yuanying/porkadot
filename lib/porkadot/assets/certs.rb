@@ -19,6 +19,17 @@ module Porkadot; module Assets
       Base64.strict_encode64(self.to_pem(key_or_cert))
     end
 
+    # Creates the CA and client key pairs, keeping files that already exist
+    # unless refresh_ca / refresh is given.
+    def prepare(refresh_ca: false, refresh: false)
+      logger.info "--> CA key and certs"
+      self.ca_key
+      self.ca_cert(refresh_ca)
+      logger.info "--> Client key and certs"
+      self.client_key
+      self.client_cert(refresh)
+    end
+
     def ca_name
       raise "Not implemented"
     end
