@@ -7,6 +7,10 @@ module Porkadot; module Assets
 
   module CertsUtils
 
+    def asset_store
+      self.global_config.asset_store
+    end
+
     def to_pem(key_or_cert)
       self.send(key_or_cert.to_sym).to_pem
     end
@@ -28,7 +32,7 @@ module Porkadot; module Assets
       return @ca_cert if defined?(@ca_cert)
       if File.file?(config.ca_cert_path) and !refresh
         self.logger.debug("--> CA cert already exists, skipping: #{config.ca_cert_path}")
-        @ca_cert = OpenSSL::X509::Certificate.new(File.read(config.ca_cert_path))
+        @ca_cert = OpenSSL::X509::Certificate.new(asset_store.read(config.ca_cert_path))
       else
         @ca_cert = _ca_cert(config.ca_cert_path, self.ca_name, self.ca_key)
       end
@@ -48,7 +52,7 @@ module Porkadot; module Assets
       return @client_cert if defined?(@client_cert)
       if File.file?(config.client_cert_path) and !refresh
         self.logger.debug("--> Client cert already exists, skipping: #{config.client_cert_path}")
-        @client_cert = OpenSSL::X509::Certificate.new(File.read(config.client_cert_path))
+        @client_cert = OpenSSL::X509::Certificate.new(asset_store.read(config.client_cert_path))
       else
         @client_cert = _client_cert(config.client_cert_path, self.client_name, self.client_key, self.ca_cert(false), self.ca_key)
       end
@@ -58,14 +62,10 @@ module Porkadot; module Assets
     def private_key(path)
       if File.file?(path)
         self.logger.debug("--> Private key already exists, skipping: #{path}")
-        key = OpenSSL::PKey::RSA.new File.read(path)
+        key = OpenSSL::PKey::RSA.new asset_store.read(path)
       else
-        dir = File.dirname(path)
-        FileUtils.mkdir_p(dir)
         key = OpenSSL::PKey::RSA.new 2048
-        File.open path, 'wb' do |f|
-          f.write key.export(nil, nil)
-        end
+        asset_store.write(path, key.export(nil, nil), secret: true)
       end
       return key
     end
@@ -75,11 +75,7 @@ module Porkadot; module Assets
       if File.file?(path)
         self.logger.debug("--> Public key already exists, skipping: #{path}")
       else
-        dir = File.dirname(path)
-        FileUtils.mkdir_p(dir)
-        File.open path, 'wb' do |f|
-          f.write public_key.export(nil, nil)
-        end
+        asset_store.write(path, public_key.export(nil, nil), secret: true)
       end
       return public_key
     end
@@ -117,14 +113,12 @@ module Porkadot; module Assets
       root_ca.add_extension(ef.create_extension("authorityKeyIdentifier","keyid:always",false))
       root_ca.sign(root_key, OpenSSL::Digest::SHA256.new)
 
-      File.open path, 'wb' do |f|
-        f.write root_ca.to_pem
-      end
+      asset_store.write(path, root_ca.to_pem, secret: true)
 
       return root_ca
     end
 
-    def _client_cert(path, name, client_key, ca_cert, ca_key)
+    def _client_cert(path, name, client_key, ca_cert, ca_key, secret: true)
       cert = unsigned_cert(name, client_key, ca_cert, 1 * 365 * 24 * 60 * 60)
 
       ef = OpenSSL::X509::ExtensionFactory.new
@@ -135,9 +129,7 @@ module Porkadot; module Assets
       cert.add_extension(ef.create_extension("extendedKeyUsage","clientAuth",true))
       cert.sign(ca_key, OpenSSL::Digest::SHA256.new)
 
-      File.open path, 'wb' do |f|
-        f.write cert.to_pem
-      end
+      asset_store.write(path, cert.to_pem, secret: secret)
 
       return cert
     end

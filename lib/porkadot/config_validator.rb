@@ -29,6 +29,7 @@ module Porkadot
       validate_cidrs(errors)
       validate_addons(errors)
       validate_connection(errors)
+      validate_sops(errors)
 
       errors
     end
@@ -132,6 +133,16 @@ module Porkadot
 
       if enabled.include?('flannel') && enabled.include?('cnidaria')
         errors << 'addons.enabled must not contain both flannel and cnidaria'
+      end
+    end
+
+    def validate_sops(errors)
+      sops = config.sops_raw
+      unless [true, false].include?(sops['enabled'])
+        errors << 'local.sops.enabled must be true or false'
+      end
+      if sops['config'] && !sops['config'].is_a?(String)
+        errors << 'local.sops.config must be a String'
       end
     end
 

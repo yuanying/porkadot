@@ -1,7 +1,8 @@
 module Porkadot; module Install
   class RotateCerts
     ETCD_TEMP = File.join(Porkadot::Install::KUBE_TEMP, 'rotate-certs-etcd')
-    ETCD_SECRETS_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.rotate-certs-etcd')
+    # Used by porkadot before secrets were merged into the assets tree.
+    LEGACY_ETCD_SECRETS_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.rotate-certs-etcd')
 
     include SSHKit::DSL
     attr_reader :global_config
@@ -40,9 +41,10 @@ module Porkadot; module Install
       hosts = kubelet_hosts(node)
       ca_path = global_config.kubelet_default.ca_crt_path
 
+      uploader = Porkadot::Install::Uploader.new(global_config)
       on(hosts) do
         execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
-        upload! ca_path, File.join(Porkadot::Install::KUBE_TEMP, 'ca.crt')
+        uploader.upload_file(self, ca_path, File.join(Porkadot::Install::KUBE_TEMP, 'ca.crt'))
 
         as user: 'root' do
           execute(:mkdir, '-p', '/etc/kubernetes/pki')
@@ -89,16 +91,11 @@ module Porkadot; module Install
     private
 
     def install_etcd_assets host
+      uploader = Porkadot::Install::Uploader.new(global_config)
       on(host) do
         execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
-        if test("[ -d #{ETCD_TEMP} ]")
-          execute(:rm, '-rf', ETCD_TEMP)
-          execute(:rm, '-rf', ETCD_SECRETS_TEMP)
-        end
-
-        upload! host.config.target_path, ETCD_TEMP, recursive: true
-        upload! host.config.target_secrets_path, ETCD_SECRETS_TEMP, recursive: true
-        execute(:cp, '-r', ETCD_SECRETS_TEMP + '/*', ETCD_TEMP)
+        execute(:rm, '-rf', ETCD_TEMP, LEGACY_ETCD_SECRETS_TEMP)
+        uploader.upload_tree(self, host.config.target_path, ETCD_TEMP)
 
         as user: 'root' do
           execute(:bash, File.join(ETCD_TEMP, 'addons', 'etcd', 'install.sh'))
@@ -129,8 +126,7 @@ module Porkadot; module Install
     def restart_kubernetes_components hosts
       vip = global_config.k8s.control_plane_endpoint
       on(hosts) do
-        kubeconfig = File.join(Porkadot::Install::Kubernetes::KUBE_SECRETS_TEMP, 'kubeconfig.yaml')
-        with KUBECONFIG: kubeconfig do
+        with KUBECONFIG: Porkadot::Install::Kubernetes::KUBECONFIG do
           execute(:"/opt/bin/kubectl", '-n', 'kube-system', 'rollout', 'restart', 'daemonset/kube-apiserver')
           execute(:"/opt/bin/kubectl", '-n', 'kube-system', 'rollout', 'restart', 'deployment/kube-controller-manager')
           execute(:"/opt/bin/kubectl", '-n', 'kube-system', 'rollout', 'restart', 'deployment/kube-scheduler')

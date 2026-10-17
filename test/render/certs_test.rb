@@ -47,6 +47,6 @@ class PorkadotRenderCertsTest < Minitest::Test
   end
 
   def read_cert(path)
-    File.read(File.join(@tmpdir, 'assets', 'secrets', 'certs', path))
+    File.read(File.join(@tmpdir, 'assets', 'certs', path))
   end
 end

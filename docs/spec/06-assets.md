@@ -12,14 +12,7 @@ assets/
 │   ├── install-deps.sh         # 依存関係インストールスクリプト
 │   ├── install-pkgs.sh         # パッケージインストールスクリプト
 │   ├── setup-node.sh           # ノード OS セットアップスクリプト
-│   ├── setup-containerd.sh     # containerd セットアップスクリプト
-│   └── addons/                 # アドオン（etcd 等）
-│       └── etcd/
-│           ├── {node1}/        # etcd メンバーごと
-│           │   ├── etcd-server.yaml   # etcd 静的 Pod マニフェスト
-│           │   ├── etcd.env           # etcd 環境変数
-│           │   └── install.sh         # etcd インストールスクリプト
-│           └── {node2}/
+│   └── setup-containerd.sh     # containerd セットアップスクリプト
 │
 ├── kubelet/                    # ノードごとの kubelet 設定
 │   ├── {node1}/
@@ -28,7 +21,11 @@ assets/
 │   │   ├── bootstrap-kubelet.conf   # TLS ブートストラップ用 kubeconfig
 │   │   ├── bootstrap.crt            # TLS ブートストラップ用クライアント証明書
 │   │   ├── initiatorname.iscsi      # iSCSI 設定
-│   │   └── metadata.json            # ノードメタデータ
+│   │   ├── metadata.json            # ノードメタデータ
+│   │   └── addons/etcd/             # etcd メンバーのみ
+│   │       ├── etcd-server.yaml     # etcd 静的 Pod マニフェスト
+│   │       ├── etcd.env             # etcd 環境変数
+│   │       └── install.sh           # etcd インストールスクリプト
 │   └── {node2}/
 │
 ├── bootstrap/                  # ブートストラップ用コントロールプレーン
@@ -81,44 +78,43 @@ assets/
                 └── kustomization.yaml
 ```
 
-## secrets/ ディレクトリ
+## secret ファイル
 
-TLS 証明書・秘密鍵・kubeconfig 等の秘密情報は `local.assets_dir/secrets/` に格納されます。デフォルトでは `./assets/secrets/` です。
+TLS 証明書・秘密鍵・kubeconfig 等の秘密情報（secret）も、通常の asset と同じツリーに出力されます。以前の porkadot は `assets/secrets/` に分けて出力していました。そのツリーが残っている場合は `porkadot migrate-secrets` で移行します（[CLI](03-cli.md#porkadot-migrate-secrets--secret-の移行)）。
+
+secret として扱うファイルは次のとおりです。ローカルではモード 0600 で書き込まれ、`local.sops.enabled: true` のときは sops で暗号化されます（[設定](02-config.md#local-セクション)）。
 
 ```
-assets/secrets/
-├── certs/
-│   ├── kubernetes/
-│   │   ├── ca.key / ca.crt
-│   │   ├── apiserver.key / apiserver.crt
-│   │   ├── kubelet-client.key / kubelet-client.crt
-│   │   ├── admin.key / admin.crt
-│   │   ├── sa.key / sa.pub
-│   │   └── front-proxy/
-│   │       ├── ca.key / ca.crt
-│   │       └── client.key / client.crt
-│   └── etcd/
-│       ├── ca.key / ca.crt
-│       ├── client.key / client.crt
-│       └── {node}/
-│           └── etcd.key / etcd.crt
-├── kubelet-default/
-│   └── addons/etcd/{node}/
-│       └── ca.crt
+assets/
+├── certs/                       # PKI（render certs が生成）
+│   ├── kubernetes/              # Kubernetes CA・apiserver・kubelet-client・admin・SA 鍵・front-proxy
+│   └── etcd/                    # etcd CA・etcd-client
 ├── kubelet/
 │   └── {node}/
-│       └── bootstrap.key
+│       ├── bootstrap.key        # TLS ブートストラップ用秘密鍵
+│       └── addons/etcd/         # etcd メンバーのみ
+│           ├── ca.crt
+│           ├── etcd.crt
+│           └── etcd.key
 ├── bootstrap/
-│   ├── bootstrap/
-│   │   └── kubeconfig-bootstrap.yaml
-│   └── secrets/               # 全証明書のコピー（bootstrap node に転送）
+│   ├── kubelet/bootstrap.key
+│   └── bootstrap/secrets/       # certs/ のコピー（bootstrap node に転送）
 └── kubernetes/
-    ├── kubeconfig.yaml        # admin kubeconfig
+    ├── kubeconfig.yaml          # admin kubeconfig
+    ├── install.secrets.sh       # secret マニフェストの適用スクリプト
     └── manifests/
         ├── kube-apiserver.secrets.yaml
-        ├── kube-controller-manager.secrets.yaml
-        └── install.secrets.sh
+        └── kube-controller-manager.secrets.yaml
 ```
+
+### sops による暗号化
+
+`local.sops.enabled: true` のとき、上の secret は sops の binary 形式で暗号化されます。
+
+- ファイル名は変わりません。中身は `data` と `sops` をキーに持つ JSON になります。YAML の secret も同じ形式です（sops の YAML 形式は復号すると元のバイト列に戻らないため）。
+- 中身にトップレベルの `sops` キーがあるファイルを暗号化済みとみなします。暗号化済みのファイルは、`local.sops.enabled` の値にかかわらず読み込み時に復号されます。
+- 再 render では既存ファイルを復号して比較し、内容が同じなら書き込みません。暗号文が無意味に変わらないため、assets を git で管理できます。
+- install 時は各ファイルをメモリ上で復号して upload します。ノードには暗号化前と同じ内容が届きます。平文はローカルディスクに書かれません。
 
 ## 主要ファイルの説明
 
@@ -190,7 +186,7 @@ kubelet の systemd サービスユニットです。
 kubelet の初回起動時に使用する kubeconfig です。
 
 - サーバー: `{control_plane_endpoint}`（通常は VIP）
-- クライアント証明書: `/etc/kubernetes/pki/bootstrap.{crt,key}`（生成時は証明書が `assets/kubelet/{node}/bootstrap.crt`、秘密鍵が `assets/secrets/kubelet/{node}/bootstrap.key`）
+- クライアント証明書: `/etc/kubernetes/pki/bootstrap.{crt,key}`（生成時は `assets/kubelet/{node}/bootstrap.{crt,key}`）
 - CA データ: Kubernetes CA 証明書（Base64 エンコード埋め込み）
 
 ### `bootstrap/manifests/kube-apiserver.bootstrap.yaml`

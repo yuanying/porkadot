@@ -53,9 +53,6 @@ module Porkadot; module Assets
       unless File.directory?(config.addon_path)
         FileUtils.mkdir_p(config.addon_path)
       end
-      unless File.directory?(config.addon_secrets_path)
-        FileUtils.mkdir_p(config.addon_secrets_path)
-      end
 
       render_ca_crt
       render_erb 'setup-node.sh'
@@ -67,9 +64,7 @@ module Porkadot; module Assets
 
     def render_ca_crt
       logger.info "----> ca.crt"
-      open(config.ca_crt_path, 'w') do |out|
-        out.write self.certs.ca_cert(false).to_pem
-      end
+      global_config.asset_store.write(config.ca_crt_path, self.certs.ca_cert(false).to_pem)
     end
   end
 
@@ -93,9 +88,6 @@ module Porkadot; module Assets
       logger.info "--> Rendering #{config.name} node"
       unless File.directory?(config.target_path)
         FileUtils.mkdir_p(config.target_path)
-      end
-      unless File.directory?(config.target_secrets_path)
-        FileUtils.mkdir_p(config.target_secrets_path)
       end
       ca_data = certs.ca_cert.to_pem
       ca_data = Base64.strict_encode64(ca_data)
@@ -123,14 +115,15 @@ module Porkadot; module Assets
       return @bootstrap_cert if defined?(@bootstrap_cert)
       if File.file?(config.bootstrap_cert_path) and !refresh
         self.logger.debug("--> Bootstrap cert already exists, skipping: #{config.bootstrap_cert_path}")
-        @bootstrap_cert = OpenSSL::X509::Certificate.new(File.read(config.bootstrap_cert_path))
+        @bootstrap_cert = OpenSSL::X509::Certificate.new(global_config.asset_store.read(config.bootstrap_cert_path))
       else
         @bootstrap_cert = certs._client_cert(
           config.bootstrap_cert_path,
           "/O=porkadot:node-bootstrappers/CN=node-bootstrapper:#{config.name}",
           self.bootstrap_key,
           self.certs.ca_cert(false),
-          self.certs.ca_key
+          self.certs.ca_key,
+          secret: false
         )
       end
       return @bootstrap_cert

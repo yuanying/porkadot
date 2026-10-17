@@ -18,6 +18,7 @@ porkadot <subcommand> [options] --config <config.yaml>
 - `install kubernetes [all|apiserver|controller-manager|scheduler|proxy]` — kubernetes マニフェストの再適用
 - `rotate-certs [all|etcd|kubernetes|kubelet-ca]` — レンダリング済み証明書を安全順に反映
 - `set-config` — kubeconfig のエンドポイントを VIP に切り替え
+- `migrate-secrets` — 旧レイアウト（`assets/secrets/`）の secret を `assets/<group>/` へ移動（sops 有効時は暗号化）
 
 オプション:
 - `--config <path>` — 設定ファイルのパス（デフォルト: ./porkadot.yaml）
@@ -270,6 +271,56 @@ storage-version-migrator を入れていたクラスタでは `kube-system` に 
 
 ---
 
+## secret の扱いと sops による暗号化
+
+証明書・秘密鍵・kubeconfig・secret マニフェスト・`install.secrets.sh` は、通常の asset と同じ `assets/<group>/` に出力される（モード 0600）。
+
+- `porkadot.yaml` に `local.sops.enabled: true` を設定すると、これらは sops の binary 形式で暗号化される。ファイル名は変わらず、中身が `data` と `sops` を持つ JSON になる。
+- 鍵は `porkadot.yaml` と同じディレクトリ（または `local.sops.config`）の `.sops.yaml` の `creation_rules` で決まる。`path_regex` は `assets/.*` のように `.sops.yaml` からの相対パスで書く。
+- render・install・rotate-certs・set-config を実行する環境では、sops が復号できるよう鍵（age なら `SOPS_AGE_KEY_FILE` など）を用意する。
+- install 時はメモリ上で復号して upload するので、ノードには平文が届く。ローカルに平文は書かれない。
+- 再 render で内容が変わらない secret は書き換えられない（暗号文の無意味な差分が出ない）。
+
+### secret を手で復号・編集するとき
+
+secret は拡張子に関係なく binary 形式で暗号化されているので、sops に形式を明示する。
+
+```bash
+# 復号（標準出力に元のバイト列がそのまま出る）
+sops decrypt --input-type json --output-type binary assets/kubernetes/kubeconfig.yaml
+
+# 編集（binary 形式のまま暗号化し直される）
+sops edit --input-type binary --output-type binary assets/kubernetes/kubeconfig.yaml
+```
+
+拡張子が `.yaml` のファイル（`kubeconfig.yaml`、`*.secrets.yaml`）は、sops が拡張子から YAML 形式とみなす。
+
+- `sops -d <file>` だけでは、中身全体が 1 つの文字列として `data: |+` で包まれた YAML が出力される。そのまま kubectl などに渡せない。
+- `sops edit <file>` だけでは、エディタに `data: |+` で包まれた文字列が開き、保存すると YAML 形式で暗号化し直される。中身も JSON ではなくなる。
+  porkadot はこの形式も復号できるが、`data:` で包まれた YAML が平文として扱われ、ノードに届く内容が壊れる。
+
+`.crt` / `.key` / `.sh` などは sops が binary 形式とみなすので、オプションなしでも正しく復号・編集できる。
+
+### 旧レイアウト（`assets/secrets/`）からの移行
+
+`assets/secrets/` が残っていると、render / install / rotate-certs / set-config / setup-node / setup-containerd は
+`Legacy secrets layout found` で止まる。etcd サブコマンドは止まらない。
+
+```bash
+# sops を使う場合は先に local.sops.enabled と .sops.yaml を用意する
+porkadot migrate-secrets --config ./porkadot.yaml
+
+# 新しいレイアウト用のスクリプトを生成し直す（render certs は不要、CA を作り直さないこと）
+porkadot render kubelet --config ./porkadot.yaml
+porkadot render etcd --config ./porkadot.yaml
+porkadot render bootstrap --config ./porkadot.yaml
+porkadot render kubernetes --config ./porkadot.yaml
+```
+
+移動先に内容の異なるファイルがあると、何も変更せずにエラーで止まる。どちらが正しいかを確認してから片方を退避して再実行する。
+
+---
+
 ## アセット回帰確認（render 後の差分チェック）
 
 ```bash
@@ -286,3 +337,5 @@ porkadot render kubernetes --config ./porkadot.yaml
 # 差分確認
 diff -ru "$tmp_before/assets" assets
 ```
+
+sops 有効時、暗号化された secret は `diff -ru` では暗号文の比較になる。内容が変わらない secret は書き換えられないので差分は出ない。差分が出た secret の中身は `sops decrypt --input-type json --output-type binary <file>` で確認する。

@@ -1,5 +1,9 @@
 local:
   assets_dir: ./assets
+  sops:
+    # Encrypt secrets in assets_dir with sops. Keys are resolved from
+    # .sops.yaml next to porkadot.yaml, or from `config` if set.
+    enabled: false
 
 connection:
   user: ubuntu

@@ -303,3 +303,24 @@ porkadot を実行するローカルマシンの設定です。
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `assets_dir` | `./assets` | 生成アセットの出力ディレクトリ |
+| `sops.enabled` | `false` | secret を sops で暗号化して書き込む |
+| `sops.config` | なし | sops の設定ファイル（`.sops.yaml`）のパス。相対パスは `porkadot.yaml` のあるディレクトリ基準 |
+
+`assets_dir` の相対パスは、porkadot を実行したディレクトリを基準に解決されます。
+
+### `local.sops`
+
+`sops.enabled: true` にすると、porkadot が secret として出力するファイル（証明書・秘密鍵・kubeconfig・secret マニフェスト等）を sops で暗号化して書き込みます。暗号化した assets は git で管理できます。
+
+- sops は `porkadot.yaml` のあるディレクトリで実行され、通常どおり `.sops.yaml` を探します。`sops.config` を指定するとそのファイルを使います。
+- 鍵（age recipients 等）は `.sops.yaml` の `creation_rules` で指定します。`path_regex` は `.sops.yaml` のあるディレクトリからの相対パス（例: `assets/.*`）と照合されます。
+- 復号に必要な鍵（age なら `SOPS_AGE_KEY_FILE` など）は、render・install・set-config を実行する環境で sops が使えるように設定してください。
+- 無効のときも、すでに暗号化されたファイルは読み込み時に復号されます。
+
+```yaml
+local:
+  assets_dir: ./assets
+  sops:
+    enabled: true
+```
+

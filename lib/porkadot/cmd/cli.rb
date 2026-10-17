@@ -59,6 +59,11 @@ module Porkadot; module Cmd
       ""
     end
 
+    desc "migrate-secrets", "Move secrets of the legacy assets/secrets layout into the assets tree"
+    def migrate_secrets
+      Porkadot::Cmd::MigrateSecrets.new(self.loaded_config).run
+    end
+
     desc "set-config", "Set cluster to kubeconfig"
     def set_config
       name = config.k8s.cluster_name

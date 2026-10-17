@@ -294,6 +294,20 @@ porkadot setup-node [--node <node-name>] [--force] [--bootstrap]
 
 ---
 
+## `porkadot migrate-secrets` — secret の移行
+
+以前の porkadot が `assets/secrets/<group>/...` に出力した secret を、`assets/<group>/...` へ移動します。`local.sops.enabled: true` なら移動と同時に暗号化します。
+
+```
+porkadot migrate-secrets [--config <path>]
+```
+
+- 移動先に内容の異なるファイルがある場合は、何も変更せずにエラーで終了します。
+- `assets/secrets/` が残っている間、`render`・`install`・`rotate-certs`・`set-config`・`setup-node`・`setup-containerd` はエラーで止まります（`etcd` サブコマンドは止まりません）。
+- 移行後は `render kubelet`・`render etcd`・`render bootstrap`・`render kubernetes` を実行し、新しいレイアウト用のスクリプトを生成し直してください。`render certs` は CA を作り直すため不要です。
+
+---
+
 ## `porkadot set-config` — kubeconfig 設定
 
 kubectl の kubeconfig にクラスタ情報を設定します。コントロールプレーンエンドポイント（VIP）向けに切り替えます。

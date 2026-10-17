@@ -28,7 +28,7 @@ class Porkadot::Assets::Certs::Kubernetes
     return @apiserver_cert if defined?(@apiserver_cert)
     if File.file?(config.apiserver_cert_path) and !refresh
       self.logger.debug("--> APIserver cert already exists, skipping: #{config.apiserver_cert_path}")
-      @apiserver_cert = OpenSSL::X509::Certificate.new(File.read(config.apiserver_cert_path))
+      @apiserver_cert = OpenSSL::X509::Certificate.new(asset_store.read(config.apiserver_cert_path))
     else
       @apiserver_cert = _apiserver_cert(config.apiserver_cert_path, self.apiserver_key, self.ca_cert, self.ca_key)
     end
@@ -44,7 +44,7 @@ class Porkadot::Assets::Certs::Kubernetes
     return @kubelet_client_cert if defined?(@kubelet_client_cert)
     if File.file?(config.kubelet_client_cert_path) and !refresh
       self.logger.debug("--> Kubelet client cert already exists, skipping: #{config.kubelet_client_cert_path}")
-      @kubelet_client_cert = OpenSSL::X509::Certificate.new(File.read(config.kubelet_client_cert_path))
+      @kubelet_client_cert = OpenSSL::X509::Certificate.new(asset_store.read(config.kubelet_client_cert_path))
     else
       @kubelet_client_cert = _client_cert(
         config.kubelet_client_cert_path,
@@ -80,9 +80,7 @@ class Porkadot::Assets::Certs::Kubernetes
     cert.add_extension(ef.create_extension("subjectAltName", self.config.additional_sans.join(','), true))
     cert.sign(ca_key, OpenSSL::Digest::SHA256.new)
 
-    File.open path, 'wb' do |f|
-      f.write cert.to_pem
-    end
+    asset_store.write(path, cert.to_pem, secret: true)
 
     return cert
   end
