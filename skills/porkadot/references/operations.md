@@ -52,15 +52,15 @@ porkadot setup-node --config ./porkadot.yaml
 porkadot setup-containerd --config ./porkadot.yaml
 ```
 
-containerd 1.x（config version 2）と 2.x（config version 3）のどちらにも対応する。
+containerd 1.x（config version 2）と 2.x（config version 3、2.3 以降は version 4）のどちらにも対応する。
 
 - `/etc/containerd/config.toml` が無いときだけ `containerd config default` で作る。既存の config は作り直さない（NVIDIA Container Toolkit などが足した設定を残すため）。
 - 既存の config に `version` 行が無い場合（Docker の `containerd.io` パッケージが同梱する、`disabled_plugins = ["cri"]` だけの config など）は、元のファイルを `/etc/containerd/config.toml.porkadot-bak.<日時>` に退避してから `containerd config default` で作り直す。作り直したときはその旨をログに出す。
 - config の version に合った runc options セクションに `SystemdCgroup = true` を設定する。
   - version 2: `plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options`
-  - version 3: `plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options`
+  - version 3 / 4: `plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options`
 - runc options セクションが無い config では、セクションを作らずにエラーで止まる（containerd は再起動しない）。runc の options を inline table（`options = { ... }`）で書いた config も同じく止まる。直し方は troubleshooting「setup-containerd が runc options セクションが無いと言って止まる」を参照。
-- containerd 1.x のノードに version 3 の config がある場合、config の version が 2 / 3 以外（4 など）の場合、containerd の major version が 1 / 2 以外の場合は失敗する。
+- containerd 1.x のノードに version 3 / 4 の config がある場合、containerd 2.0〜2.2 のノードに version 4 の config がある場合、config の version が 2 / 3 / 4 以外（5 など）の場合、containerd の major version が 1 / 2 以外の場合は失敗する。
 - 既存の config は作り直さないので、containerd を上げても `sandbox_image`（pause image）などは古い既定値のまま残る。新しい既定値を取り込みたいときは、`/etc/containerd/config.toml` を退避・削除してから `setup-containerd` を再実行する。
 - assets に `containerd/config.toml` を置いた場合（`kubelet-default/` または `kubelet/<node>/` の下）は、それをそのままコピーし、`SystemdCgroup` は書き換えない。
 
