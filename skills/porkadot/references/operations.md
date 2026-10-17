@@ -264,6 +264,26 @@ porkadot install kubernetes --config ./porkadot.yaml --node 192.168.1.111
 - install 時はメモリ上で復号して upload するので、ノードには平文が届く。ローカルに平文は書かれない。
 - 再 render で内容が変わらない secret は書き換えられない（暗号文の無意味な差分が出ない）。
 
+### secret を手で復号・編集するとき
+
+secret は拡張子に関係なく binary 形式で暗号化されているので、sops に形式を明示する。
+
+```bash
+# 復号（標準出力に元のバイト列がそのまま出る）
+sops decrypt --input-type json --output-type binary assets/kubernetes/kubeconfig.yaml
+
+# 編集（binary 形式のまま暗号化し直される）
+sops edit --input-type binary --output-type binary assets/kubernetes/kubeconfig.yaml
+```
+
+拡張子が `.yaml` のファイル（`kubeconfig.yaml`、`*.secrets.yaml`）は、sops が拡張子から YAML 形式とみなす。
+
+- `sops -d <file>` だけでは、中身全体が 1 つの文字列として `data: |+` で包まれた YAML が出力される。そのまま kubectl などに渡せない。
+- `sops edit <file>` だけでは、エディタに `data: |+` で包まれた文字列が開き、保存すると YAML 形式で暗号化し直される。中身も JSON ではなくなる。
+  porkadot はこの形式も復号できるが、`data:` で包まれた YAML が平文として扱われ、ノードに届く内容が壊れる。
+
+`.crt` / `.key` / `.sh` などは sops が binary 形式とみなすので、オプションなしでも正しく復号・編集できる。
+
 ### 旧レイアウト（`assets/secrets/`）からの移行
 
 `assets/secrets/` が残っていると、render / install / rotate-certs / set-config / setup-node / setup-containerd は

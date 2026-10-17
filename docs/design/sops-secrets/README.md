@@ -41,6 +41,8 @@ binary 形式なら、復号結果は元のバイト列と完全に一致する�
 
 代わりに `sops edit` で YAML として構造編集することはできない。secret は porkadot が生成するものであり、手で編集する運用は想定しないため、この制約は受け入れる（ユーザー判断）。
 
+もう 1 つの影響として、拡張子が `.yaml` の secret（`kubeconfig.yaml`、`*.secrets.yaml`）を手で扱うときは形式を明示する必要がある。sops は拡張子から YAML 形式と判断するので、`sops -d <file>` だけでは中身が `data: |+` で包まれた YAML が出力される。復号は `sops decrypt --input-type json --output-type binary <file>`、編集は `sops edit --input-type binary --output-type binary <file>` で行う。オプションなしの `sops edit` は YAML 形式で書き戻すので、中身が `data:` で包まれたままになる。手順は `skills/porkadot/references/operations.md` の「secret を手で復号・編集するとき」にある。
+
 ## secret として扱う出力
 
 旧レイアウトで `assets/secrets/` に置いていたファイルを、そのまま secret として扱う。移動先は次のとおり。
