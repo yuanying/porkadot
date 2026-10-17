@@ -89,12 +89,15 @@ containerd v2 の path:
 
 どちらの path を編集するかは、containerd の major version ではなく **config の top-level `version`** で決める。編集対象は config の schema で決まるためである。
 
-| config version | containerd 1.x | containerd 2.x |
-|---|---|---|
-| 2 | v1 path を編集する | v1 path を編集する（containerd 2.x は読み込み時に version 3 へ移行する） |
-| 3 | 失敗させる（containerd 1.x は読めない） | v2 path を編集する |
-| なし | 退避して default で作り直し、作り直した config の version で上の行に従う | 同左 |
-| それ以外（4 など） | 失敗させる | 失敗させる |
+| config version | containerd 1.x | containerd 2.0〜2.2 | containerd 2.3 以降 |
+|---|---|---|---|
+| 2 | v1 path を編集する | v1 path を編集する（containerd 2.x は読み込み時に最新の version へ移行する） | 同左 |
+| 3 | 失敗させる（containerd 1.x は読めない） | v2 path を編集する | v2 path を編集する |
+| 4 | 失敗させる | 失敗させる（containerd 2.3 未満は読めない） | v2 path を編集する |
+| なし | 退避して default で作り直し、作り直した config の version で上の行に従う | 同左 | 同左 |
+| それ以外（5 など） | 失敗させる | 失敗させる | 失敗させる |
+
+config version 4 の扱いは「containerd config version 4 への対応」の節に書く。
 
 `version` のある config は、containerd の版が変わっても作り直さない。apt で containerd を 1.x から 2.x に上げたノードでは version 2 の config が残るが、v1 path に設定した `SystemdCgroup = true` は containerd 2.x の移行で v2 path に引き継がれる（containerd 2.2.1 の `config dump` で確認済み）。
 
@@ -124,6 +127,31 @@ case "$(containerd_major_version)" in
     ;;
 esac
 ```
+
+## containerd config version 4 への対応
+
+Docker の `containerd.io` 2.4.2 の `containerd config default` は `version = 4` の config を出す。当初の実装は version 4 を未知の version として止めていたため、`containerd.io` 2.4.2 のノードで setup-containerd が「Unsupported containerd config version」で失敗した。config がない場合と、`version` のない `containerd.io` 同梱の config を作り直す場合のどちらでも起きる。
+
+containerd の公式の資料（`RELEASES.md` の Daemon Configuration、`docs/man/containerd-config.toml.5.md`）と v2.4.2 のソースで、version 4 を次のとおり確かめた。
+
+- version 4 を読める containerd は 2.3.0 以降である。containerd 2.2.1 は version 4 の config を「expected containerd config version equal to or less than `3`, got `4`」で拒否し、起動しない（Ubuntu noble-updates の 2.2.1 で確認）。
+- version 3 から 4 への移行で動くのは、top-level の `[grpc]`・`[ttrpc]`・`[debug]`・`[metrics]` を `io.containerd.server.v1.*` の plugin に移すことだけである。CRI の plugin の配置は version 3 と同じである。
+- setup-containerd が触るのは runc options の `SystemdCgroup` だけである。この section は version 4 でも `[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]` で、version 3 と同じ v2 path を編集すればよい。sandbox image（`io.containerd.cri.v1.images` の `pinned_images`）、レジストリの設定（同 `registry`）、CNI の設定の場所も version 3 と変わらないが、setup-containerd はこれらを編集しない。
+
+そこで setup-containerd は次のように扱う。
+
+- containerd の版を major だけでなく minor まで読み取る。
+- config version 4 は、containerd 2.3 以降なら v2 path を編集する。
+- containerd 1.x や 2.0〜2.2 で config version 4 なら、config を変えず、containerd を再起動せずに失敗させる。メッセージには 2.3 以降が必要なことを書く。version 4 の config を書き換えて残しても、その containerd は起動できないためである。
+- version 5 以降は、これまでと同じく未知の version として失敗させる。
+- version 2・3 の扱いは変えない。containerd 2.3 以降のノードに残った version 2・3 の config も作り直さず、それぞれの path を編集する（containerd が読み込み時に version 4 へ移行する）。
+
+テストには、containerd 2.4.2 の `containerd config default` の出力を fixture として加えた。実物の確認として、`containerd.io` 2.4.2 を入れた Ubuntu 24.04 のコンテナで次を確かめた。
+
+- config がない状態から setup-containerd を実行すると version 4 の config ができ、`containerd config dump` で runc の `SystemdCgroup = true` と `runtime_type = 'io.containerd.runc.v2'` が有効になる。
+- `containerd.io` 同梱の config（`version` なし、`disabled_plugins = ["cri"]`）は退避されて version 4 の default から作り直され、CRI が有効になる。
+- 2 回目の実行で config が変わらない。
+- containerd を起動すると、CRI の plugin（`io.containerd.cri.v1` の images・runtime と `io.containerd.grpc.v1.cri`）が `ok` で読み込まれる。
 
 ## Kubernetes version との関係
 
@@ -155,6 +183,8 @@ render した `setup-containerd.sh` を bash で実際に実行し、生成さ�
 
 - containerd 1.7.12 の `containerd config default` の出力（config version 2）
 - containerd 2.2.1 の `containerd config default` の出力（config version 3）
+- containerd 2.4.2 の `containerd config default` の出力（config version 4）
+- version 4 で runc runtime section がない config
 - version 2 で runc options に `SystemdCgroup` がなく、NVIDIA runtime と `imports` を含む config
 - version 2 で runc options section がない config
 - version 3 で runc runtime section がない config
@@ -176,7 +206,10 @@ render した `setup-containerd.sh` を bash で実際に実行し、生成さ�
 - section header の行末にコメントがあっても、v1 / v2 とも `SystemdCgroup = true` を設定する。
 - containerd 2.x で version 2 の config は v1 path を編集する。
 - `version` のない config（`containerd.io` 同梱のものを含む）は、v1 / v2 とも default から作り直して `SystemdCgroup = true` を設定し、元のファイルを退避する。`version` のある config は退避しない。
-- containerd 1.x で version 3 の config、未知の config version（4 など）、unsupported major version では失敗し、containerd を再起動しない。
+- containerd 2.4 で config がない場合、`containerd.io` 同梱の config を作り直す場合、既存の version 4 の config の場合は、v2 path の `SystemdCgroup` が `true` になる。既存の config は `SystemdCgroup` の行以外を変えない。
+- version 4 で runc runtime section がない場合は、section を作らずに失敗する。
+- containerd 2.4 で version 3 の config は v2 path を編集し、version 3 のまま残す。
+- containerd 1.x で version 3・4 の config、containerd 2.2 で version 4 の config、未知の config version（5 など）、unsupported major version では失敗し、containerd を再起動しない。
 - 2 回実行しても config が変わらない。
 
 テストとは別に、containerd 1.7.12 / 2.2.1 の実バイナリで生成した config を `containerd config dump` に通し、runc の `SystemdCgroup = true` と `runtime_type = "io.containerd.runc.v2"` が有効になることを確認した。

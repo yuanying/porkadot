@@ -9,6 +9,7 @@ class PorkadotAssetsSetupContainerdTest < Minitest::Test
   CONTAINERD_FIXTURES_DIR = File.join(TEST_FIXTURES_DIR, 'containerd')
   V1_VERSION = 'containerd github.com/containerd/containerd 1.7.12'
   V2_VERSION = 'containerd github.com/containerd/containerd/v2 2.2.1'
+  V24_VERSION = 'containerd containerd v2.4.2 b7a25261e029d68978bbf290df0a62fc819b3c51'
   V1_RUNC_OPTIONS = '[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]'
   V2_RUNC_OPTIONS = "[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]"
 
@@ -43,6 +44,86 @@ class PorkadotAssetsSetupContainerdTest < Minitest::Test
     assert_equal 'true', systemd_cgroup(config, V2_RUNC_OPTIONS)
     assert_includes config, "imports = ['/etc/containerd/conf.d/*.toml']"
     assert_includes stub_log, 'systemctl restart containerd'
+  end
+
+  def test_v24_generates_default_config_version4_with_systemd_cgroup
+    status = run_script(version: V24_VERSION, default: 'v2.4-default.toml')
+
+    assert status.success?, @output
+    assert_match(/^version = 4$/, config)
+    assert_equal 'true', systemd_cgroup(config, V2_RUNC_OPTIONS)
+    assert_includes stub_log, 'systemctl restart containerd'
+  end
+
+  def test_existing_version4_config_only_changes_systemd_cgroup
+    existing = fixture('v2.4-default.toml')
+    install_existing_config(existing)
+
+    status = run_script(version: V24_VERSION, default: 'v2.4-default.toml')
+
+    assert status.success?, @output
+    refute_includes stub_log, 'containerd config default'
+    assert_equal existing.sub(/(runc\.options\]\n(?:\s+\w+ = .*\n)*?\s+)SystemdCgroup = false/, '\1SystemdCgroup = true'), config
+    assert_empty backups
+  end
+
+  def test_version4_fails_without_creating_runc_section_when_missing
+    existing = fixture('v2.4-without-runc.toml')
+    install_existing_config(existing)
+
+    status = run_script(version: V24_VERSION, default: 'v2.4-default.toml')
+
+    refute status.success?
+    assert_equal existing, config
+    assert_missing_section_error V2_RUNC_OPTIONS
+    refute_includes stub_log, 'systemctl restart containerd'
+  end
+
+  def test_containerd_io_config_is_regenerated_with_v24
+    existing = fixture('containerd-io.toml')
+    install_existing_config(existing)
+
+    status = run_script(version: V24_VERSION, default: 'v2.4-default.toml')
+
+    assert status.success?, @output
+    assert_match(/^version = 4$/, config)
+    assert_equal 'true', systemd_cgroup(config, V2_RUNC_OPTIONS)
+    assert_equal [existing], backups.map { |f| File.read(f) }
+  end
+
+  def test_v24_binary_with_version3_config_uses_v2_path
+    install_existing_config(fixture('v2-nvidia.toml'))
+
+    status = run_script(version: V24_VERSION, default: 'v2.4-default.toml')
+
+    assert status.success?, @output
+    assert_match(/^version = 3$/, config)
+    assert_equal 'true', systemd_cgroup(config, V2_RUNC_OPTIONS)
+  end
+
+  def test_v1_binary_with_version4_config_fails
+    existing = fixture('v2.4-default.toml')
+    install_existing_config(existing)
+
+    status = run_script(version: V1_VERSION, default: 'v1-default.toml')
+
+    refute status.success?
+    assert_match(/config version 4/, @output)
+    assert_equal existing, config
+    refute_includes stub_log, 'systemctl restart containerd'
+  end
+
+  def test_v22_binary_with_version4_config_fails
+    existing = fixture('v2.4-default.toml')
+    install_existing_config(existing)
+
+    status = run_script(version: V2_VERSION, default: 'v2-default.toml')
+
+    refute status.success?
+    assert_match(/config version 4/, @output)
+    assert_match(/2\.3/, @output)
+    assert_equal existing, config
+    refute_includes stub_log, 'systemctl restart containerd'
   end
 
   def test_existing_config_is_not_regenerated
@@ -212,9 +293,9 @@ class PorkadotAssetsSetupContainerdTest < Minitest::Test
   end
 
   def test_unknown_config_version_fails
-    install_existing_config(fixture('v2-default.toml').sub(/^version = 3$/, 'version = 4'))
+    install_existing_config(fixture('v2.4-default.toml').sub(/^version = 4$/, 'version = 5'))
 
-    status = run_script(version: V2_VERSION, default: 'v2-default.toml')
+    status = run_script(version: V24_VERSION, default: 'v2.4-default.toml')
 
     refute status.success?
     assert_match(/Unsupported containerd config version/, @output)
@@ -244,7 +325,7 @@ class PorkadotAssetsSetupContainerdTest < Minitest::Test
   end
 
   def test_running_twice_is_idempotent
-    [V1_VERSION, V2_VERSION].zip(['v1-default.toml', 'v2-default.toml']).each do |version, default|
+    [V1_VERSION, V2_VERSION, V24_VERSION].zip(['v1-default.toml', 'v2-default.toml', 'v2.4-default.toml']).each do |version, default|
       FileUtils.rm_rf(@etc_dir)
       assert run_script(version: version, default: default).success?, @output
       first = config

@@ -286,7 +286,7 @@ ssh ubuntu@<bootstrap-node-ip> \
 既存の `/etc/containerd/config.toml` に、runc の options セクションが無い。kubelet は cgroup driver に `systemd` を使うので、`SystemdCgroup = true` を設定できないまま続けると、containerd と cgroup driver が食い違う。そのため `setup-containerd` は止まる。
 
 - config version 2: `[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]`
-- config version 3: `[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]`
+- config version 3 / 4: `[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]`
 
 runc の options を inline table（`[...runtimes.runc]` の下の `options = { SystemdCgroup = false }`）で書いている場合も、セクションが無い扱いになる。`setup-containerd` は inline table を書き換えない。セクションのヘッダ行の末尾にコメントがあるだけなら止まらない。
 
@@ -296,6 +296,25 @@ runc の options を inline table（`[...runtimes.runc]` の下の `options = { 
 
 - `/etc/containerd/config.toml` に、エラーに出たセクションを `SystemdCgroup = true` 付きで足す。inline table で書いている場合は、そのセクションの形に書き直す。
 - `/etc/containerd/config.toml` を退避（例: `config.toml.porkadot-bak`）して消す。`setup-containerd` が `containerd config default` で作り直す。退避した config に独自の設定（registry mirror、NVIDIA の runtime など）があれば、作り直した config に戻す。
+
+---
+
+## setup-containerd が config version 4 に対応していないと言って止まる
+
+### 症状
+
+`porkadot setup-containerd` が `/etc/containerd/config.toml is config version 4, but containerd 2.2 does not support it (2.3 or later is required)` のようなエラーで失敗する。containerd は再起動されず、config も変わらない。
+
+### 原因
+
+config version 4 を読めるのは containerd 2.3 以降である。containerd 2.3 以降（Docker の `containerd.io` 2.4.2 など）で作った config が残ったまま、containerd を 2.3 未満（Ubuntu noble-updates の 2.2.1 など）に入れ替えると起きる。この組み合わせでは containerd 自体が config を読めず起動しない。
+
+### 対処
+
+次のどちらかを行い、`setup-containerd` を再実行する。
+
+- containerd を 2.3 以降にする。
+- `/etc/containerd/config.toml` を退避（例: `config.toml.porkadot-bak`）して消す。`setup-containerd` がいまの containerd の `containerd config default` で作り直す。退避した config に独自の設定があれば、作り直した config に戻す。
 
 ---
 
