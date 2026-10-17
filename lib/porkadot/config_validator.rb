@@ -122,8 +122,9 @@ module Porkadot
 
         if REMOVED_ADDONS.key?(name)
           errors << "addons.enabled contains removed addon: #{name} " \
-            "(#{REMOVED_ADDONS[name]}); remove it from addons.enabled " \
-            "and delete its resources from the cluster (see docs/spec/07-addons.md)"
+            "(#{REMOVED_ADDONS[name]}); remove it from addons.enabled, " \
+            "and the next install kubernetes prunes its resources " \
+            "(see docs/spec/07-addons.md)"
           next
         end
 
