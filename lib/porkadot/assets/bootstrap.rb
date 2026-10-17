@@ -29,15 +29,38 @@ module Porkadot; module Assets
       render_erb 'cleanup.sh'
     end
 
+    # Creates the certificates the bootstrap control plane needs when they
+    # are missing, then copies them. Existing ones are kept as they are.
     def render_secrets
       logger.info "----> Secrets"
+      certs = Porkadot::Assets::Certs.new(global_config)
+      certs.etcd.prepare
+      certs.kubernetes.prepare
+      certs.front_proxy.prepare
+
       store = global_config.asset_store
       root = certs_config.certs_root_dir
-      Dir.glob('**/*', base: root).sort.each do |rel|
-        src = File.join(root, rel)
-        next unless File.file?(src)
+      secret_paths.each do |src|
+        rel = src.delete_prefix(root + File::SEPARATOR)
         store.copy(src, File.join(config.secrets_path, rel), secret: true)
       end
+    end
+
+    def secret_paths
+      etcd = certs_config.etcd
+      k8s = certs_config.kubernetes
+      front_proxy = certs_config.front_proxy
+      [
+        etcd.ca_cert_path, etcd.ca_key_path,
+        etcd.client_cert_path, etcd.client_key_path,
+        k8s.ca_cert_path, k8s.ca_key_path,
+        k8s.apiserver_cert_path, k8s.apiserver_key_path,
+        k8s.kubelet_client_cert_path, k8s.kubelet_client_key_path,
+        k8s.admin_cert_path, k8s.admin_key_path,
+        k8s.sa_private_key_path, k8s.sa_public_key_path,
+        front_proxy.ca_cert_path, front_proxy.ca_key_path,
+        front_proxy.client_cert_path, front_proxy.client_key_path,
+      ]
     end
 
     def render_manifests
