@@ -296,3 +296,37 @@ runc の options を inline table（`[...runtimes.runc]` の下の `options = { 
 
 - `/etc/containerd/config.toml` に、エラーに出たセクションを `SystemdCgroup = true` 付きで足す。inline table で書いている場合は、そのセクションの形に書き直す。
 - `/etc/containerd/config.toml` を退避（例: `config.toml.porkadot-bak`）して消す。`setup-containerd` が `containerd config default` で作り直す。退避した config に独自の設定（registry mirror、NVIDIA の runtime など）があれば、作り直した config に戻す。
+
+---
+
+## `Legacy secrets layout found` で render / install が止まる
+
+### 症状
+
+- `porkadot render ...` や `porkadot install ...` が `Legacy secrets layout found: .../assets/secrets` で失敗する
+
+### 原因
+
+以前の porkadot は secret を `assets/secrets/<group>/` に出力していた。現在は `assets/<group>/` に統合されており、
+旧ツリーが残っていると secret の無い asset を配布したり、CA を作り直したりする恐れがあるため止めている。
+
+### 対処
+
+`porkadot migrate-secrets --config ./porkadot.yaml` を実行し、続けて `render kubelet / etcd / bootstrap / kubernetes` を実行する
+（`references/operations.md` の「旧レイアウト（`assets/secrets/`）からの移行」）。`render certs` は実行しない。
+
+---
+
+## sops の暗号化・復号に失敗する
+
+### 症状
+
+- `sops encrypt failed for ...` または `sops decrypt failed for ...` で render / install / set-config が止まる
+- `sops command not found: sops`
+
+### 確認ポイント
+
+- `sops` がインストールされ PATH にあるか
+- `porkadot.yaml` と同じディレクトリ（または `local.sops.config`）に `.sops.yaml` があり、`creation_rules` の `path_regex` が `assets/...` に一致するか（encrypt 失敗時）
+- 復号用の鍵が使えるか（age なら `SOPS_AGE_KEY_FILE` か `~/.config/sops/age/keys.txt`）（decrypt 失敗時）
+- `local.sops.enabled: false` でも、暗号化済みのファイルを読むときは復号が必要になる

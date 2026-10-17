@@ -1,7 +1,8 @@
 module Porkadot; module Install
   class Bootstrap
     KUBE_TEMP = File.join(Porkadot::Install::KUBE_TEMP, 'bootstrap')
-    KUBE_SECRETS_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.bootstrap')
+    # Used by porkadot before secrets were merged into the assets tree.
+    LEGACY_SECRETS_TEMP = File.join(Porkadot::Install::KUBE_TEMP, '.bootstrap')
     include SSHKit::DSL
     attr_reader :global_config
     attr_reader :config
@@ -18,15 +19,11 @@ module Porkadot; module Install
     def install
       global_config = self.global_config
       config = self.config
+      uploader = Porkadot::Install::Uploader.new(global_config)
       on(host) do |host|
         execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
-        if test("[ -d #{KUBE_TEMP} ]")
-          execute(:rm, '-rf', KUBE_TEMP)
-          execute(:rm, '-rf', KUBE_SECRETS_TEMP)
-        end
-        upload! config.target_path, KUBE_TEMP, recursive: true
-        upload! config.target_secrets_path, KUBE_SECRETS_TEMP, recursive: true
-        execute(:cp, '-r', KUBE_SECRETS_TEMP + '/*', KUBE_TEMP)
+        execute(:rm, '-rf', KUBE_TEMP, LEGACY_SECRETS_TEMP)
+        uploader.upload_tree(self, config.target_path, KUBE_TEMP)
 
         as user: 'root' do
           execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
@@ -44,15 +41,11 @@ module Porkadot; module Install
     def cleanup
       global_config = self.global_config
       config = self.config
+      uploader = Porkadot::Install::Uploader.new(global_config)
       on(host) do |host|
         execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
-        if test("[ -d #{KUBE_TEMP} ]")
-          execute(:rm, '-rf', KUBE_TEMP)
-          execute(:rm, '-rf', KUBE_SECRETS_TEMP)
-        end
-        upload! config.target_path, KUBE_TEMP, recursive: true
-        upload! config.target_secrets_path, KUBE_SECRETS_TEMP, recursive: true
-        execute(:cp, '-r', KUBE_SECRETS_TEMP + '/*', KUBE_TEMP)
+        execute(:rm, '-rf', KUBE_TEMP, LEGACY_SECRETS_TEMP)
+        uploader.upload_tree(self, config.target_path, KUBE_TEMP)
 
         global_config.nodes.each do |k, node|
           if node.apiserver?

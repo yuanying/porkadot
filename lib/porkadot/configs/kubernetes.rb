@@ -46,10 +46,6 @@ module Porkadot; module Configs
       File.join(self.config.assets_dir, 'kubernetes')
     end
 
-    def target_secrets_path
-      File.join(self.config.secrets_root_dir, 'kubernetes')
-    end
-
     def manifests_path
       File.join(self.target_path, 'manifests')
     end

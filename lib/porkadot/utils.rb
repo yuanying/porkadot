@@ -9,7 +9,19 @@ class Porkadot::SubCommandBase < Thor
 end
 
 module Porkadot::Utils
+  # Loads porkadot.yaml. Commands that read or write assets refuse to run
+  # while the legacy assets/secrets layout is present; see
+  # assets_layout_check?.
   def config
+    config = self.loaded_config
+    unless defined?(@assets_layout_checked)
+      config.ensure_current_assets_layout! if self.assets_layout_check?
+      @assets_layout_checked = true
+    end
+    config
+  end
+
+  def loaded_config
     unless defined?(@config)
       opts = options.dup
       opts = opts.merge(parent_options) if parent_options
@@ -19,7 +31,11 @@ module Porkadot::Utils
     @config
   end
 
+  def assets_layout_check?
+    true
+  end
+
   def logger
-    self.config.logger
+    self.loaded_config.logger
   end
 end

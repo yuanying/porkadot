@@ -4,8 +4,10 @@
 
 porkadot は 3 種類の独立した PKI を管理します。
 
+PKI は `assets/certs/` に出力されます。これらは secret として扱われ、`local.sops.enabled: true` なら sops で暗号化されます（[生成アセット](06-assets.md#secret-ファイル)）。
+
 ```
-assets/secrets/
+assets/
 ├── certs/
 │   ├── kubernetes/        # Kubernetes PKI
 │   │   ├── ca.key / ca.crt           # Kubernetes CA
@@ -22,7 +24,7 @@ assets/secrets/
 │       └── {node}/
 │           ├── etcd.key / etcd.crt   # etcd メンバー証明書
 │           └── ca.crt                # （CA のコピー）
-└── bootstrap/         # ブートストラップ用（secrets のコピー）
+└── bootstrap/bootstrap/secrets/   # ブートストラップ用（certs/ のコピー）
 ```
 
 ## 証明書の有効期限

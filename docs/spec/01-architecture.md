@@ -41,7 +41,7 @@ porkadot install         ← インストール層
 | `Configs::Addons` | `addons` | アドオンのパス管理 |
 | `Configs::Certs` | — | PKI パスの管理 |
 
-`ConfigUtils` モジュールが各設定クラスに mixin され、`asset_path`・`secrets_path` ヘルパーと `method_missing` による生設定値へのドット記法アクセスを提供する。
+`ConfigUtils` モジュールが各設定クラスに mixin され、`asset_path` ヘルパーと `method_missing` による生設定値へのドット記法アクセスを提供する。
 
 ### アセット層 (`lib/porkadot/assets/`)
 
@@ -49,10 +49,10 @@ porkadot install         ← インストール層
 
 | クラス | 出力先 | 主な出力物 |
 |--------|--------|-----------|
-| `Assets::Certs` | `assets/` (secrets) | 全 TLS 証明書・秘密鍵 |
+| `Assets::Certs` | `assets/certs/` | 全 TLS 証明書・秘密鍵 |
 | `Assets::KubeletDefault` | `assets/kubelet-default/` | 共通インストールスクリプト・CA 証明書 |
 | `Assets::Kubelet` | `assets/kubelet/{node}/` | ノードごとの kubelet 設定・bootstrap kubeconfig |
-| `Assets::EtcdList` | `assets/kubelet-default/addons/etcd/{node}/` | etcd 静的 Pod マニフェスト・環境変数 |
+| `Assets::EtcdList` | `assets/kubelet/{node}/addons/etcd/` | etcd 静的 Pod マニフェスト・環境変数 |
 | `Assets::Bootstrap` | `assets/bootstrap/` | ブートストラップ用静的 Pod マニフェスト・スクリプト |
 | `Assets::Kubernetes` | `assets/kubernetes/` | Kubernetes DaemonSet マニフェスト・アドオン・kubeconfig |
 
@@ -65,6 +65,11 @@ SSHKit を使ってリモートノードに SSH 接続し、レンダリング�
 | `Install::KubeletList` | 全ノードへの kubelet デプロイ・containerd セットアップ・etcd バックアップ/リストア |
 | `Install::Bootstrap` | ブートストラップノードへの一時コントロールプレーンデプロイ |
 | `Install::Kubernetes` | kubectl/kustomize による Kubernetes マニフェスト適用 |
+| `Install::Uploader` | assets ツリーをファイルごとに upload する（暗号化済み secret はメモリ上で復号） |
+
+### assets の読み書き
+
+assets ディレクトリへの読み書きは `AssetStore`（`Config#asset_store`）に集約されている。secret の印が付いた出力はモード 0600 で書き、`local.sops.enabled: true` なら `Porkadot::Sops`（sops コマンドのラッパー）で暗号化する。読み込み時は暗号化済みのファイルを復号する。詳細は [docs/design/sops-secrets](../design/sops-secrets/README.md) を参照。
 
 ## Self-hosted アーキテクチャ（bootkube 方式）
 

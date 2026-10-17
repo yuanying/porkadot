@@ -50,9 +50,6 @@ module Porkadot; module Assets
       unless File.directory?(config.target_path)
         FileUtils.mkdir_p(config.target_path)
       end
-      unless File.directory?(config.target_secrets_path)
-        FileUtils.mkdir_p(config.target_secrets_path)
-      end
       render_ca_crt
       render_etcd_crt
       render_erb 'etcd-server.yaml', etcd: global_config.etcd
@@ -62,9 +59,7 @@ module Porkadot; module Assets
 
     def render_ca_crt
       logger.info "----> ca.crt"
-      open(config.ca_crt_path, 'w') do |out|
-        out.write self.certs.ca_cert(false).to_pem
-      end
+      global_config.asset_store.write(config.ca_crt_path, self.certs.ca_cert(false).to_pem, secret: true)
     end
 
     def render_etcd_crt
@@ -81,8 +76,8 @@ module Porkadot; module Assets
     def etcd_cert(refresh=false)
       return @etcd_cert if defined?(@etcd_cert)
       if File.file?(config.etcd_crt_path) and !refresh
-        self.logger.debug("--> Etcd cert already exists, skipping: #{config.etcd_cert_path}")
-        @etcd_cert = OpenSSL::X509::Certificate.new(File.read(config.etcd_cert_path))
+        self.logger.debug("--> Etcd cert already exists, skipping: #{config.etcd_crt_path}")
+        @etcd_cert = OpenSSL::X509::Certificate.new(global_config.asset_store.read(config.etcd_crt_path))
       else
         ca_key = self.certs.ca_key
         ca_cert = self.certs.ca_cert(false)
@@ -102,9 +97,7 @@ module Porkadot; module Assets
         @etcd_cert.add_extension(ef.create_extension("subjectAltName", self.config.additional_sans.join(','), true))
         @etcd_cert.sign(ca_key, OpenSSL::Digest::SHA256.new)
 
-        File.open config.etcd_crt_path, 'wb' do |f|
-          f.write @etcd_cert.to_pem
-        end
+        global_config.asset_store.write(config.etcd_crt_path, @etcd_cert.to_pem, secret: true)
       end
       return @etcd_cert
     end

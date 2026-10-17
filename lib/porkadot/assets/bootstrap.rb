@@ -31,10 +31,13 @@ module Porkadot; module Assets
 
     def render_secrets
       logger.info "----> Secrets"
-      unless File.directory?(config.secrets_path)
-        FileUtils.mkdir_p(config.secrets_path)
+      store = global_config.asset_store
+      root = certs_config.certs_root_dir
+      Dir.glob('**/*', base: root).sort.each do |rel|
+        src = File.join(root, rel)
+        next unless File.file?(src)
+        store.copy(src, File.join(config.secrets_path, rel), secret: true)
       end
-      FileUtils.cp_r(Dir.glob(File.join(certs_config.certs_root_dir, '*')), config.secrets_path)
     end
 
     def render_manifests

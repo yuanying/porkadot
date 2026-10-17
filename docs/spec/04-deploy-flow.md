@@ -22,7 +22,7 @@
 
 ### 1. `render certs`
 
-PKI 全体を生成します。証明書は `assets/secrets/certs/` サブディレクトリに格納されます。
+PKI 全体を生成します。証明書は `assets/certs/` サブディレクトリに格納されます。`local.sops.enabled: true` なら秘密鍵・証明書は sops で暗号化して書き込まれます。
 
 - Kubernetes PKI（CA、apiserver、kubelet クライアント、admin、service account）
 - etcd PKI（CA、各メンバー証明書）
@@ -78,6 +78,8 @@ etcd メンバーの設定を生成します。
 ### ステップ 1: kubelet インストール（全ノード）
 
 `porkadot install kubelet` がすべてのノードに対して以下を実行します。
+
+assets は、ノードの一時ディレクトリ（`./kube_temp/<group>`）へファイルごとに upload されます。kubelet では `kubelet-default/` に `kubelet/{node}/` を重ねて同じディレクトリに置きます。sops で暗号化された secret は、upload 時にメモリ上で復号されます。
 
 1. **インストール済みチェック**: バージョンファイルが存在する場合はスキップ（`--force` で強制実行）
 2. `install-deps.sh` — 依存関係をビルド・ダウンロード

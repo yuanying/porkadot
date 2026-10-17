@@ -24,6 +24,22 @@ Or install it yourself as:
 
 TODO: Write usage instructions here
 
+## Secrets and sops
+
+porkadot renders certificates, private keys, kubeconfigs and secret manifests into the same `assets/<group>/...` tree as the other assets, with mode 0600.
+
+To keep the assets directory in git, set `local.sops.enabled: true` in `porkadot.yaml`. Secrets are then encrypted with [sops](https://github.com/getsops/sops) (binary format) using the `creation_rules` of `.sops.yaml` next to `porkadot.yaml`, or of `local.sops.config`. They are decrypted in memory when porkadot reads them, including when it uploads them to nodes, so plain secrets are never written to the local disk.
+
+```yaml
+local:
+  sops:
+    enabled: true
+```
+
+Assets rendered by older versions keep secrets in `assets/secrets/`. Move them with `porkadot migrate-secrets --config porkadot.yaml`, then run `render kubelet`, `render etcd`, `render bootstrap` and `render kubernetes`. Most commands refuse to run until the old tree is migrated.
+
+See `docs/design/sops-secrets/README.md` for the design.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

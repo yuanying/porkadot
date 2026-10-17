@@ -16,10 +16,6 @@ module Porkadot; module Configs
       def target_path
         File.join(bootstrap_config.target_path, 'kubelet')
       end
-
-      def target_secrets_path
-        File.join(bootstrap_config.target_secrets_path, 'kubelet')
-      end
     end
 
     include Porkadot::ConfigUtils
@@ -35,20 +31,12 @@ module Porkadot; module Configs
       File.join(self.config.assets_dir, 'bootstrap')
     end
 
-    def target_secrets_path
-      File.join(self.config.secrets_root_dir, 'bootstrap')
-    end
-
     def bootstrap_path
       File.join(self.target_path, 'bootstrap')
     end
 
-    def bootstrap_secrets_path
-      File.join(self.target_secrets_path, 'bootstrap')
-    end
-
     def secrets_path
-      File.join(self.bootstrap_secrets_path, 'secrets')
+      File.join(self.bootstrap_path, 'secrets')
     end
 
     def kubeconfig_path
