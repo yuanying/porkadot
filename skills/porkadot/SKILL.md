@@ -68,9 +68,13 @@ secret（証明書・鍵・kubeconfig 等）は `assets/<group>/` に通常の a
 
 ```
 1. render kubelet / etcd / bootstrap / kubernetes（render 済みの場合は不要）
-2. install kubelet（全ノードに新しい設定・etcd マニフェストを配布）
-3. install kubernetes --node <control-plane-ip>（コントロールプレーンを更新）
+2. etcd backup
+3. install kubernetes --node <control-plane-ip>（コントロールプレーンを先に更新）
+4. install kubelet --node <control-plane-ip>（1 台ずつ。etcd マニフェストもここで変わる）
+5. install kubelet --node <worker>（1 台ずつ）
 ```
+
+kubelet を kube-apiserver より先に上げない（version skew policy）。マイナー版は 1 つずつ上げる。
 
 詳細は `references/operations.md` の「バージョンアップ」セクションを参照。
 

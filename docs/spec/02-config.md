@@ -83,8 +83,8 @@ Kubernetes クラスタ全体の設定です。
 |------|-----------|------|
 | `cluster_name` | `porkadot` | クラスタ名 |
 | `control_plane_endpoint` | — | コントロールプレーンエンドポイント（例: `192.168.23.101:6443`）|
-| `kubernetes_version` | `v1.29.8` | Kubernetes バージョン |
-| `crictl_version` | `v1.28.0` | crictl バージョン |
+| `kubernetes_version` | `v1.30.14` | Kubernetes バージョン |
+| `crictl_version` | `v1.30.1` | crictl バージョン |
 | `image_repository` | `registry.k8s.io` | コンテナイメージリポジトリ |
 
 ### `kubernetes.networking`
@@ -173,7 +173,7 @@ etcd クラスタの設定です。
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `image_repository` | `registry.k8s.io/etcd` | etcd イメージリポジトリ |
-| `image_tag` | `3.5.12-0` | etcd イメージタグ |
+| `image_tag` | `3.5.34-0` | etcd イメージタグ |
 | `extra_env` | `[]` | 追加環境変数（例: ARM64 サポート用） |
 
 追加環境変数の例（ARM64 向け）:
