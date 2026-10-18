@@ -41,9 +41,11 @@ module Porkadot; module Install
       hosts = self.exec hosts: hosts
       on(hosts) do |host|
         as user: 'root' do
-          unless test("[ -f /opt/bin/kubelet-#{host.global_config.k8s.kubernetes_version} ]") && !force
-            execute(:bash, File.join(KUBE_TEMP, 'install-deps.sh'))
-          end
+          # install-deps.sh links the configured versions and downloads only
+          # the missing ones, unless --force is given.
+          deps = [File.join(KUBE_TEMP, 'install-deps.sh')]
+          deps << '--force' if force
+          execute(:bash, *deps)
           execute(:bash, File.join(KUBE_TEMP, 'install-pkgs.sh'))
           execute(:bash, File.join(KUBE_TEMP, 'install.sh'))
         end

@@ -125,7 +125,7 @@ porkadot install kubelet [--node <node-name>] [--force]
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
 | `--node` | — | 指定したノードのみインストール |
-| `--force` | `false` | インストール済みチェックをスキップして強制再インストール |
+| `--force` | `false` | ノードにある版を使わず、kubectl・kubelet・etcdctl・crictl・CNI plugins をすべてダウンロードし直す |
 
 実行内容: `install-deps.sh` → `install-pkgs.sh` → `install.sh` の順に SSH 実行
 
