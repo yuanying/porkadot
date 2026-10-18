@@ -265,6 +265,11 @@ porkadot install kubelet --config ./porkadot.yaml --node <worker>
 kubectl get nodes -o wide
 ```
 
+Step 4・5 の `install kubelet` は、kubectl・kubelet・etcdctl・crictl の `/opt/bin/<名前>` を設定の版に張り替える。
+ノードに残っている版はダウンロードせずに使うので、版を戻すときも上げ直すときも `--force` は要らない。
+K8s の版を変えずに etcd・crictl・CNI plugins の版だけを変えた場合も追従する。
+`--force` はすべてをダウンロードし直したいとき（バイナリが壊れている疑いがあるときなど）に使う。
+
 **Step 6**: 削除されたワーカーノードがある場合（porkadot.yaml から削除済み）
 
 ```bash
