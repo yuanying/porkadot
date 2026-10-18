@@ -122,11 +122,17 @@ MetalLB が VIP を確立すると、コントロールプレーンエンドポ�
 
 `porkadot install bootstrap cleanup` が以下を実行します。
 
-1. 全マスターノードの `/healthz` をポーリング → 全ノードが Ready になるまで待機
-2. コントロールプレーンエンドポイント（VIP）の `/healthz` をポーリング → VIP が応答するまで待機
-3. `cleanup.sh` を実行:
+1. 全マスターノードの `/readyz` をポーリング → 全ノードの apiserver が応答するまで待機
+2. ブートストラップ apiserver 経由で Service `kube-system/porkadot-kubernetes` の EndpointSlice をポーリング → 全マスターの kube-apiserver の endpoint が `ready` になるまで待機（ブートストラップ apiserver の endpoint は数えない）
+3. Deployment `kube-controller-manager` と `kube-scheduler` をポーリング → それぞれ Ready のレプリカが 1 つ以上になるまで待機
+4. `cleanup.sh` を実行:
    - `/etc/kubernetes/bootstrap/` を削除
    - `*.bootstrap.yaml` 静的 Pod マニフェストを削除
+5. VIP の `/readyz` をポーリング → 本来のコントロールプレーンが VIP で応答することを確認
+
+1〜3 の待ちには上限（`--timeout`、既定 600 秒）があり、超えると静的 Pod を消さずに失敗します。
+
+2 を待つ理由: cleanup の時点では VIP の背後にブートストラップ apiserver も居るので、VIP の応答は引き継ぎの確認になりません。また、マスターの apiserver が `/readyz` に ok を返していても、kubelet がその Pod の Ready をまだ報告していなければ EndpointSlice の endpoint は `ready: false` のままです。この状態でブートストラップ apiserver を消すと、kubelet・kube-controller-manager・kube-proxy は VIP 経由でしか API に届かないのに kube-proxy が VIP を REJECT するため、Pod の Ready を報告できず、EndpointSlice も更新されないまま全ノードが NotReady になります。
 
 ブートストラップ静的 Pod が削除されると、ブートストラップ apiserver が停止します。
 この時点でブートストラップノードの kubelet は `127.0.0.1` を見ていますが、実際のコントロールプレーン（DaemonSet）は VIP 経由で動作しています。
@@ -199,7 +205,7 @@ self-hosted クラスタではコントロールプレーンも DaemonSet とし
 
 3. MetalLB controller がブートストラップノードに再スケジュールされ、VIP が有効化されます。
 
-4. 他のノードが順次 Ready になったら、ブートストラップをクリーンアップします。
+4. 他のノードが順次 Ready になったら、ブートストラップをクリーンアップします。`install bootstrap cleanup` は、`porkadot-kubernetes` の EndpointSlice に全マスターの apiserver が `ready` で入るまで待ってから静的 Pod を消します（ステップ 2c）。上限を超えて止まった場合は、表示された項目を直してから再実行します。
 
    ```bash
    bundle exec porkadot install bootstrap cleanup --config ../porkadot.yaml

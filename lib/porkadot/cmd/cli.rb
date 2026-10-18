@@ -3,6 +3,17 @@ module Porkadot; module Cmd
   class Cli < Thor
     include Porkadot::Utils
 
+    # Entry point of exe/porkadot. Returns the exit status.
+    # Porkadot::Error messages are written for the user, so print only the
+    # message, without a backtrace.
+    def self.main args
+      puts start(args)
+      0
+    rescue Porkadot::Error => e
+      $stderr.puts e.message
+      1
+    end
+
     class_option :config, type: :string,
       default: './porkadot.yaml',
       desc: 'Path to porkadot config file'
