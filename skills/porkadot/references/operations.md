@@ -210,13 +210,23 @@ porkadot set-config --config ./porkadot.yaml
 
 前提: render 済み（assets/ に新バージョンのマニフェストが生成されている）
 
-**Step 1**: 全ノードに新しい kubelet 設定・etcd マニフェストを配布
+マイナー版は 1 つずつ上げる（1.29 → 1.30 → 1.31 …）。
+
+**コントロールプレーンを先に、kubelet を後に上げる。** Kubernetes の version skew policy では kubelet が kube-apiserver より新しくてはいけない。
+`install kubelet` を先に流すと、新しい kubelet が古い kube-apiserver につながる状態になる。
+kube-proxy は kubelet と 3 マイナー版まで前後してよいので、`install kubernetes` で先に上がってよい。
+
+`install kubelet` は kubelet の設定とバイナリだけでなく、コントロールプレーンのノードでは **etcd の static Pod のマニフェストも置く**。
+etcd の版が変わる場合は、`install kubelet` を流したノードで etcd が新しいイメージで再起動する。
+コントロールプレーンのノードは 1 台ずつ流し、etcd が全メンバー healthy に戻ってから次へ進む。
+
+**Step 1**: etcd のバックアップを取る
 
 ```bash
-porkadot install kubelet --config ./porkadot.yaml
+porkadot etcd backup --config ./porkadot.yaml
 ```
 
-**Step 2**: コントロールプレーンのマニフェストを更新
+**Step 2**: コントロールプレーン（kube-apiserver・kube-controller-manager・kube-scheduler・kube-proxy・アドオン）を更新
 
 ```bash
 porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-ip>
@@ -227,11 +237,35 @@ porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-ip>
 
 ```bash
 kubectl rollout status daemonset/kube-apiserver -n kube-system
-kubectl get nodes -o wide
+kubectl rollout status deployment/kube-controller-manager -n kube-system
+kubectl rollout status deployment/kube-scheduler -n kube-system
+kubectl rollout status daemonset/kube-proxy -n kube-system
 kubectl version
 ```
 
-**Step 4**: 削除されたワーカーノードがある場合（porkadot.yaml から削除済み）
+**Step 4**: コントロールプレーンのノードの kubelet（と etcd）を 1 台ずつ更新
+
+```bash
+porkadot install kubelet --config ./porkadot.yaml --node <control-plane-ip>
+```
+
+1 台ごとに、Node が Ready で新しい版になったことと、etcd が全メンバー healthy であることを確かめてから次のノードに進む。
+etcd はコントロールプレーンのノード上で確かめる（`/etc/etcd/etcd.env` に接続情報がある）。
+
+```bash
+kubectl get nodes -o wide
+ssh <user>@<control-plane-ip> 'sudo bash -c ". /etc/etcd/etcd.env && /opt/bin/etcdctl endpoint health --cluster"'
+ssh <user>@<control-plane-ip> 'sudo bash -c ". /etc/etcd/etcd.env && /opt/bin/etcdctl endpoint status --cluster -w table"'
+```
+
+**Step 5**: ワーカーノードの kubelet を 1 台ずつ更新
+
+```bash
+porkadot install kubelet --config ./porkadot.yaml --node <worker>
+kubectl get nodes -o wide
+```
+
+**Step 6**: 削除されたワーカーノードがある場合（porkadot.yaml から削除済み）
 
 ```bash
 kubectl get nodes
