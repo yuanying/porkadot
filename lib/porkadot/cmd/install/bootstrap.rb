@@ -35,10 +35,12 @@ module Porkadot; module Cmd; module Install; module Bootstrap
     end
 
     desc "cleanup", "Cleanup bootstrap node"
+    option :timeout, type: :numeric, default: Porkadot::Install::Bootstrap::DEFAULT_CLEANUP_TIMEOUT,
+      desc: "Seconds to wait for the self-hosted control plane before giving up"
     def cleanup
       logger.info "Cleanup bootstrap node"
       bootstrap = Porkadot::Install::Bootstrap.new(self.config)
-      bootstrap.cleanup
+      bootstrap.cleanup(timeout: options[:timeout])
       ""
     end
 
