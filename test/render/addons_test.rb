@@ -75,6 +75,15 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert namespaced.all? { |d| d['metadata']['namespace'] == 'kube-system' }
   end
 
+  def test_coredns_uses_kubeadm_coredns_image
+    render_addons(['coredns'])
+
+    deploy = YAML.load_stream(File.read(addon_path('coredns/coredns.yaml')))
+      .compact.find { |d| d['kind'] == 'Deployment' && d['metadata']['name'] == 'coredns' }
+    images = pod_spec(deploy)['containers'].map { |c| c['image'] }
+    assert_equal ['registry.k8s.io/coredns/coredns:v1.11.3'], images
+  end
+
   def test_default_addons_do_not_render_storage_version_migrator
     config = YAML.load_file(File.join(TEST_FIXTURES_DIR, 'config', 'porkadot.yaml'))
     config['local'] = { 'assets_dir' => File.join(@tmpdir, 'assets') }
