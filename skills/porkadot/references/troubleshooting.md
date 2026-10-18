@@ -38,12 +38,30 @@ bootstrap kubeconfig は `127.0.0.1:6443` を向いており、bootstrap ノー�
 
 **Step 3**: MetalLB controller が bootstrap ノードに再スケジュールされ、VIP が有効化される
 
-**Step 4**: 他のノードが順次 Ready になったら cleanup と kubelet 復旧
+**Step 4**: 他のノードが順次 Ready になったら、VIP の背後の EndpointSlice に全マスターの apiserver が ready で入っていることを確かめる
+
+```bash
+ssh ubuntu@<bootstrap-node-ip> \
+  "/opt/bin/kubectl --kubeconfig /etc/kubernetes/bootstrap/kubeconfig-bootstrap.yaml \
+   -n kube-system get endpointslices -l kubernetes.io/service-name=porkadot-kubernetes \
+   -o jsonpath='{range .items[*].endpoints[*]}{.nodeName}{\"\t\"}{.targetRef.name}{\"\t\"}{.conditions.ready}{\"\n\"}{end}'"
+```
+
+`bootstrap-kube-apiserver-*` 以外の行（各マスターの `kube-apiserver-*`）が全部 `true` になるまで待つ。
+`false` のまま bootstrap を消すと、kube-proxy が VIP を REJECT して全ノードが NotReady に戻る。
+`install bootstrap cleanup` も同じ条件（と kube-controller-manager / kube-scheduler に Ready のレプリカがあること）を
+待ち、上限（既定 600 秒、`--timeout` で変えられる）を超えたら static pod を消さずに止まる。
+
+**Step 5**: cleanup と kubelet 復旧
 
 ```bash
 porkadot --config ./porkadot.yaml install bootstrap cleanup
 porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node-ip>
 ```
+
+cleanup が「Bootstrap static Pods were not removed」で止まったら、表示された項目（どのマスターの
+endpoint が ready でないかなど）を直してから再実行する。「Bootstrap static Pods were already removed」で
+止まったら（削除後に VIP が応答しない）、Step 1 からやり直す。
 
 ---
 
@@ -153,6 +171,9 @@ ssh <user>@<bootstrap-node-ip> \
 Pod を削除すると kubelet が新しい DaemonSet spec から Pod を再生成し、新しい証明書が読み込まれる。
 
 **Step 5**: cleanup と必要な kubeconfig 更新を実行する
+
+cleanup の前に、「クラスター再起動後に MetalLB が起動しない」の Step 4 と同じコマンドで、
+`porkadot-kubernetes` の EndpointSlice に全マスターの apiserver が ready で入っていることを確かめる。
 
 ```bash
 porkadot install bootstrap cleanup --config ./porkadot.yaml

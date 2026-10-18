@@ -170,13 +170,21 @@ porkadot install bootstrap kubernetes
 ブートストラップ静的 Pod を削除してクリーンアップします。
 
 ```
-porkadot install bootstrap cleanup
+porkadot install bootstrap cleanup [--timeout <秒>]
 ```
 
-実行内容:
-1. 全マスターノードの `/healthz` をポーリングして Ready 確認
-2. コントロールプレーンエンドポイント（VIP）の `/healthz` をポーリング
-3. VIP が応答したら `cleanup.sh` を実行してブートストラップ静的 Pod を削除
+| オプション | 説明 |
+|---|---|
+| `--timeout` | 1〜3 の待ちの上限（秒、既定 600）。5 の待ちにも同じ上限を使う |
+
+実行内容（ポーリングは 5 秒間隔）:
+1. 全マスターノードの `https://<master>:<bind_port>/readyz` が 200 を返すまで待つ
+2. ブートストラップ apiserver（`127.0.0.1`）に問い合わせ、Service `kube-system/porkadot-kubernetes`（VIP の背後）の EndpointSlice に、全マスターの kube-apiserver の endpoint が `ready` で入るまで待つ。ブートストラップ apiserver 自身の endpoint は数えない
+3. Deployment `kube-controller-manager` と `kube-scheduler` に Ready のレプリカが 1 つ以上あるまで待つ
+4. `cleanup.sh` を実行してブートストラップ静的 Pod を削除
+5. VIP の `/readyz` が応答するまで待つ
+
+1〜3 が上限までに揃わなければ、静的 Pod を消さずにエラーで止まり、何が揃っていないかと確かめるコマンドを表示します。5 が上限までに応答しなければ、`install bootstrap node` からやり直す手順を表示してエラーで止まります。
 
 ### `porkadot install kubernetes` — Kubernetes コンポーネントインストール
 
