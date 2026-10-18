@@ -16,6 +16,8 @@ class PorkadotInstallEtcdTest < Minitest::Test
 
     def download!(remote, local = nil, _options = {})
       self.class.downloads << [host.hostname, remote, local]
+      # Simulates a download that leaves the file world-readable.
+      File.open(local, 'w', 0644) { |f| f.write('snapshot') } if local.is_a?(String)
     end
 
     private
@@ -52,6 +54,16 @@ class PorkadotInstallEtcdTest < Minitest::Test
     RecordingBackend.commands
       .select { |host, _| host.hostname == hostname }
       .map { |_, cmd| cmd.to_s }
+  end
+
+  # Returns the command matching pattern and whether `as user: 'root'` wraps it.
+  def find_command hostname, pattern
+    cmd = RecordingBackend.commands
+      .select { |host, _| host.hostname == hostname }
+      .map(&:last)
+      .find { |c| c.to_s.include?(pattern) }
+    return [nil, false] unless cmd
+    [cmd.to_s, cmd.to_command.start_with?('sudo -u root ')]
   end
 
   def all_commands
@@ -167,6 +179,70 @@ class PorkadotInstallEtcdTest < Minitest::Test
     assert_equal ['192.168.33.112'], RecordingBackend.downloads.map(&:first)
   end
 
+  # The etcd client key is readable only by root, so etcdctl must run as
+  # root and the snapshot must be handed back to the connection user.
+  def test_backup_etcd_saves_snapshot_as_root
+    RecordingBackend.responder = backup_responder
+    Dir.mktmpdir do |dir|
+      @kubelets.backup_etcd host: 'node01', path: File.join(dir, 'etcd.db')
+    end
+
+    save, as_root = find_command('192.168.33.111', 'snapshot save')
+    assert save, 'snapshot save was not executed'
+    assert as_root, 'snapshot save was not run as root'
+    assert_includes save, '--cacert /etc/etcd/pki/ca.crt'
+    assert_includes save, 'kube_temp/kubelet/etcd.db'
+  end
+
+  def test_backup_etcd_hands_snapshot_to_connection_user_with_mode_600
+    RecordingBackend.responder = backup_responder
+    Dir.mktmpdir do |dir|
+      @kubelets.backup_etcd host: 'node01', path: File.join(dir, 'etcd.db')
+    end
+
+    commands = commands_for('192.168.33.111')
+    save = commands.index { |c| c.include?('snapshot save') }
+    chown = commands.index { |c| c.include?('chown 1000:1001 ./kube_temp/kubelet/etcd.db') }
+    chmod = commands.index { |c| c.include?('chmod 0600 ./kube_temp/kubelet/etcd.db') }
+    assert chown, "snapshot was not chowned: #{commands.inspect}"
+    assert chmod, "snapshot was not chmoded: #{commands.inspect}"
+    assert find_command('192.168.33.111', 'chown').last, 'chown was not run as root'
+    assert_operator save, :<, chown
+    assert_operator save, :<, chmod
+  end
+
+  def test_backup_etcd_removes_remote_snapshot_after_download
+    RecordingBackend.responder = backup_responder
+    Dir.mktmpdir do |dir|
+      @kubelets.backup_etcd host: 'node01', path: File.join(dir, 'etcd.db')
+    end
+
+    assert_equal [['192.168.33.111', './kube_temp/kubelet/etcd.db']],
+      RecordingBackend.downloads.map { |h, remote, _| [h, remote] }
+    rm = commands_for('192.168.33.111').last
+    assert_includes rm, 'rm -f ./kube_temp/kubelet/etcd.db'
+  end
+
+  def test_backup_etcd_writes_local_snapshot_with_mode_600
+    RecordingBackend.responder = backup_responder
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'etcd.db')
+      @kubelets.backup_etcd host: 'node01', path: path
+
+      assert_equal 0600, File.stat(path).mode & 0777
+    end
+  end
+
+  def test_rotate_certs_waits_for_etcd_health_as_root
+    rotator = Porkadot::Install::RotateCerts.new(@config)
+    host = @kubelets['node01']
+    rotator.send(:wait_etcd_health, host, @kubelets.etcd_options)
+
+    health, as_root = find_command('192.168.33.111', 'endpoint health')
+    assert health, 'endpoint health was not checked'
+    assert as_root, 'endpoint health was not checked as root'
+  end
+
   def test_backup_etcd_without_node_uses_first_etcd_member
     Dir.mktmpdir do |dir|
       @kubelets.backup_etcd path: File.join(dir, 'etcd.db')
@@ -213,6 +289,16 @@ class PorkadotInstallEtcdTest < Minitest::Test
     end
 
     assert_equal ['node01'], calls
+  end
+
+  def backup_responder
+    lambda do |_host, cmd|
+      case cmd.to_s
+      when /\bid -u\b/ then '1000'
+      when /\bid -g\b/ then '1001'
+      else ''
+      end
+    end
   end
 
   def silence_warnings

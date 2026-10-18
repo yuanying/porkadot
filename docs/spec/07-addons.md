@@ -201,6 +201,10 @@ porkadot etcd backup --node 192.168.22.111
 
 etcdctl のオプション（証明書パス等）は設定から自動的に構築されます。
 
+`/etc/etcd/pki` の証明書と鍵は root だけが読めるため、etcdctl は root で実行します。
+スナップショットはノードの `./kube_temp/kubelet/etcd.db` に書いたあと、接続ユーザーの持ち物・モード 0600 にしてダウンロードし、ノードからは消します。
+スナップショットは Secret を含むため、手元のファイルもモード 0600 にします。
+
 ### リストア
 
 ```bash
@@ -248,6 +252,14 @@ etcdctl コマンドは以下の証明書ファイルを使用します:
 | `--cert` | `/etc/etcd/pki/etcd.crt` |
 | `--key` | `/etc/etcd/pki/etcd.key` |
 | `--endpoints` | `https://127.0.0.1:2379` |
+
+`/etc/etcd/pki` の `ca.crt`・`etcd.crt`・`etcd.key` は `install.sh` が root:root 0600 で置きます（既にあるファイルも 0600 にそろえ直します）。
+etcd の静的 Pod は root で動くので読めます。etcdctl を使う porkadot のコマンド（`etcd backup`、`rotate-certs etcd` のヘルスチェック）は root で実行します。
+
+`/etc/etcd/etcd.env` は同じ値を `ETCDCTL_CACERT` / `ETCDCTL_CERT` / `ETCDCTL_KEY` / `ETCDCTL_ENDPOINTS` として export します（秘密は含まないのでモードはそのまま）。
+porkadot のコマンドはこのファイルを読み込みません。手で読み込んだシェルで同じ値をフラグでも渡すと、etcdctl 3.5 は
+`conflicting environment variable "ETCDCTL_ENDPOINTS" is shadowed by corresponding command-line flag` で止まります。
+読み込んだときはフラグを付けず、別のエンドポイントを使うときは環境変数を unset してからフラグで渡します。
 
 ### etcd メンバーの URL 構成
 

@@ -78,11 +78,23 @@ module Porkadot; module Install
       end
 
       options = self.etcd_options
+      snapshot = "#{KUBE_TEMP}/etcd.db"
       on(host) do |host|
         execute(:mkdir, '-p', KUBE_TEMP)
-        execute(:"/opt/bin/etcdctl", *options, "snapshot", "save", "#{KUBE_TEMP}/etcd.db")
-        download! "#{KUBE_TEMP}/etcd.db", path
+        uid = capture(:id, '-u')
+        gid = capture(:id, '-g')
+        # The etcd client key is readable only by root.
+        as user: 'root' do
+          execute(:"/opt/bin/etcdctl", *options, "snapshot", "save", snapshot)
+          execute(:chown, "#{uid}:#{gid}", snapshot)
+          execute(:chmod, '0600', snapshot)
+        end
+        download! snapshot, path
+        execute(:rm, '-f', snapshot)
       end
+
+      # The snapshot contains Secrets.
+      File.chmod(0600, path)
     end
 
     def restore_etcd path: "./backup/etcd.db"

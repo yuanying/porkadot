@@ -116,9 +116,12 @@ module Porkadot; module Install
 
     def wait_etcd_health host, etcd_opts
       on(host) do
-        until test(:"/opt/bin/etcdctl", *etcd_opts, 'endpoint', 'health')
-          info "Still waiting for etcd health on #{host.hostname}"
-          sleep 5
+        # The etcd client key is readable only by root.
+        as user: 'root' do
+          until test(:"/opt/bin/etcdctl", *etcd_opts, 'endpoint', 'health')
+            info "Still waiting for etcd health on #{host.hostname}"
+            sleep 5
+          end
         end
       end
     end

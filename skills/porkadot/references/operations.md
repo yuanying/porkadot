@@ -368,6 +368,33 @@ porkadot render kubernetes --config ./porkadot.yaml
 
 ---
 
+## etcd の backup と etcdctl
+
+```bash
+# ./backup/etcd-<日時>.db に取る（モード 0600。Secret を含むので扱いに注意）
+porkadot etcd backup --config ./porkadot.yaml
+
+# メンバーを指定する場合は porkadot.yaml の nodes のキーを渡す
+porkadot etcd backup --node <node> --config ./porkadot.yaml
+```
+
+- `/etc/etcd/pki` の証明書と鍵は root:root 0600。etcdctl は root で動かす（porkadot の `etcd backup` / `rotate-certs etcd` は自動で root で流す）。
+- 古い porkadot で置かれたノードでは 0644 のことがある。`install kubelet` を流すと 0600 にそろう。
+
+ノードで手で etcdctl を使うときは、`/etc/etcd/etcd.env` を読み込んでフラグを付けない。
+
+```bash
+ssh <node> "sudo bash -c '. /etc/etcd/etcd.env && /opt/bin/etcdctl endpoint health --cluster'"
+ssh <node> "sudo bash -c '. /etc/etcd/etcd.env && /opt/bin/etcdctl member list -w table'"
+```
+
+`etcd.env` は `ETCDCTL_CACERT` / `ETCDCTL_CERT` / `ETCDCTL_KEY` / `ETCDCTL_ENDPOINTS` を export する。
+読み込んだうえで `--endpoints` などを付けると、etcdctl 3.5 は
+`conflicting environment variable "ETCDCTL_ENDPOINTS" is shadowed by corresponding command-line flag` で止まる。
+別のエンドポイントを使うときは `unset ETCDCTL_ENDPOINTS` してから `--endpoints` を渡す。
+
+---
+
 ## アセット回帰確認（render 後の差分チェック）
 
 ```bash
