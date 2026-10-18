@@ -184,6 +184,16 @@ class PorkadotInstallBootstrapTest < Minitest::Test
     assert_match(/no ready replica: kube-controller-manager$/, error.message)
   end
 
+  def test_cleanup_timeout_prints_nothing_to_stderr
+    @cluster.readyz['192.168.33.113'] = false
+
+    _, err = capture_io do
+      assert_raises(Porkadot::Error) { @bootstrap.cleanup(timeout: 60) }
+    end
+
+    assert_empty err, 'the error should be reported once, by the caller'
+  end
+
   def test_cleanup_reports_when_vip_does_not_answer_after_cleanup
     @cluster.vip_after_cleanup = false
 
@@ -219,6 +229,45 @@ class PorkadotInstallBootstrapTest < Minitest::Test
   end
 
   # --- CLI ---
+
+  def test_main_prints_porkadot_error_once_without_backtrace
+    fake = Object.new
+    fake.define_singleton_method(:cleanup) { |timeout: nil| raise Porkadot::Error, "Timed out waiting for X\nBootstrap static Pods were not removed." }
+
+    original_new = Porkadot::Install::Bootstrap.method(:new)
+    silence_warnings { Porkadot::Install::Bootstrap.define_singleton_method(:new) { |_| fake } }
+    status = nil
+    begin
+      _, err = capture_io do
+        status = Porkadot::Cmd::Cli.main(['install', 'bootstrap', 'cleanup',
+          '--config', File.join(TEST_FIXTURES_DIR, 'config', 'porkadot.yaml')])
+      end
+    ensure
+      silence_warnings { Porkadot::Install::Bootstrap.define_singleton_method(:new) { |*args| original_new.call(*args) } }
+    end
+
+    assert_equal 1, status
+    assert_equal "Timed out waiting for X\nBootstrap static Pods were not removed.\n", err
+  end
+
+  def test_main_returns_zero_on_success
+    fake = Object.new
+    fake.define_singleton_method(:cleanup) { |timeout: nil| nil }
+
+    original_new = Porkadot::Install::Bootstrap.method(:new)
+    silence_warnings { Porkadot::Install::Bootstrap.define_singleton_method(:new) { |_| fake } }
+    status = nil
+    begin
+      capture_io do
+        status = Porkadot::Cmd::Cli.main(['install', 'bootstrap', 'cleanup',
+          '--config', File.join(TEST_FIXTURES_DIR, 'config', 'porkadot.yaml')])
+      end
+    ensure
+      silence_warnings { Porkadot::Install::Bootstrap.define_singleton_method(:new) { |*args| original_new.call(*args) } }
+    end
+
+    assert_equal 0, status
+  end
 
   def test_cli_passes_timeout_to_cleanup
     calls = []

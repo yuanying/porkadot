@@ -114,6 +114,7 @@ static pod を消す前に、本来の control-plane に引き継げることを
 
 - 上限までに揃わなければ static pod を消さずに失敗する。表示されたコマンドで何が揃っていないかを確かめ、直してから cleanup を再実行する。マスターが 1 台落ちたままの状態では cleanup は通らない
 - VIP の `/readyz` だけでは確認にならない。cleanup の時点では VIP の背後に bootstrap apiserver も居るため。またマスターの `/readyz` が ok でも、kubelet が Pod の Ready を報告するまで EndpointSlice は `ready: false` のままで、その間に bootstrap を消すと kube-proxy が VIP を REJECT して全ノードが NotReady になる（デッドロックになり自力では戻らない）
+- 消した直後は VIP が数秒応答しないことがある（消えた bootstrap の endpoint が EndpointSlice から外れるまで）。削除後の VIP の待ちで吸収するので、`Still waiting` が数回出ても問題ない
 - 削除後に VIP が応答しなければ失敗する。`install bootstrap node` から再実行して VIP を戻し、EndpointSlice を確かめてから cleanup をやり直す
 
 ### bootstrap ノードの kubelet 復旧

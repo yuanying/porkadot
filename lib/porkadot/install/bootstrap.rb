@@ -54,7 +54,9 @@ module Porkadot; module Install
       config = self.config
       bootstrap = self
       uploader = Porkadot::Install::Uploader.new(global_config)
-      on(host) do |host|
+      # Sequential: the parallel runner's thread would print the error and its
+      # backtrace again when it dies.
+      on(host, in: :sequence) do |host|
         execute(:mkdir, '-p', Porkadot::Install::KUBE_TEMP)
         execute(:rm, '-rf', KUBE_TEMP, LEGACY_SECRETS_TEMP)
         uploader.upload_tree(self, config.target_path, KUBE_TEMP)

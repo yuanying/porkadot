@@ -2,4 +2,4 @@
 
 require 'porkadot'
 
-puts Porkadot::Cmd::Cli.start(ARGV)
+exit Porkadot::Cmd::Cli.main(ARGV)
