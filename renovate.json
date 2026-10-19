@@ -75,6 +75,11 @@
       "matchManagers": ["kustomize"],
       "matchFileNames": ["hack/metallb/**"],
       "groupName": "metallb"
+    },
+    {
+      "description": "Workflows are already read by the github-actions manager. Grouping them keeps a handful of actions from arriving as a handful of pull requests, since they are updated together and reviewed the same way",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
     }
   ]
 }

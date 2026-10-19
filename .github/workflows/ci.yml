@@ -1,0 +1,37 @@
+# porkadot CI
+#
+# Runs the same `bundle exec rake test` as a laptop. The install tests replace
+# the SSHKit backend with a recorder or stub Net::SSH.start, so nothing here
+# reaches a node or a cluster. The sops tests are skipped when sops and
+# age-keygen are missing, as they are on the runner.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# Running the tests writes nothing outside the runner.
+permissions:
+  contents: read
+
+# A pull request that gets pushed to again drops its earlier run. Pushes to
+# master are not cancelled: every commit on master should have its own result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The Ruby is read from .ruby-version. Gemfile.lock is not committed, so
+      # setup-ruby resolves the gems from the gemspec on each run and caches
+      # them under the lockfile it generated.
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          bundler-cache: true
+      - run: bundle exec rake test
