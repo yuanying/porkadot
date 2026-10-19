@@ -83,8 +83,8 @@ Kubernetes クラスタ全体の設定です。
 |------|-----------|------|
 | `cluster_name` | `porkadot` | クラスタ名 |
 | `control_plane_endpoint` | — | コントロールプレーンエンドポイント（例: `192.168.23.101:6443`）|
-| `kubernetes_version` | `v1.30.14` | Kubernetes バージョン |
-| `crictl_version` | `v1.30.1` | crictl バージョン |
+| `kubernetes_version` | `v1.31.14` | Kubernetes バージョン |
+| `crictl_version` | `v1.31.1` | crictl バージョン |
 | `image_repository` | `registry.k8s.io` | コンテナイメージリポジトリ |
 
 ### `kubernetes.networking`
