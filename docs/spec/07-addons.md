@@ -133,7 +133,12 @@ MetalLB は CRD を使用するため、`assets/kubernetes/manifests/crds/metall
 
 kubelet のサービング証明書 CSR を自動承認します。`serverTLSBootstrap: true` が有効な環境で必要です。
 
-追加設定なし。
+マニフェストは上流 [alex1989hu/kubelet-serving-cert-approver](https://github.com/alex1989hu/kubelet-serving-cert-approver) の `deploy/standalone-install.yaml`（v0.12.1）を元にしています。上流との違いは、node affinity で `node-role.kubernetes.io/master` の付いたノードも避けることと、イメージのタグを設定で固定すること（`imagePullPolicy: IfNotPresent`）です。
+
+| キー | デフォルト | 説明 |
+|------|-----------|------|
+| `image_repository` | `ghcr.io/alex1989hu/kubelet-serving-cert-approver` | approver イメージ |
+| `image_tag` | `0.12.1` | approver イメージタグ（上流のリリース `v0.12.1` に当たる。イメージのタグに `v` は付かない） |
 
 `kubelet-rubber-stamp` の後継として推奨されるアドオンです。
 
