@@ -26,6 +26,12 @@
       "matchStrings": ["spec\\.add_(?:development_)?dependency \"(?<depName>[^\"]+)\", \"(?<currentValue>[^\"]+)\""],
       "datasourceTemplate": "rubygems",
       "versioningTemplate": "ruby"
+    },
+    {
+      "description": "CI installs the tools some tests need by a version set in the workflow's env. The same comment as in default.yaml sits on the line above each one, and the version is the value on the next line",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": ["# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*[A-Z_]+: \"?(?<currentValue>[^\"\\s]+)\"?"]
     }
   ],
   "packageRules": [
