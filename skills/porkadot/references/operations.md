@@ -279,6 +279,11 @@ Step 4・5 の `install kubelet` は、kubectl・kubelet・etcdctl・crictl の 
 K8s の版を変えずに etcd・crictl・CNI plugins の版だけを変えた場合も追従する。
 `--force` はすべてをダウンロードし直したいとき（バイナリが壊れている疑いがあるときなど）に使う。
 
+`install kubelet` は iscsid を再起動しない（`initiatorname.iscsi` の中身が変わったときだけ再起動する）。入っている open-iscsi などのパッケージも上げない。
+Longhorn v1.11.3・v1.12.1 より前のノードで iscsid を再起動する（open-iscsi の更新、手での `systemctl restart iscsid` など）ときは、
+先に drain し、`sudo iscsiadm -m session` に残った Longhorn のセッション（`iqn.2019-10.io.longhorn:`）を logout してから再起動する。
+アタッチされたまま再起動すると、そのエンジンは detach の後に古いセッションを残す（`troubleshooting.md` の「drain の後に古い iSCSI セッションが残る」）。
+
 **Step 6**: 削除されたワーカーノードがある場合（porkadot.yaml から削除済み）
 
 ```bash
