@@ -22,8 +22,10 @@ addons:
   flannel:
     backend: vxlan
     plugin_image_repository: flannel/flannel-cni-plugin
+    # renovate: datasource=docker depName=flannel/flannel-cni-plugin
     plugin_image_tag: v1.4.1-flannel1
     daemon_image_repository: flannel/flannel
+    # renovate: datasource=docker depName=flannel/flannel
     daemon_image_tag: v0.25.1
     resources:
       requests:
@@ -36,6 +38,7 @@ addons:
   # Opt-in replacement for flannel: swap flannel for cnidaria in addons.enabled.
   cnidaria:
     image_repository: ghcr.io/yuanying/cnidaria-cni
+    # renovate: datasource=docker depName=ghcr.io/yuanying/cnidaria-cni
     image_tag: v0.1.0
     network_name: cnidaria
     resources:
@@ -60,19 +63,24 @@ addons:
   kubelet-serving-cert-approver:
     image_repository: ghcr.io/alex1989hu/kubelet-serving-cert-approver
     # Upstream image tags have no leading "v" (release v0.12.1 is image 0.12.1).
+    # renovate: datasource=github-releases depName=alex1989hu/kubelet-serving-cert-approver extractVersion=^v(?<version>.+)$
     image_tag: "0.12.1"
 
 etcd:
   image_repository: registry.k8s.io/etcd
+  # renovate: datasource=docker depName=registry.k8s.io/etcd
   image_tag: 3.5.34-0
   extra_env: []
 
 kubernetes:
+  # renovate: datasource=github-releases depName=kubernetes/kubernetes
   kubernetes_version: v1.31.14
+  # renovate: datasource=github-releases depName=kubernetes-sigs/cri-tools
   crictl_version: v1.31.1
   image_repository: registry.k8s.io
 
   networking:
+    # renovate: datasource=github-releases depName=containernetworking/plugins
     cni_version: v1.4.1
     service_subnet: '10.254.0.0/24'
     pod_subnet: '10.244.0.0/16'
