@@ -57,7 +57,10 @@ addons:
 
   kubelet-rubber-stamp: {}
 
-  kubelet-serving-cert-approver: {}
+  kubelet-serving-cert-approver:
+    image_repository: ghcr.io/alex1989hu/kubelet-serving-cert-approver
+    # Upstream image tags have no leading "v" (release v0.12.1 is image 0.12.1).
+    image_tag: "0.12.1"
 
 etcd:
   image_repository: registry.k8s.io/etcd

@@ -1,3 +1,7 @@
+<% approver = config.raw['kubelet-serving-cert-approver'] -%>
+# Based on deploy/standalone-install.yaml of github.com/alex1989hu/kubelet-serving-cert-approver v0.12.1.
+# Unlike upstream, the node affinity still avoids node-role.kubernetes.io/master, which porkadot
+# clusters taint control plane nodes with.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -160,8 +164,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        image: ghcr.io/alex1989hu/kubelet-serving-cert-approver:main
-        imagePullPolicy: Always
+        image: <%= approver.image_repository %>:<%= approver.image_tag %>
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthz
@@ -193,6 +197,12 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /healthz
+            port: health
+          periodSeconds: 10
       priorityClassName: system-cluster-critical
       securityContext:
         fsGroup: 65534
@@ -202,6 +212,9 @@ spec:
           type: RuntimeDefault
       serviceAccountName: kubelet-serving-cert-approver
       tolerations:
+      - effect: NoSchedule
+        key: node.cloudprovider.kubernetes.io/uninitialized
+        operator: Exists
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
         operator: Exists

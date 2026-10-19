@@ -276,7 +276,12 @@ metallb:
 
 #### `addons.kubelet-serving-cert-approver`
 
-追加設定なし。kubelet サービング証明書を自動承認する。
+kubelet サービング証明書を自動承認する。
+
+| キー | デフォルト | 説明 |
+|------|-----------|------|
+| `image_repository` | `ghcr.io/alex1989hu/kubelet-serving-cert-approver` | approver イメージ |
+| `image_tag` | `0.12.1` | approver イメージタグ（上流のリリース `v0.12.1` に当たる。イメージのタグに `v` は付かない） |
 
 #### `addons.kubelet-rubber-stamp`（非推奨）
 

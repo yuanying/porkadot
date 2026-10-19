@@ -84,6 +84,39 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert_equal ['registry.k8s.io/coredns/coredns:v1.11.3'], images
   end
 
+  def test_kubelet_serving_cert_approver_uses_pinned_image
+    render_addons(['kubelet-serving-cert-approver'])
+
+    container = pod_spec(approver_deployment)['containers'].first
+    assert_equal 'ghcr.io/alex1989hu/kubelet-serving-cert-approver:0.12.1', container['image']
+    assert_equal 'IfNotPresent', container['imagePullPolicy']
+  end
+
+  def test_kubelet_serving_cert_approver_image_can_be_overridden
+    render_addons(['kubelet-serving-cert-approver'], 'kubelet-serving-cert-approver' => {
+      'image_repository' => 'registry.example.com/kubelet-serving-cert-approver',
+      'image_tag' => '9.9.9',
+    })
+
+    container = pod_spec(approver_deployment)['containers'].first
+    assert_equal 'registry.example.com/kubelet-serving-cert-approver:9.9.9', container['image']
+  end
+
+  def test_kubelet_serving_cert_approver_matches_upstream_v0_12_1
+    render_addons(['kubelet-serving-cert-approver'])
+
+    spec = pod_spec(approver_deployment)
+    startup = spec['containers'].first['startupProbe']
+    assert_equal({ 'path' => '/healthz', 'port' => 'health' }, startup['httpGet'])
+    assert_equal 30, startup['failureThreshold']
+    assert_equal 10, startup['periodSeconds']
+
+    taints = spec['tolerations'].map { |t| t['key'] }
+    assert_includes taints, 'node.cloudprovider.kubernetes.io/uninitialized'
+    assert_includes taints, 'node-role.kubernetes.io/master'
+    assert_includes taints, 'node-role.kubernetes.io/control-plane'
+  end
+
   def test_default_addons_do_not_render_storage_version_migrator
     config = YAML.load_file(File.join(TEST_FIXTURES_DIR, 'config', 'porkadot.yaml'))
     config['local'] = { 'assets_dir' => File.join(@tmpdir, 'assets') }
@@ -124,6 +157,11 @@ class PorkadotRenderAddonsTest < Minitest::Test
   def cnidaria_daemonset
     YAML.load_stream(File.read(addon_path('cnidaria/cnidaria.yaml')))
       .compact.find { |d| d['kind'] == 'DaemonSet' }
+  end
+
+  def approver_deployment
+    YAML.load_stream(File.read(addon_path('kubelet-serving-cert-approver/src.yaml')))
+      .compact.find { |d| d['kind'] == 'Deployment' }
   end
 
   def pod_spec(ds)
