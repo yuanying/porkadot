@@ -33,7 +33,7 @@ class PorkadotRenderAddonsTest < Minitest::Test
 
     ds = cnidaria_daemonset
     images = pod_spec(ds).values_at('initContainers', 'containers').flatten.map { |c| c['image'] }
-    assert_equal ['ghcr.io/yuanying/cnidaria-cni:v0.1.0'] * 2, images
+    assert_equal ['ghcr.io/yuanying/cnidaria-cni:v0.1.1'] * 2, images
 
     container = pod_spec(ds)['containers'].first
     assert_includes container['args'], '--network-name=cnidaria'
@@ -75,13 +75,13 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert namespaced.all? { |d| d['metadata']['namespace'] == 'kube-system' }
   end
 
-  def test_coredns_uses_kubeadm_coredns_image
+  def test_coredns_uses_default_image
     render_addons(['coredns'])
 
     deploy = YAML.load_stream(File.read(addon_path('coredns/coredns.yaml')))
       .compact.find { |d| d['kind'] == 'Deployment' && d['metadata']['name'] == 'coredns' }
     images = pod_spec(deploy)['containers'].map { |c| c['image'] }
-    assert_equal ['registry.k8s.io/coredns/coredns:v1.11.3'], images
+    assert_equal ['registry.k8s.io/coredns/coredns:v1.11.4'], images
   end
 
   def test_kubelet_serving_cert_approver_uses_pinned_image

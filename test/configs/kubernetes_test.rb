@@ -30,7 +30,7 @@ class PorkadotConfigsK8sTest < Minitest::Test
     assert_equal 'porkadot', k8s.cluster_name
     assert_equal '192.168.33.101:6443', k8s.control_plane_endpoint
     assert_equal 'v1.17.2', k8s.kubernetes_version
-    assert_equal 'v1.31.1', k8s.crictl_version
+    assert_equal 'v1.32.0', k8s.crictl_version
     assert_equal 'registry.k8s.io', k8s.image_repository
     assert_nil k8s.log_level
   end
@@ -42,7 +42,7 @@ class PorkadotConfigsK8sTest < Minitest::Test
       path = File.join(dir, 'porkadot.yaml')
       File.write(path, YAML.dump(config))
 
-      assert_equal 'v1.31.14', Porkadot::Configs::Kubernetes.new(Porkadot::Config.new(path)).kubernetes_version
+      assert_equal 'v1.32.13', Porkadot::Configs::Kubernetes.new(Porkadot::Config.new(path)).kubernetes_version
     end
   end
 
