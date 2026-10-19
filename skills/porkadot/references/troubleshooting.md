@@ -256,22 +256,45 @@ kubectl delete volumeattachment <stuck-attachment-name>
 - porkadot 実行時に特定ノードで SSH 接続が失敗する
 - エラーメッセージに `fingerprint` や `known_hosts` が含まれる
 
+- porkadot は `Host key of <user>@<node>:22 does not match known_hosts (...)` と出す
+
 ### 原因
 
 porkadot が使用する net-ssh (Ruby) は `~/.ssh/known_hosts` のエントリを直接検証する。
-以下の場合に不一致が発生する:
-- ノードを再インストールしてホスト鍵が変わった
-- `ssh-keyscan -H`（ハッシュ形式）で登録されており net-ssh が認識できない
+hashed の行も、同じホストの複数の行（rsa・ecdsa・ed25519）も読むので、
+`ssh` で入れるのに porkadot で不一致になるなら、ノードのホスト鍵が変わった（再インストールなど）と見てよい。
+
+porkadot 0.30.0 以前は SSHKit の known_hosts の parser を使っていて、hashed の行では最初に一致した 1 行の鍵しか見なかった。
+あるノードの rsa の行が ecdsa の行より前にあると、鍵が正しくても不一致になった。
 
 ### 対処
 
 ```bash
-# 古いエントリを削除
-ssh-keygen -R <node-ip>
+# 登録されている鍵とノードが出す鍵を比べる
+ssh-keygen -F <node-ip>
+ssh-keyscan <node-ip>
 
-# 平文形式で再登録（-H フラグなし）
-ssh-keyscan <node-ip> >> ~/.ssh/known_hosts
+# ホスト鍵が変わったと確かめてから、古いエントリを削除して入り直す
+ssh-keygen -R <node-ip>
+ssh <user>@<node-ip> true
 ```
+
+---
+
+## porkadot 実行時に SSH の認証で失敗する
+
+### 症状
+
+- `ssh` では入れるのに、porkadot は `SSH authentication failed for <user>@<node>:22 (...)` で止まる
+
+### 原因と対処
+
+porkadot はメッセージに、ssh-agent の状態、使う鍵、net-ssh が読めなかった鍵ファイルを出す。
+
+- `ssh-agent: SSH_AUTH_SOCK is not set` / `not available` — ssh-agent が使えない（サンドボックスがソケットを塞いでいる場合など）。
+  鍵ファイルを直接読むので、その鍵がノードに登録されていれば入れる
+- `keys: ...` — `connection.keys` を書くと、その鍵ファイルしか読まない。ノードに登録されている鍵を足すか、`keys` を外して `~/.ssh/config` の `IdentityFile` と既定の鍵ファイル（`~/.ssh/id_ed25519` など）に任せる
+- `net-ssh: could not load private key file ...` — その鍵ファイルを読めなかった。パスフレーズ付きの鍵は ssh-agent に載せて使う
 
 ---
 

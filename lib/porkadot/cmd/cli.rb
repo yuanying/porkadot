@@ -7,10 +7,17 @@ module Porkadot; module Cmd
     # Porkadot::Error messages are written for the user, so print only the
     # message, without a backtrace.
     def self.main args
+      # SSHKit's parallel runner re-raises errors of its threads, which are
+      # handled below. Don't let the threads print them again.
+      Thread.report_on_exception = false
       puts start(args)
       0
     rescue Porkadot::Error => e
       $stderr.puts e.message
+      1
+    rescue SSHKit::Runner::ExecuteError => e
+      raise unless e.cause.is_a?(Porkadot::Error)
+      $stderr.puts e.cause.message
       1
     end
 
