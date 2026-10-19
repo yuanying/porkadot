@@ -8,7 +8,9 @@ local:
 connection:
   user: ubuntu
   port: 22
-  keys: ["~/.ssh/id_rsa", "~/.ssh/id_dsa"]
+  # keys: ["~/.ssh/id_ed25519"]
+  # Without keys, net-ssh uses ssh-agent and IdentityFile in ~/.ssh/config,
+  # or ~/.ssh/id_ed25519, id_rsa, id_dsa and id_ecdsa if no IdentityFile is set.
 
 nodes: {}
 

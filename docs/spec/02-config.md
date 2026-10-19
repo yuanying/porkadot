@@ -292,7 +292,13 @@ metallb:
 |------|-----------|------|
 | `user` | `ubuntu` | SSH ユーザー名 |
 | `port` | `22` | SSH ポート |
-| `keys` | `["~/.ssh/id_rsa", "~/.ssh/id_dsa"]` | SSH 秘密鍵のパス |
+| `keys` | なし | SSH 秘密鍵のパス（例: `["~/.ssh/id_ed25519"]`） |
+
+`keys` を書かなければ、net-ssh が OpenSSH と同じように鍵を選ぶ。ssh-agent の鍵と、`~/.ssh/config` の `IdentityFile`（無ければ `~/.ssh/id_ed25519`・`id_rsa`・`id_dsa`・`id_ecdsa`）を使う。`keys` を書くとその鍵ファイルだけを読み、`IdentityFile` と既定の鍵ファイルは使わない（ssh-agent の鍵は使う）。
+
+ssh-agent が使えない環境でも、鍵ファイルを直接読んで入れる。ed25519 の鍵も読める（`ed25519`・`bcrypt_pbkdf` の gem）。パスフレーズ付きの鍵は、ssh-agent が無いと入力を求められる。
+
+ホスト鍵は `~/.ssh/known_hosts`（`UserKnownHostsFile`）と `/etc/ssh/ssh_known_hosts` で確かめる。hashed の行（`HashKnownHosts yes`）も、同じホストの複数の行（rsa・ecdsa・ed25519）も読む。
 
 ---
 

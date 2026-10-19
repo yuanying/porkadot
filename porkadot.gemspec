@@ -35,8 +35,12 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "thor", "~> 1.0"
   spec.add_dependency "hashie", ">= 4.1"
-  spec.add_dependency "sshkit", "~> 1.20"
-  spec.add_dependency "net-ssh", "~> 7.0"
+  spec.add_dependency "sshkit", "~> 1.25", ">= 1.25.1"
+  spec.add_dependency "net-ssh", "~> 7.3", ">= 7.3.6"
+  # Required by net-ssh to read ed25519 keys, e.g. ~/.ssh/id_ed25519 when
+  # ssh-agent is not available.
+  spec.add_dependency "ed25519", "~> 1.3"
+  spec.add_dependency "bcrypt_pbkdf", "~> 1.1"
   spec.add_development_dependency "bundler", ">= 2.5"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "minitest", ">= 5.0"
