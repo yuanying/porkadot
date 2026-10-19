@@ -33,6 +33,7 @@ require 'porkadot/assets/bootstrap'
 require 'porkadot/assets/kubernetes'
 
 require 'porkadot/install/base'
+require 'porkadot/install/ssh'
 require 'porkadot/install/uploader'
 require 'porkadot/install/kubelet'
 require 'porkadot/install/kubernetes'
