@@ -249,6 +249,47 @@ kubectl delete volumeattachment <stuck-attachment-name>
 
 ---
 
+## drain の後に古い iSCSI セッションが残り、同じボリュームのアタッチが失敗する
+
+### 症状
+
+- drain したノードの `sudo iscsiadm -m session` に、もう居ない instance-manager の IP への Longhorn のセッション（`iqn.2019-10.io.longhorn:`）が残る
+- そのノードに同じボリュームがアタッチされると、エンジンが `Failed to init frontend ... failed to logout target` で落ち、ボリュームが faulted になって Pod が作り直され続ける
+- iscsid のログに `session N cannot be terminted because it's trying to reconnect`、logout が `32 - target likely not connected`
+
+### 原因
+
+Longhorn v1.11.3・v1.12.1 より前のエンジンは、起動したときの iscsid の PID を使って iscsiadm を流す。
+ボリュームがアタッチされたまま iscsid が再起動すると、そのエンジンは logout ができなくなり、detach（drain を含む）のたびにセッションを残す。
+残ったまま iscsid がもう一度再起動すると、そのセッションは logout もできなくなる。
+porkadot 0.31 までの `install kubelet` は毎回 iscsid を再起動していた（今は `initiatorname.iscsi` が変わったときだけ）。
+詳細は porkadot-dev の `docs/longhorn/iscsi-stale-sessions.md`。
+
+### 対処
+
+iscsid を再起動する前（drain の後、そのノードに Longhorn のボリュームがアタッチされていない状態）なら、ノードの上で logout すれば消える。
+
+```bash
+sudo iscsiadm -m session
+# 残っている Longhorn のセッションごとに
+sudo iscsiadm -m session -r <sid> -u
+sudo iscsiadm -m node -T <iqn> -p <古い IP>:3260 -o delete
+sudo iscsiadm -m session   # iscsiadm: No active sessions.
+```
+
+logout が `32` で失敗する（iscsid を再起動した後）なら、drain したまま、残ったセッションの node の記録の
+`node.session.reopen_max` を 1 にして iscsid を再起動し、iscsid に諦めさせる（1 本 16 秒ほど）。
+ノードの再起動でも消える。
+
+```bash
+sudo iscsiadm -m node -T <iqn> -p <古い IP>:3260 -o update -n node.session.reopen_max -v 1
+sudo systemctl restart iscsid.service
+sudo iscsiadm -m session   # Longhorn のセッションが消えるまで待つ
+sudo iscsiadm -m node -p <古い IP>:3260 -o delete
+```
+
+---
+
 ## porkadot 実行時に SSH 接続が fingerprint mismatch で失敗する
 
 ### 症状

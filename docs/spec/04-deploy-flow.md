@@ -96,6 +96,12 @@ assets は、ノードの一時ディレクトリ（`./kube_temp/<group>`）へ�
 - CNI plugins は `/opt/cni/bin` に展開し、版を `/opt/cni/bin/.porkadot-cni-plugins-version` に記録します。記録が `kubernetes.networking.cni_version` と違う（または無い）ときだけ展開し直します。
 - `--force` を付けると、すべてをダウンロードし直します。
 
+`install-pkgs.sh` も毎回実行され、次のように振る舞います。
+
+- パッケージ（open-iscsi など）は `apt-get install --no-upgrade` で入れます。入っていないものだけを入れ、入っているものは上げません。open-iscsi を上げると、その postinst が iscsid を再起動するためです。パッケージの更新は OS の更新に任せます。
+- `/etc/iscsi/initiatorname.iscsi` は、中身が違う（または無い）ときだけ置き直し、そのときだけ iscsid を再起動します。同じときは `systemctl start iscsid.service` だけを流します（動いていれば何もしない。Ubuntu の open-iscsi は `iscsid.socket` だけを有効にするので、iscsid が動いていないことがある）。
+  - Longhorn のボリュームがアタッチされたまま iscsid を再起動すると、Longhorn v1.11.3・v1.12.1 より前のエンジンは iSCSI の logout ができなくなり、detach の後に古いセッションが残ります（`skills/porkadot/references/troubleshooting.md` を参照）。
+
 インストール後、kubelet は TLS ブートストラップを使って apiserver に接続します。
 この時点では apiserver が存在しないため、kubelet は起動待ちの状態になります。
 
