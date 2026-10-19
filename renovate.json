@@ -1,0 +1,80 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "A version is proposed only once it has been public for seven days, so that a release pulled or fixed in its first week never reaches a branch. internalChecksFilter is already strict by default; it is stated so that the wait is read here as holding back the branch and the pull request themselves, not only a status check on them",
+  "extends": ["config:recommended", ":semanticCommitTypeAll(chore)"],
+  "timezone": "Asia/Tokyo",
+  "dependencyDashboard": true,
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "customManagers": [
+    {
+      "description": "porkadot keeps the versions it installs in default.yaml, which no manager reads. A comment on the line above each version says where to look it up: `# renovate: datasource=<datasource> depName=<name>`, optionally followed by packageName=, versioning= and extractVersion= in that order. The version is the value of the key on the next line, without its quotes. A version is tracked by writing the comment, not by adding a manager here",
+      "customType": "regex",
+      "managerFilePatterns": ["/^lib/porkadot/default\\.yaml$/"],
+      "matchStrings": ["# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: packageName=(?<packageName>\\S+))?(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))?\\n\\s*[\\w-]+: \"?(?<currentValue>[^\"\\s]+)\"?"]
+    },
+    {
+      "description": "Some images are written directly into the templates instead of default.yaml. They carry the same comment above the image line, written as an ERB comment (`<%-# renovate: ... -%>`) so that it does not appear in the rendered manifests. The version is the tag of the image on the next line",
+      "customType": "regex",
+      "managerFilePatterns": ["/^lib/porkadot/assets/.+\\.erb$/"],
+      "matchStrings": ["<%-# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: packageName=(?<packageName>\\S+))?(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))? -%>\\n\\s*image: [^\\s:]+:(?<currentValue>\\S+)"]
+    },
+    {
+      "description": "The gem's dependencies are in the gemspec. The bundler manager reads only the Gemfile, which here says just `gemspec`, and Gemfile.lock is not committed, so no other manager reads them. Each line already names the gem and its range, so it is read directly; a comment would only repeat the name. The ranges belong to a library, so a pull request appears only when a release falls outside one",
+      "customType": "regex",
+      "managerFilePatterns": ["/^porkadot\\.gemspec$/"],
+      "matchStrings": ["spec\\.add_(?:development_)?dependency \"(?<depName>[^\"]+)\", \"(?<currentValue>[^\"]+)\""],
+      "datasourceTemplate": "rubygems",
+      "versioningTemplate": "ruby"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Otherwise Renovate offers only the newest release, which folds a patch into the minor after it. With the minor disabled below, the patch would be dropped too. Kept separate, the newest patch of the current minor is offered on its own",
+      "matchDepNames": [
+        "kubernetes/kubernetes",
+        "kubernetes-sigs/cri-tools",
+        "registry.k8s.io/etcd",
+        "coredns/coredns"
+      ],
+      "separateMinorPatch": true
+    },
+    {
+      "description": "These follow the Kubernetes minor version. Each porkadot release supports one Kubernetes minor, and the minor is raised by hand together with the porkadot release that supports it, so only patch releases are proposed. Before each etcd minor upgrade, etcd has to be on a recent enough patch release (3.5.26 or later before 3.6, 3.6.11 or later before 3.7). A patch-only update never crosses a minor, so it does not run into this",
+      "matchDepNames": [
+        "kubernetes/kubernetes",
+        "kubernetes-sigs/cri-tools",
+        "registry.k8s.io/etcd",
+        "coredns/coredns"
+      ],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    },
+    {
+      "description": "flannel's daemon and CNI plugin are released together, and each flannel release names the plugin it was tested with, so both are updated on one branch",
+      "matchPackageNames": ["flannel/flannel", "flannel/flannel-cni-plugin"],
+      "groupName": "flannel"
+    },
+    {
+      "description": "The CNI plugin's tags are a plugins version followed by -flannelN, where N counts flannel's builds of that version. Docker versioning reads the suffix as a variant and would offer only tags with the same -flannelN. Read as a build number, a newer build of the same plugins version is offered too",
+      "matchPackageNames": ["flannel/flannel-cni-plugin"],
+      "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-flannel(?<build>\\d+)$"
+    },
+    {
+      "description": "These images are the user's own. The wait protects against a broken release published by someone else, and ghcr.io gives no release time to wait on, so these images are exempt",
+      "matchPackageNames": ["ghcr.io/yuanying/**", "ghcr.io/porkadot/**"],
+      "minimumReleaseAge": "0 days"
+    },
+    {
+      "description": "registry.k8s.io gives no release time, so the wait would hold these images back for good. etcd is read as an image because its tag ends in a -N suffix, which counts Kubernetes' rebuilds and is missing from the etcd releases. Only etcd patch releases are proposed, and each one goes through the dev cluster before a porkadot release. The amd64-only autoscaler name has had no new tag since 1.8.1, so letting it through without a release time cannot bring in a fresh release",
+      "matchPackageNames": ["registry.k8s.io/etcd", "registry.k8s.io/cluster-proportional-autoscaler-amd64"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "MetalLB's template is rendered from the kustomizations in hack/metallb, which the kustomize manager already reads, so the image tags in the rendered template are not tracked. Both kustomizations name the same release and are updated together. The pull request changes only the ref; run hack/update-metallb.sh on its branch to render the template and the CRDs from the new release",
+      "matchManagers": ["kustomize"],
+      "matchFileNames": ["hack/metallb/**"],
+      "groupName": "metallb"
+    }
+  ]
+}
