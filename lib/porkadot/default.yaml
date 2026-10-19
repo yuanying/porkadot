@@ -39,7 +39,7 @@ addons:
   cnidaria:
     image_repository: ghcr.io/yuanying/cnidaria-cni
     # renovate: datasource=docker depName=ghcr.io/yuanying/cnidaria-cni
-    image_tag: v0.1.0
+    image_tag: v0.1.1
     network_name: cnidaria
     resources:
       requests:
