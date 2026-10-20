@@ -398,6 +398,12 @@ porkadot etcd backup --node <node> --config ./porkadot.yaml
 - `/etc/etcd/pki` の証明書と鍵は root:root 0600。etcdctl は root で動かす（porkadot の `etcd backup` / `rotate-certs etcd` は自動で root で流す）。
 - 古い porkadot で置かれたノードでは 0644 のことがある。`install kubelet` を流すと 0600 にそろう。
 
+`porkadot etcd restore` は、etcd を止めて最新の backup から戻し（`etcdutl snapshot restore --bump-revision 1000000000 --mark-compacted`）、
+etcd を起動して全メンバーの health を待ったあと、全 master の kube-apiserver を 1 台ずつ、続けて kube-controller-manager と kube-scheduler を、
+crictl でコンテナを止めて kubelet に起動し直させる（再起動しなかった apiserver が、消えたはずのオブジェクトを watch cache から返し続けるのを防ぐ）。
+kubelet は再起動しない。待ちは `--timeout`（既定 600 秒）で打ち切られ、確かめるコマンドを出して止まる。
+restore を使う前に、そのノードで 0.34 以降の `install kubelet` を一度流して `/opt/bin/etcdutl` を置いておく。
+
 ノードで手で etcdctl を使うときは、`/etc/etcd/etcd.env` を読み込んでフラグを付けない。
 
 ```bash

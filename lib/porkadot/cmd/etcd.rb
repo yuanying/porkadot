@@ -44,6 +44,8 @@ module Porkadot; module Cmd; module Etcd
 
     desc "restore", "Restore etcd data"
     option :path, type: :string, default: "./backup", desc: "Directory where etcd backup data is stored."
+    option :timeout, type: :numeric, default: Porkadot::Install::KubeletList::DEFAULT_RESTORE_TIMEOUT,
+      desc: "Seconds to wait for etcd and for each control plane component after the restore"
     def restore
       invoke :stop, [], options
 
@@ -57,6 +59,14 @@ module Porkadot; module Cmd; module Etcd
       kubelets.restore_etcd path: path
 
       invoke :start, [], options
+
+      # Clients that keep running would go on with what they had before the
+      # restore. The bumped and compacted revision makes their watches list
+      # again; the control plane is also replaced, as Kubernetes recommends.
+      logger.info "Waiting for etcd"
+      kubelets.wait_etcd_health timeout: options[:timeout]
+      logger.info "Restarting kube-apiserver, kube-controller-manager and kube-scheduler"
+      kubelets.restart_control_plane timeout: options[:timeout]
       ""
     end
 

@@ -29,6 +29,14 @@ module Porkadot; module Configs
       return ([major, minor] <=> [3, 6]) < 0
     end
 
+    # etcdutl snapshot restore has --bump-revision and --mark-compacted since
+    # 3.5.10. A tag without a readable version is taken as new.
+    def restore_bumps_revision?
+      version = self.image_tag.to_s.match(/(\d+)\.(\d+)\.(\d+)/)&.captures&.map(&:to_i)
+      return true unless version
+      return (version <=> [3, 5, 10]) >= 0
+    end
+
     def advertise_client_urls
       urls = []
       config.etcd_nodes.each do |_, v|

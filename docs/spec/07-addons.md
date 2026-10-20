@@ -241,7 +241,15 @@ porkadot etcd restore --path /mnt/backup
 3. etcd データをリストア（全メンバーノード）。既存の `/var/lib/etcd` は `/opt/porkadot/data-<日時>` に退避し、
    そのノードのメンバー名・peer URL と全メンバーの initial-cluster（`etcd-server.yaml` と同じ値）で `/var/lib/etcd` に復元する。
    復元は `/opt/bin/etcdutl snapshot restore` で行う（etcdctl の `snapshot restore` は 3.6 で消えた。etcdutl は 3.5 にもある）
+   - `--bump-revision 1000000000 --mark-compacted` を付ける（etcd の disaster recovery の文書の推奨。`etcd.image_tag` が 3.5.10 未満なら付けない。etcdutl にこのフラグが無いため）。
+     そのまま戻すと revision が backup の時点に戻り、動き続けている kube-apiserver の watch cache や各コンポーネントの informer は、戻した後の変化（消えたはずのオブジェクトの削除など）を受け取れない。
+     revision を十分に進めて compacted にすると、watch しているクライアントには compacted が返り、list し直す。1000000000 は毎秒 1500 書き込み未満なら 1 週間分の書き込みを超える
 4. etcd を起動（全メンバーノード）
+5. 全メンバーで `etcdctl endpoint health` が通るまで待つ（`--timeout` 秒）
+6. 全 master で kube-apiserver のコンテナを crictl で止め、kubelet が起動し直して `https://127.0.0.1:<bind_port>/readyz` が返るのを待つ。1 台ずつ流すので、API が全部止まることはない
+7. 続けて kube-controller-manager と kube-scheduler のコンテナを、動いている master で同じように止め、起動し直すのを待つ（Kubernetes の文書「Restoring an etcd cluster」は、古いデータに頼らないようこれらと kubelet の再起動を勧めている）
+   - kubelet は再起動しない。kubelet・kube-proxy・アドオンの informer は 3 の compacted で list し直す。気になるときは各ノードで `sudo systemctl restart kubelet` を流す（コンテナは止まらない）
+   - 待ちが `--timeout` を過ぎると、何を待っていたかと確かめるコマンドを出してエラーで止まる
 
 バックアップファイルが見つからない場合はエラーで終了します。
 

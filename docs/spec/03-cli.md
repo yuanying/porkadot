@@ -237,18 +237,20 @@ porkadot etcd backup [--node <node-name>] [--path <backup-dir>]
 etcd をスナップショットから復元します。
 
 ```
-porkadot etcd restore [--path <backup-dir>]
+porkadot etcd restore [--path <backup-dir>] [--timeout <秒>]
 ```
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
 | `--path` | `./backup` | バックアップファイルが格納されているディレクトリ |
+| `--timeout` | `600` | リストアの後、etcd の health と各コントロールプレーンのコンポーネントの入れ替えをそれぞれ待つ秒数 |
 
-実行順序: etcd 停止 → 最新バックアップをリストア → etcd 起動
+実行順序: etcd 停止 → 最新バックアップをリストア → etcd 起動 → 全メンバーの health を待つ → kube-apiserver・kube-controller-manager・kube-scheduler を入れ替える
 
 各 etcd メンバーで、既存の `/var/lib/etcd` を `/opt/porkadot/data-<日時>` に退避し、
 `etcd-server.yaml` と同じメンバー名・peer URL・initial-cluster を使って `/var/lib/etcd` に復元する。
 復元には `/opt/bin/etcdutl snapshot restore` を使う（etcdctl の `snapshot restore` は 3.6 で消えた）。
+revision は `--bump-revision 1000000000 --mark-compacted` で進めて compacted にする（etcd 3.5.10 以上。詳細は [07-addons.md](07-addons.md#リストア)）。
 
 バックアップが見つからない場合はエラーで終了します。
 
