@@ -83,8 +83,8 @@ Kubernetes クラスタ全体の設定です。
 |------|-----------|------|
 | `cluster_name` | `porkadot` | クラスタ名 |
 | `control_plane_endpoint` | — | コントロールプレーンエンドポイント（例: `192.168.23.101:6443`）|
-| `kubernetes_version` | `v1.33.13` | Kubernetes バージョン |
-| `crictl_version` | `v1.33.0` | crictl バージョン |
+| `kubernetes_version` | `v1.34.12` | Kubernetes バージョン |
+| `crictl_version` | `v1.34.0` | crictl バージョン |
 | `image_repository` | `registry.k8s.io` | コンテナイメージリポジトリ |
 
 ### `kubernetes.networking`
@@ -173,7 +173,7 @@ etcd クラスタの設定です。
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `image_repository` | `registry.k8s.io/etcd` | etcd イメージリポジトリ |
-| `image_tag` | `3.5.34-0` | etcd イメージタグ |
+| `image_tag` | `3.6.15-0` | etcd イメージタグ。etcdctl・etcdutl の版にもなる（`-0` などの接尾辞を除く） |
 | `extra_env` | `[]` | 追加環境変数（例: ARM64 サポート用） |
 
 追加環境変数の例（ARM64 向け）:
@@ -184,6 +184,13 @@ etcd:
   - name: ETCD_UNSUPPORTED_ARCH
     value: arm64
 ```
+
+etcd の一部のフラグは 3.6 で名前が変わり、3.7 で古い名前が消えました。新しい名前は 3.5 では使えないので、`etcd-server.yaml` は `image_tag` の major.minor で出し分けます。major.minor が読めないタグは 3.6 以上として扱います。
+
+| 3.5 以前 | 3.6 以上 |
+|---------|---------|
+| `--experimental-initial-corrupt-check=true` | `--feature-gates=InitialCorruptCheck=true` |
+| `--experimental-watch-progress-notify-interval=5s` | `--watch-progress-notify-interval=5s` |
 
 ---
 
