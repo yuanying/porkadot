@@ -242,6 +242,11 @@ porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-ip>
 # 例: porkadot install kubernetes --config ./porkadot.yaml --node 192.168.1.111
 ```
 
+`install kubernetes` は kube-apiserver を先に適用し、DaemonSet の rollout が終わってから残りを適用する
+（新しい kube-scheduler が古い kube-apiserver に張り付いて新しい apiserver の Pod をスケジュールしない、というデッドロックを避けるため）。
+rollout が `--apiserver-timeout`（既定 600 秒）までに終わらないと、残りを適用せずに止まる。
+kube-apiserver の Pod を確かめ、直してからもう一度流す。
+
 **Step 3**: rollout 完了確認
 
 ```bash
@@ -274,7 +279,7 @@ porkadot install kubelet --config ./porkadot.yaml --node <worker>
 kubectl get nodes -o wide
 ```
 
-Step 4・5 の `install kubelet` は、kubectl・kubelet・etcdctl・crictl の `/opt/bin/<名前>` を設定の版に張り替える。
+Step 4・5 の `install kubelet` は、kubectl・kubelet・etcdctl・etcdutl・crictl の `/opt/bin/<名前>` を設定の版に張り替える。
 ノードに残っている版はダウンロードせずに使うので、版を戻すときも上げ直すときも `--force` は要らない。
 K8s の版を変えずに etcd・crictl・CNI plugins の版だけを変えた場合も追従する。
 標準の CNI plugins（`bridge`・`host-local`・`portmap`・`loopback` など）を `/opt/cni/bin` に置くのは `install kubelet` だけで、CNI の DaemonSet は自分のバイナリだけを置く（flannel は `flannel`、cnidaria は何も置かない）。
@@ -393,6 +398,12 @@ porkadot etcd backup --node <node> --config ./porkadot.yaml
 - `/etc/etcd/pki` の証明書と鍵は root:root 0600。etcdctl は root で動かす（porkadot の `etcd backup` / `rotate-certs etcd` は自動で root で流す）。
 - 古い porkadot で置かれたノードでは 0644 のことがある。`install kubelet` を流すと 0600 にそろう。
 
+`porkadot etcd restore` は、etcd を止めて最新の backup から戻し（`etcdutl snapshot restore --bump-revision 1000000000 --mark-compacted`）、
+etcd を起動して全メンバーの health を待ったあと、全 master の kube-apiserver を 1 台ずつ、続けて kube-controller-manager と kube-scheduler を、
+crictl でコンテナを止めて kubelet に起動し直させる（再起動しなかった apiserver が、消えたはずのオブジェクトを watch cache から返し続けるのを防ぐ）。
+kubelet は再起動しない。待ちは `--timeout`（既定 600 秒）で打ち切られ、確かめるコマンドを出して止まる。
+restore を使う前に、そのノードで 0.34 以降の `install kubelet` を一度流して `/opt/bin/etcdutl` を置いておく。
+
 ノードで手で etcdctl を使うときは、`/etc/etcd/etcd.env` を読み込んでフラグを付けない。
 
 ```bash
@@ -401,7 +412,7 @@ ssh <node> "sudo bash -c '. /etc/etcd/etcd.env && /opt/bin/etcdctl member list -
 ```
 
 `etcd.env` は `ETCDCTL_CACERT` / `ETCDCTL_CERT` / `ETCDCTL_KEY` / `ETCDCTL_ENDPOINTS` を export する。
-読み込んだうえで `--endpoints` などを付けると、etcdctl 3.5 は
+読み込んだうえで `--endpoints` などを付けると、etcdctl（3.5 以降）は
 `conflicting environment variable "ETCDCTL_ENDPOINTS" is shadowed by corresponding command-line flag` で止まる。
 別のエンドポイントを使うときは `unset ETCDCTL_ENDPOINTS` してから `--endpoints` を渡す。
 

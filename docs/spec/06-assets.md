@@ -166,7 +166,12 @@ kubectl/kustomize を使って Kubernetes マニフェストを適用します�
 実行内容:
 1. CRD を適用（サーバーサイドコンフリクト解決）
 2. CRD が確立するまで待機（最大 60 秒）
-3. kustomize で全マニフェストを適用（プルーニング付き）
+3. kube-apiserver（`app.kubernetes.io/component=kube-apiserver` のもの）だけを先に適用し、DaemonSet `kube-apiserver` の rollout が終わる（全 Pod が新しい版で Ready になる）まで待つ
+   - kube-apiserver の Pod は 1 台ずつ入れ替わるので、`kubectl rollout status --watch=false` を 5 秒おきに確かめ、要求の失敗では待ちをやめない
+   - `KUBE_APISERVER_TIMEOUT`（秒、既定 600）までに終わらなければ、残りを適用せずにエラーで止まる
+   - `KUBE_WAIT_APISERVER=false` のときはこの段を飛ばす（`install bootstrap kubernetes`。新規構築では self-hosted の kube-apiserver は残りがそろうまで Ready にならない）
+   - 理由: Kubernetes の version skew policy では kube-apiserver を先に上げる。新しい kube-scheduler は古い kube-apiserver が返さない API を待ち続けることがあり（1.34 の scheduler は `resource.k8s.io/v1` を待つ）、そうなると新しい kube-apiserver の Pod をスケジュールする者がいなくなる
+4. kustomize で全マニフェストを適用（プルーニング付き）
    - `kubernetes.unstable.cloud/installed-by=porkadot` ラベルで管理リソースを追跡
    - prune の対象は `--prune-allowlist` で指定した種類に限る（`Kubernetes#prune_allowlist`）。**Namespace は prune しない**。Namespace を消すと中のリソースもすべて消え、`kube-system` のように複数のアドオンが共有する Namespace もあるため。アドオンを無効にしても、そのアドオンが作った Namespace はクラスタに残る（[07-addons.md](07-addons.md) の「アドオンを無効にしたとき」）
    - `KUBE_TARGET` 環境変数が設定されている場合は特定コンポーネントのみ適用

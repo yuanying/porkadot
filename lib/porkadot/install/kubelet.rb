@@ -5,6 +5,15 @@ module Porkadot; module Install
     LEGACY_TEMPS = %w(.kubelet .default .default.kubelet).map { |d| File.join(Porkadot::Install::KUBE_TEMP, d) }
     ETCD_TEMP = '/opt/porkadot'
     ETCD_DATA_DIR = '/var/lib/etcd'
+    # etcd's disaster recovery guide: covers a week of writes below 1500/s.
+    # The restored revision then stays above every revision a client has
+    # seen, and marking it compacted makes every watch list again.
+    RESTORE_BUMP_REVISION = 1_000_000_000
+    CONTAINERD_ENDPOINT = 'unix:///run/containerd/containerd.sock'
+    # Restarted after a restore, apiservers first. They all run on masters.
+    CONTROL_PLANE_CONTAINERS = ['kube-apiserver', 'kube-controller-manager', 'kube-scheduler']
+    DEFAULT_RESTORE_TIMEOUT = 600
+    POLL_INTERVAL = 5
     include SSHKit::DSL
     attr_reader :global_config
     attr_reader :logger
@@ -104,6 +113,10 @@ module Porkadot; module Install
       hosts = self.etcd_hosts
 
       etcd_nodes = self.global_config.etcd_nodes
+      bump = []
+      if self.global_config.etcd.restore_bumps_revision?
+        bump = ["--bump-revision", RESTORE_BUMP_REVISION.to_s, "--mark-compacted"]
+      end
       on(hosts) do |host|
         etcd_node = etcd_nodes[host.config.name]
         execute(:rm, '-rf', KUBE_TEMP, *LEGACY_TEMPS)
@@ -115,13 +128,111 @@ module Porkadot; module Install
           if test("[ -d #{ETCD_DATA_DIR} ]")
             execute(:mv, ETCD_DATA_DIR, "#{ETCD_TEMP}/data-#{DateTime.now.to_s}")
           end
-          execute(:"/opt/bin/etcdctl", "snapshot", "restore", "#{KUBE_TEMP}/etcd.db",
+          # etcdctl 3.6 has no snapshot restore.
+          execute(:"/opt/bin/etcdutl", "snapshot", "restore", "#{KUBE_TEMP}/etcd.db",
             "--data-dir", ETCD_DATA_DIR,
             "--name", etcd_node.member_name,
             "--initial-cluster", etcd_node.initial_cluster.map{|k,v| "#{k}=#{v}"}.join(','),
-            "--initial-advertise-peer-urls", etcd_node.advertise_peer_urls.join(','))
+            "--initial-advertise-peer-urls", etcd_node.advertise_peer_urls.join(','),
+            *bump)
         end
       end
+    end
+
+    # Waits until every etcd member answers endpoint health.
+    def wait_etcd_health hosts: nil, timeout: DEFAULT_RESTORE_TIMEOUT
+      list = self
+      options = self.etcd_options
+      deadline = now + timeout
+      on(self.etcd_hosts(hosts), in: :sequence, wait: 0) do |host|
+        # The etcd client key is readable only by root.
+        as user: 'root' do
+          list.wait_until(self, deadline, "etcd health on #{host.hostname}", <<~HINT) do
+            Check the etcd Pod on #{host.hostname} (crictl ps --name etcd, crictl logs).
+          HINT
+            test(:"/opt/bin/etcdctl", *options, 'endpoint', 'health') ? nil : 'not healthy'
+          end
+        end
+      end
+    rescue SSHKit::Runner::ExecuteError => e
+      raise e.cause if e.cause.is_a?(Porkadot::Error)
+      raise
+    end
+
+    # Replaces the kube-apiserver, kube-controller-manager and kube-scheduler
+    # on every master after a restore, so that none of them keeps serving or
+    # acting on what it cached before. Their containers are stopped through
+    # crictl and the kubelet starts them again, which needs no API.
+    # kube-apiservers go first, and the rest follows once every one of them
+    # is ready again.
+    def restart_control_plane timeout: DEFAULT_RESTORE_TIMEOUT
+      list = self
+      deadline = now + timeout
+      port = global_config.k8s.apiserver.bind_port
+      hosts = self.master_hosts
+      CONTROL_PLANE_CONTAINERS.each do |name|
+        # Every master runs a kube-apiserver. The controller-manager and the
+        # scheduler run on some masters only.
+        optional = name != 'kube-apiserver'
+        on(hosts, in: :sequence, wait: 0) do |host|
+          as user: 'root' do
+            with(container_runtime_endpoint: CONTAINERD_ENDPOINT) do
+              old = list.containers(self, name)
+              next if old.empty? && optional
+              old.each { |id| execute(:"/opt/bin/crictl", 'stop', id) }
+              list.wait_until(self, deadline, "#{name} on #{host.hostname}", <<~HINT) do
+                The kubelet did not start #{name} again. Check it with
+                  crictl ps -a --name #{name}
+                on #{host.hostname}, and the kubelet's log.
+              HINT
+                current = list.containers(self, name)
+                (current.empty? || !(current & old).empty?) ? 'not restarted' : nil
+              end
+              if name == 'kube-apiserver'
+                endpoint = "https://127.0.0.1:#{port}/readyz"
+                list.wait_until(self, deadline, "#{name} on #{host.hostname} to be ready", <<~HINT) do
+                  #{endpoint} did not answer. Check crictl logs of #{name} on #{host.hostname}.
+                HINT
+                  test(:curl, '-skf', endpoint) ? nil : endpoint
+                end
+              end
+            end
+          end
+        end
+      end
+    rescue SSHKit::Runner::ExecuteError => e
+      raise e.cause if e.cause.is_a?(Porkadot::Error)
+      raise
+    end
+
+    # IDs of the running containers named exactly name.
+    def containers backend, name
+      backend.capture(:"/opt/bin/crictl", 'ps', '-q', '--name', "^#{name}$").split
+    end
+
+    def wait_until backend, deadline, subject, hint
+      backend.info "Start to wait for #{subject}"
+      loop do
+        pending = yield
+        return if pending.nil?
+        if now >= deadline
+          raise Porkadot::Error, "Timed out waiting for #{subject}: #{pending}\n#{hint}"
+        end
+        backend.info "Still waiting for #{subject}: #{pending}"
+        pause
+      end
+    end
+
+    def master_hosts
+      self.kubelets.values.select { |k| k.config.apiserver? }
+    end
+
+    def now
+      Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    end
+
+    def pause
+      sleep POLL_INTERVAL
     end
 
     def start_etcd hosts: nil

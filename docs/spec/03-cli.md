@@ -125,7 +125,7 @@ porkadot install kubelet [--node <node-name>] [--force]
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
 | `--node` | — | 指定したノードのみインストール |
-| `--force` | `false` | ノードにある版を使わず、kubectl・kubelet・etcdctl・crictl・CNI plugins をすべてダウンロードし直す |
+| `--force` | `false` | ノードにある版を使わず、kubectl・kubelet・etcdctl・etcdutl・crictl・CNI plugins をすべてダウンロードし直す |
 
 実行内容: `install-deps.sh` → `install-pkgs.sh` → `install.sh` の順に SSH 実行
 
@@ -193,8 +193,12 @@ porkadot install bootstrap cleanup [--timeout <秒>]
 全 Kubernetes コンポーネントをインストールします。
 
 ```
-porkadot install kubernetes [all] [--node <node-name>]
+porkadot install kubernetes [all] [--node <node-name>] [--apiserver-timeout <秒>]
 ```
+
+kube-apiserver を先に適用し、DaemonSet `kube-apiserver` の rollout が終わるのを待ってから、kube-controller-manager・kube-scheduler・kube-proxy・アドオンを適用します（[06-assets.md](06-assets.md) の `kubernetes/install.sh`）。
+`--apiserver-timeout`（既定 600 秒）までに rollout が終わらなければ、残りを適用せずにエラーで止まります。kube-apiserver の Pod を確かめてから、もう一度実行します。
+`install bootstrap kubernetes` は待たずに一度に適用します。
 
 #### 個別コンポーネントインストール
 
@@ -233,17 +237,20 @@ porkadot etcd backup [--node <node-name>] [--path <backup-dir>]
 etcd をスナップショットから復元します。
 
 ```
-porkadot etcd restore [--path <backup-dir>]
+porkadot etcd restore [--path <backup-dir>] [--timeout <秒>]
 ```
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
 | `--path` | `./backup` | バックアップファイルが格納されているディレクトリ |
+| `--timeout` | `600` | リストアの後、etcd の health と各コントロールプレーンのコンポーネントの入れ替えをそれぞれ待つ秒数 |
 
-実行順序: etcd 停止 → 最新バックアップをリストア → etcd 起動
+実行順序: etcd 停止 → 最新バックアップをリストア → etcd 起動 → 全メンバーの health を待つ → kube-apiserver・kube-controller-manager・kube-scheduler を入れ替える
 
 各 etcd メンバーで、既存の `/var/lib/etcd` を `/opt/porkadot/data-<日時>` に退避し、
 `etcd-server.yaml` と同じメンバー名・peer URL・initial-cluster を使って `/var/lib/etcd` に復元する。
+復元には `/opt/bin/etcdutl snapshot restore` を使う（etcdctl の `snapshot restore` は 3.6 で消えた）。
+revision は `--bump-revision 1000000000 --mark-compacted` で進めて compacted にする（etcd 3.5.10 以上。詳細は [07-addons.md](07-addons.md#リストア)）。
 
 バックアップが見つからない場合はエラーで終了します。
 

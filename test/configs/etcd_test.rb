@@ -14,8 +14,23 @@ class PorkadotConfigsEtcdTest < Minitest::Test
 
   def test_explicit_accessors
     assert_equal "registry.k8s.io/etcd", etcd.image_repository
-    assert_equal "3.5.34-0", etcd.image_tag
+    assert_equal "3.6.15-0", etcd.image_tag
     assert_equal [], etcd.extra_env
+  end
+
+  def test_experimental_flags_follow_image_tag
+    {
+      '3.6.15-0' => false,
+      '3.7.2-0' => false,
+      '4.0.0-0' => false,
+      '3.5.34-0' => true,
+      'v3.4.3-arm64' => true,
+      'latest' => false,
+    }.each do |tag, expected|
+      e = etcd
+      e.raw.image_tag = tag
+      assert_equal expected, e.experimental_flags?, tag
+    end
   end
 end
 

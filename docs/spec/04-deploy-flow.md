@@ -84,13 +84,13 @@ secrets にコピーする証明書・鍵は一覧で決まっています（etc
 
 assets は、ノードの一時ディレクトリ（`./kube_temp/<group>`）へファイルごとに upload されます。kubelet では `kubelet-default/` に `kubelet/{node}/` を重ねて同じディレクトリに置きます。sops で暗号化された secret は、upload 時にメモリ上で復号されます。
 
-1. `install-deps.sh` — kubectl・kubelet・etcdctl・crictl と CNI plugins を設定の版にそろえる（下記）
+1. `install-deps.sh` — kubectl・kubelet・etcdctl・etcdutl・crictl と CNI plugins を設定の版にそろえる（下記）
 2. `install-pkgs.sh` — パッケージをインストール
 3. `install.sh` — kubelet バイナリ・設定・証明書・systemd サービスをインストール
 
 `install-deps.sh` は毎回実行され、コンポーネントごとに次のように振る舞います。
 
-- kubectl・kubelet・etcdctl・crictl は `/opt/bin/<名前>-<版>` に置き、`/opt/bin/<名前>` の symlink をその版に向けます。版は `kubernetes.kubernetes_version`、`etcd.image_tag`（`-0` などの接尾辞を除く）、`kubernetes.crictl_version` から決まります。
+- kubectl・kubelet・etcdctl・etcdutl・crictl は `/opt/bin/<名前>-<版>` に置き、`/opt/bin/<名前>` の symlink をその版に向けます。版は `kubernetes.kubernetes_version`、`etcd.image_tag`（`-0` などの接尾辞を除く。etcdctl と etcdutl は同じ etcd のリリースから取る）、`kubernetes.crictl_version` から決まります。
   - 目標の版の実体がノードに無いときだけダウンロードします。前の版の実体は消さないので、版を戻すときや上げ直すときは symlink を張り替えるだけで済みます。
   - symlink がすでに目標の版を指していれば何もしません。
 - CNI plugins は `/opt/cni/bin` に展開し、版を `/opt/cni/bin/.porkadot-cni-plugins-version` に記録します。記録が `kubernetes.networking.cni_version` と違う（または無い）ときだけ展開し直します。

@@ -20,6 +20,23 @@ module Porkadot; module Configs
       self.raw.extra_env
     end
 
+    # etcd 3.6 renamed the --experimental-* flags and 3.7 removes the old
+    # names, but 3.5 knows only the old ones. image_tag can be overridden, so
+    # the names follow its major.minor. A tag without one is taken as new.
+    def experimental_flags?
+      major, minor = self.image_tag.to_s.match(/(\d+)\.(\d+)/)&.captures&.map(&:to_i)
+      return false unless minor
+      return ([major, minor] <=> [3, 6]) < 0
+    end
+
+    # etcdutl snapshot restore has --bump-revision and --mark-compacted since
+    # 3.5.10. A tag without a readable version is taken as new.
+    def restore_bumps_revision?
+      version = self.image_tag.to_s.match(/(\d+)\.(\d+)\.(\d+)/)&.captures&.map(&:to_i)
+      return true unless version
+      return (version <=> [3, 5, 10]) >= 0
+    end
+
     def advertise_client_urls
       urls = []
       config.etcd_nodes.each do |_, v|

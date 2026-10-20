@@ -7,7 +7,7 @@ class PorkadotInstallEtcdTest < Minitest::Test
   # SSHKit backend that records commands instead of running them over SSH.
   class RecordingBackend < SSHKit::Backend::Abstract
     class << self
-      attr_accessor :commands, :uploads, :downloads, :responder
+      attr_accessor :commands, :uploads, :downloads, :responder, :curl_status, :etcd_healthy
     end
 
     def upload!(local, remote, _options = {})
@@ -27,6 +27,8 @@ class PorkadotInstallEtcdTest < Minitest::Test
       stdout = self.class.responder ? self.class.responder.call(host, cmd).to_s : ''
       cmd.on_stdout(nil, stdout) unless stdout.empty?
       cmd.exit_status = 0
+      cmd.exit_status = self.class.curl_status || 0 if cmd.to_s.include?('curl')
+      cmd.exit_status = 1 if cmd.to_s.include?('endpoint health') && self.class.etcd_healthy == false
     end
   end
 
@@ -43,6 +45,16 @@ class PorkadotInstallEtcdTest < Minitest::Test
     RecordingBackend.uploads = []
     RecordingBackend.downloads = []
     RecordingBackend.responder = nil
+    RecordingBackend.curl_status = nil
+    RecordingBackend.etcd_healthy = nil
+  end
+
+  def restore_with_snapshot
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'etcd.db')
+      File.write(path, 'snapshot')
+      @kubelets.restore_etcd path: path
+    end
   end
 
   def teardown
@@ -93,6 +105,19 @@ class PorkadotInstallEtcdTest < Minitest::Test
     end
   end
 
+  # etcdctl 3.6 has no snapshot restore; etcdutl has it since 3.5.
+  def test_restore_etcd_uses_etcdutl
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'etcd.db')
+      File.write(path, 'snapshot')
+      @kubelets.restore_etcd path: path
+    end
+
+    restore, as_root = find_command('192.168.33.111', 'snapshot restore')
+    assert_match %r{ /opt/bin/etcdutl snapshot restore }, restore
+    assert as_root, 'snapshot restore was not run as root'
+  end
+
   def test_restore_etcd_uses_same_values_as_etcd_server_manifest
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'etcd.db')
@@ -120,6 +145,156 @@ class PorkadotInstallEtcdTest < Minitest::Test
     assert mv, 'old data dir was not moved away'
     assert_match %r{mv /var/lib/etcd /opt/porkadot/data-}, mv
     refute_includes all_commands.join("\n"), '${ETCD_TEMP}'
+  end
+
+  # Without a bump the revision goes back to the snapshot's, and clients
+  # watching from a later revision miss everything in between.
+  def test_restore_etcd_bumps_and_compacts_the_revision
+    restore_with_snapshot
+
+    restore, = find_command('192.168.33.111', 'snapshot restore')
+    assert_includes restore, '--bump-revision 1000000000 --mark-compacted'
+  end
+
+  # etcdutl has the two flags since 3.5.10.
+  def test_restore_etcd_without_bump_for_older_etcd
+    @config.etcd.raw.image_tag = '3.5.9-0'
+    restore_with_snapshot
+
+    restore, = find_command('192.168.33.111', 'snapshot restore')
+    refute_includes restore, '--bump-revision'
+    refute_includes restore, '--mark-compacted'
+  end
+
+  def test_restore_bumps_revision_follows_image_tag
+    { '3.5.9-0' => false, '3.5.10-0' => true, '3.5.34-0' => true, '3.6.15-0' => true, 'latest' => true }.each do |tag, expected|
+      @config.etcd.raw.image_tag = tag
+      assert_equal expected, @config.etcd.restore_bumps_revision?, tag
+    end
+  end
+
+  # --- after restore ---
+
+  MASTERS = ['192.168.33.111', '192.168.33.112', 'node03']
+
+  # Fake crictl: each master runs an old container per component until it is
+  # stopped, then the kubelet's new one. node03 runs no controller-manager
+  # nor scheduler. restart: false keeps the old containers forever.
+  def control_plane_responder restart: true, ready: true
+    stopped = []
+    lambda do |host, cmd|
+      cmd = cmd.to_s
+      if cmd.include?('crictl stop')
+        stopped << [host.hostname, cmd.split.last]
+        ''
+      elsif (m = cmd.match(/crictl ps -q --name \^([\w-]+)\$/))
+        name = m[1]
+        next '' if host.hostname == 'node03' && name != 'kube-apiserver'
+        old = "old-#{name}-#{host.hostname}"
+        (restart && stopped.include?([host.hostname, old])) ? "new-#{name}-#{host.hostname}" : old
+      elsif cmd.include?('curl')
+        RecordingBackend.curl_status = ready ? 0 : 1
+        ''
+      else
+        ''
+      end
+    end
+  end
+
+  def test_restart_control_plane_replaces_apiservers_first
+    RecordingBackend.responder = control_plane_responder
+    @kubelets.restart_control_plane
+
+    stops = RecordingBackend.commands.map { |h, c| [h.hostname, c.to_s] }.select { |_, c| c.include?('crictl stop') }
+    apiserver = stops.select { |_, c| c.include?('kube-apiserver') }
+    others = stops.reject { |_, c| c.include?('kube-apiserver') }
+    assert_equal MASTERS.sort, apiserver.map(&:first).sort
+    assert_equal ['192.168.33.111', '192.168.33.112'] * 2, others.map(&:first)
+    assert_operator stops.index(apiserver.last), :<, stops.index(others.first)
+    assert others.any? { |_, c| c.include?('kube-controller-manager') }
+    assert others.any? { |_, c| c.include?('kube-scheduler') }
+  end
+
+  def test_restart_control_plane_waits_for_each_apiserver_to_be_ready
+    RecordingBackend.responder = control_plane_responder
+    @kubelets.restart_control_plane
+
+    MASTERS.each do |host|
+      cmds = commands_for(host)
+      stop = cmds.index { |c| c.include?('crictl stop old-kube-apiserver') }
+      readyz = cmds.index { |c| c.include?('curl -skf https://127.0.0.1:6443/readyz') }
+      assert readyz, "readyz was not checked on #{host}"
+      assert_operator stop, :<, readyz
+    end
+  end
+
+  def test_restart_control_plane_runs_crictl_as_root
+    RecordingBackend.responder = control_plane_responder
+    @kubelets.restart_control_plane
+
+    stop = RecordingBackend.commands.map(&:last).find { |c| c.to_s.include?('crictl stop') }
+    assert_includes stop.to_command, 'sudo -u root ', 'crictl stop was not run as root'
+  end
+
+  def test_restart_control_plane_times_out_when_kubelet_does_not_restart
+    RecordingBackend.responder = control_plane_responder(restart: false)
+    no_wait(@kubelets)
+
+    error = assert_raises(Porkadot::Error) { @kubelets.restart_control_plane(timeout: 0) }
+    assert_match(/kube-apiserver on 192\.168\.33\.111/, error.message)
+    assert_match(/crictl ps -a --name kube-apiserver/, error.message)
+    refute all_commands.any? { |c| c.include?('crictl stop old-kube-controller-manager') }
+  end
+
+  def test_restart_control_plane_times_out_when_apiserver_is_not_ready
+    RecordingBackend.responder = control_plane_responder(ready: false)
+    no_wait(@kubelets)
+
+    error = assert_raises(Porkadot::Error) { @kubelets.restart_control_plane(timeout: 0) }
+    assert_match(/readyz/, error.message)
+  end
+
+  def test_wait_etcd_health_times_out
+    RecordingBackend.responder = lambda do |_, cmd|
+      RecordingBackend.etcd_healthy = false if cmd.to_s.include?('endpoint health')
+      ''
+    end
+    no_wait(@kubelets)
+
+    error = assert_raises(Porkadot::Error) { @kubelets.wait_etcd_health(timeout: 0) }
+    assert_match(/etcd health on 192\.168\.33\.111/, error.message)
+  end
+
+  def test_wait_etcd_health_checks_every_member_as_root
+    @kubelets.wait_etcd_health
+
+    ['192.168.33.111', '192.168.33.112'].each do |host|
+      health, as_root = find_command(host, 'endpoint health')
+      assert health, "endpoint health was not checked on #{host}"
+      assert as_root
+    end
+  end
+
+  def test_etcd_restore_command_restarts_the_control_plane_after_etcd
+    RecordingBackend.responder = control_plane_responder
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'etcd-2026-10-20T00:00:00+00:00.db'), 'snapshot')
+      run_cli('etcd', 'restore', '--config', @config.path, '--path', dir, '--timeout', '30')
+    end
+
+    cmds = all_commands
+    restore = cmds.index { |c| c.include?('snapshot restore') }
+    start = cmds.index { |c| c.include?('/opt/porkadot/etcd-server.yaml /etc/kubernetes/manifests/') }
+    health = cmds.index { |c| c.include?('endpoint health') }
+    stop_apiserver = cmds.index { |c| c.include?('crictl stop old-kube-apiserver') }
+    assert restore && start && health && stop_apiserver, cmds.inspect
+    assert_operator restore, :<, start
+    assert_operator start, :<, health
+    assert_operator health, :<, stop_apiserver
+  end
+
+  def no_wait kubelets
+    kubelets.define_singleton_method(:pause) {}
   end
 
   # --- stop / start ---
