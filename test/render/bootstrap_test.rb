@@ -63,7 +63,43 @@ class PorkadotRenderBootstrapTest < Minitest::Test
     assert_equal before, snapshot(@secrets)
   end
 
+  # Since 1.34 the kubelet rejects static Pods that refer to API objects
+  # (PreventStaticPodAPIReferences). The bootstrap Pods and etcd are static Pods.
+  def test_static_pods_refer_to_no_api_objects
+    run_cli('render', 'bootstrap', '--config', @config_path)
+    run_cli('render', 'etcd', '--config', @config_path)
+
+    manifests = Dir.glob(File.join(@assets, 'bootstrap', 'manifests', '*.yaml')) +
+      Dir.glob(File.join(@assets, 'kubelet', '*', 'addons', 'etcd', 'etcd-server.yaml'))
+    assert_includes manifests.map { |m| File.basename(m) }, 'kube-proxy.bootstrap.yaml'
+    assert_includes manifests.map { |m| File.basename(m) }, 'etcd-server.yaml'
+
+    manifests.each do |manifest|
+      YAML.load_stream(File.read(manifest)).compact.each do |pod|
+        assert_equal 'Pod', pod['kind'], manifest
+        assert_no_api_references pod['spec'], manifest
+      end
+    end
+  end
+
   private
+
+  def assert_no_api_references(spec, manifest)
+    assert_nil spec['serviceAccountName'], manifest
+    assert_nil spec['serviceAccount'], manifest
+    assert_nil spec['imagePullSecrets'], manifest
+    assert_nil spec['resourceClaims'], manifest
+    (spec['volumes'] || []).each do |volume|
+      assert_equal [], volume.keys - %w(name hostPath emptyDir), "#{manifest}: #{volume['name']}"
+    end
+    (spec['containers'] + (spec['initContainers'] || [])).each do |container|
+      assert_nil container['envFrom'], manifest
+      (container['env'] || []).each do |env|
+        refs = (env['valueFrom'] || {}).keys - %w(fieldRef resourceFieldRef)
+        assert_empty refs, "#{manifest}: #{env['name']}"
+      end
+    end
+  end
 
   def files_in(dir)
     Dir.glob('**/*', base: dir).select { |rel| File.file?(File.join(dir, rel)) }.sort
