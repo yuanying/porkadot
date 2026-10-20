@@ -277,6 +277,8 @@ kubectl get nodes -o wide
 Step 4・5 の `install kubelet` は、kubectl・kubelet・etcdctl・crictl の `/opt/bin/<名前>` を設定の版に張り替える。
 ノードに残っている版はダウンロードせずに使うので、版を戻すときも上げ直すときも `--force` は要らない。
 K8s の版を変えずに etcd・crictl・CNI plugins の版だけを変えた場合も追従する。
+標準の CNI plugins（`bridge`・`host-local`・`portmap`・`loopback` など）を `/opt/cni/bin` に置くのは `install kubelet` だけで、CNI の DaemonSet は自分のバイナリだけを置く（flannel は `flannel`、cnidaria は何も置かない）。
+CNI plugins を上げるときは `kubernetes.networking.cni_version` を変えて `install kubelet` する。
 `--force` はすべてをダウンロードし直したいとき（バイナリが壊れている疑いがあるときなど）に使う。
 
 `install kubelet` は iscsid を再起動しない（`initiatorname.iscsi` の中身が変わったときだけ再起動する）。入っている open-iscsi などのパッケージも上げない。
