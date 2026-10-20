@@ -115,7 +115,8 @@ module Porkadot; module Install
           if test("[ -d #{ETCD_DATA_DIR} ]")
             execute(:mv, ETCD_DATA_DIR, "#{ETCD_TEMP}/data-#{DateTime.now.to_s}")
           end
-          execute(:"/opt/bin/etcdctl", "snapshot", "restore", "#{KUBE_TEMP}/etcd.db",
+          # etcdctl 3.6 has no snapshot restore.
+          execute(:"/opt/bin/etcdutl", "snapshot", "restore", "#{KUBE_TEMP}/etcd.db",
             "--data-dir", ETCD_DATA_DIR,
             "--name", etcd_node.member_name,
             "--initial-cluster", etcd_node.initial_cluster.map{|k,v| "#{k}=#{v}"}.join(','),

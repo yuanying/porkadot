@@ -93,6 +93,19 @@ class PorkadotInstallEtcdTest < Minitest::Test
     end
   end
 
+  # etcdctl 3.6 has no snapshot restore; etcdutl has it since 3.5.
+  def test_restore_etcd_uses_etcdutl
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'etcd.db')
+      File.write(path, 'snapshot')
+      @kubelets.restore_etcd path: path
+    end
+
+    restore, as_root = find_command('192.168.33.111', 'snapshot restore')
+    assert_match %r{ /opt/bin/etcdutl snapshot restore }, restore
+    assert as_root, 'snapshot restore was not run as root'
+  end
+
   def test_restore_etcd_uses_same_values_as_etcd_server_manifest
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'etcd.db')

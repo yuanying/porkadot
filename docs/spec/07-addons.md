@@ -239,7 +239,8 @@ porkadot etcd restore --path /mnt/backup
 1. etcd を停止（全メンバーノード）
 2. 指定ディレクトリ内の最新バックアップファイルを選択
 3. etcd データをリストア（全メンバーノード）。既存の `/var/lib/etcd` は `/opt/porkadot/data-<日時>` に退避し、
-   そのノードのメンバー名・peer URL と全メンバーの initial-cluster（`etcd-server.yaml` と同じ値）で `/var/lib/etcd` に復元する
+   そのノードのメンバー名・peer URL と全メンバーの initial-cluster（`etcd-server.yaml` と同じ値）で `/var/lib/etcd` に復元する。
+   復元は `/opt/bin/etcdutl snapshot restore` で行う（etcdctl の `snapshot restore` は 3.6 で消えた。etcdutl は 3.5 にもある）
 4. etcd を起動（全メンバーノード）
 
 バックアップファイルが見つからない場合はエラーで終了します。
@@ -277,7 +278,7 @@ etcdctl コマンドは以下の証明書ファイルを使用します:
 etcd の静的 Pod は root で動くので読めます。etcdctl を使う porkadot のコマンド（`etcd backup`、`rotate-certs etcd` のヘルスチェック）は root で実行します。
 
 `/etc/etcd/etcd.env` は同じ値を `ETCDCTL_CACERT` / `ETCDCTL_CERT` / `ETCDCTL_KEY` / `ETCDCTL_ENDPOINTS` として export します（秘密は含まないのでモードはそのまま）。
-porkadot のコマンドはこのファイルを読み込みません。手で読み込んだシェルで同じ値をフラグでも渡すと、etcdctl 3.5 は
+porkadot のコマンドはこのファイルを読み込みません。手で読み込んだシェルで同じ値をフラグでも渡すと、etcdctl（3.5 以降）は
 `conflicting environment variable "ETCDCTL_ENDPOINTS" is shadowed by corresponding command-line flag` で止まります。
 読み込んだときはフラグを付けず、別のエンドポイントを使うときは環境変数を unset してからフラグで渡します。
 

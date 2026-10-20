@@ -125,7 +125,7 @@ porkadot install kubelet [--node <node-name>] [--force]
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
 | `--node` | — | 指定したノードのみインストール |
-| `--force` | `false` | ノードにある版を使わず、kubectl・kubelet・etcdctl・crictl・CNI plugins をすべてダウンロードし直す |
+| `--force` | `false` | ノードにある版を使わず、kubectl・kubelet・etcdctl・etcdutl・crictl・CNI plugins をすべてダウンロードし直す |
 
 実行内容: `install-deps.sh` → `install-pkgs.sh` → `install.sh` の順に SSH 実行
 
@@ -244,6 +244,7 @@ porkadot etcd restore [--path <backup-dir>]
 
 各 etcd メンバーで、既存の `/var/lib/etcd` を `/opt/porkadot/data-<日時>` に退避し、
 `etcd-server.yaml` と同じメンバー名・peer URL・initial-cluster を使って `/var/lib/etcd` に復元する。
+復元には `/opt/bin/etcdutl snapshot restore` を使う（etcdctl の `snapshot restore` は 3.6 で消えた）。
 
 バックアップが見つからない場合はエラーで終了します。
 

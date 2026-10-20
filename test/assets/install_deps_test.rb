@@ -26,11 +26,12 @@ class PorkadotAssetsInstallDepsTest < Minitest::Test
     assert_links_to_targets
     assert_equal "kubelet #{k8s_version}", File.read(bin('kubelet'))
     assert_equal "etcdctl #{etcd_version}", File.read(bin('etcdctl'))
+    assert_equal "etcdutl #{etcd_version}", File.read(bin('etcdutl'))
     assert_equal "crictl #{crictl_version}", File.read(bin('crictl'))
     assert File.executable?(bin("kubelet-#{k8s_version}"))
     assert_equal "bridge #{cni_version}", File.read(File.join(@opt_dir, 'cni', 'bin', 'bridge'))
     assert_equal cni_version, File.read(cni_marker).strip
-    assert_equal 5, downloads.size
+    assert_equal 6, downloads.size
   end
 
   def test_up_to_date_node_downloads_nothing
@@ -47,6 +48,7 @@ class PorkadotAssetsInstallDepsTest < Minitest::Test
     assert run_script.success?, @output
     %w(kubectl kubelet).each { |name| install_other(name, 'v9.99.0') }
     install_other('etcdctl', '9.99.0')
+    install_other('etcdutl', '9.99.0')
     install_other('crictl', 'v9.99.0')
 
     assert run_script.success?, @output
@@ -103,7 +105,7 @@ class PorkadotAssetsInstallDepsTest < Minitest::Test
 
     assert run_script('--force').success?, @output
 
-    assert_equal 5, downloads.size
+    assert_equal 6, downloads.size
     assert_links_to_targets
   end
 
@@ -162,6 +164,7 @@ class PorkadotAssetsInstallDepsTest < Minitest::Test
           ver=$(basename "${url}" | sed -E 's/^etcd-v([^-]+)-.*/\1/')
           mkdir "${work}/etcd"
           echo -n "etcdctl ${ver}" > "${work}/etcd/etcdctl"
+          echo -n "etcdutl ${ver}" > "${work}/etcd/etcdutl"
           tar -C "${work}" -czf "${out}" etcd ;;
         */crictl-*)
           ver=$(basename "${url}" | sed -E 's/^crictl-(v[^-]+)-.*/\1/')
@@ -226,7 +229,7 @@ class PorkadotAssetsInstallDepsTest < Minitest::Test
   end
 
   def assert_links_to_targets
-    { 'kubectl' => k8s_version, 'kubelet' => k8s_version, 'etcdctl' => etcd_version, 'crictl' => crictl_version }.each do |name, version|
+    { 'kubectl' => k8s_version, 'kubelet' => k8s_version, 'etcdctl' => etcd_version, 'etcdutl' => etcd_version, 'crictl' => crictl_version }.each do |name, version|
       assert File.symlink?(bin(name)), "#{name} is not a symlink"
       assert_equal bin("#{name}-#{version}"), File.readlink(bin(name))
     end

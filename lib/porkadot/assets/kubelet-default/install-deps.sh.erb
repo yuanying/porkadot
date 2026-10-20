@@ -81,12 +81,14 @@ fetch_kubelet() {
 install_bin kubelet ${RELEASE} fetch_kubelet
 
 ETCD_VER="<%= global_config.etcd.image_tag.gsub(/\-\w+$/, '') %>"
-fetch_etcdctl() {
+# etcdctl and etcdutl come from the same etcd release archive.
+fetch_etcd() {
   curl -fL https://github.com/etcd-io/etcd/releases/download/v${ETCD_VER}/etcd-v${ETCD_VER}-linux-${architecture}.tar.gz \
     -o $1/etcd.tar.gz
   tar zxvf $1/etcd.tar.gz -C $1/ --strip-components=1
 }
-install_bin etcdctl ${ETCD_VER} fetch_etcdctl
+install_bin etcdctl ${ETCD_VER} fetch_etcd
+install_bin etcdutl ${ETCD_VER} fetch_etcd
 
 CRICTL_VER="<%= global_config.k8s.crictl_version %>"
 fetch_crictl() {

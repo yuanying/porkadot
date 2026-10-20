@@ -274,7 +274,7 @@ porkadot install kubelet --config ./porkadot.yaml --node <worker>
 kubectl get nodes -o wide
 ```
 
-Step 4・5 の `install kubelet` は、kubectl・kubelet・etcdctl・crictl の `/opt/bin/<名前>` を設定の版に張り替える。
+Step 4・5 の `install kubelet` は、kubectl・kubelet・etcdctl・etcdutl・crictl の `/opt/bin/<名前>` を設定の版に張り替える。
 ノードに残っている版はダウンロードせずに使うので、版を戻すときも上げ直すときも `--force` は要らない。
 K8s の版を変えずに etcd・crictl・CNI plugins の版だけを変えた場合も追従する。
 標準の CNI plugins（`bridge`・`host-local`・`portmap`・`loopback` など）を `/opt/cni/bin` に置くのは `install kubelet` だけで、CNI の DaemonSet は自分のバイナリだけを置く（flannel は `flannel`、cnidaria は何も置かない）。
@@ -401,7 +401,7 @@ ssh <node> "sudo bash -c '. /etc/etcd/etcd.env && /opt/bin/etcdctl member list -
 ```
 
 `etcd.env` は `ETCDCTL_CACERT` / `ETCDCTL_CERT` / `ETCDCTL_KEY` / `ETCDCTL_ENDPOINTS` を export する。
-読み込んだうえで `--endpoints` などを付けると、etcdctl 3.5 は
+読み込んだうえで `--endpoints` などを付けると、etcdctl（3.5 以降）は
 `conflicting environment variable "ETCDCTL_ENDPOINTS" is shadowed by corresponding command-line flag` で止まる。
 別のエンドポイントを使うときは `unset ETCDCTL_ENDPOINTS` してから `--endpoints` を渡す。
 
