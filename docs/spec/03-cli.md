@@ -237,20 +237,23 @@ porkadot etcd backup [--node <node-name>] [--path <backup-dir>]
 etcd をスナップショットから復元します。
 
 ```
-porkadot etcd restore [--path <backup-dir>] [--timeout <秒>]
+porkadot etcd restore [--path <backup-dir>] [--timeout <秒>] [--bump-revision <幅>]
 ```
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
 | `--path` | `./backup` | バックアップファイルが格納されているディレクトリ |
 | `--timeout` | `600` | リストアの後、etcd の health と各コントロールプレーンのコンポーネントの入れ替えをそれぞれ待つ秒数 |
+| `--bump-revision` | なし | revision を進める幅。指定すると今の etcd の revision を読まずにこの値を使う。動いている etcd から revision を読めないときに使う |
 
-実行順序: etcd 停止 → 最新バックアップをリストア → etcd 起動 → 全メンバーの health を待つ → kube-apiserver・kube-controller-manager・kube-scheduler を入れ替える
+実行順序: 今の etcd の revision を読む → etcd 停止 → 最新バックアップをリストア → etcd 起動 → 全メンバーの health を待つ → kube-apiserver・kube-controller-manager・kube-scheduler を入れ替える
 
 各 etcd メンバーで、既存の `/var/lib/etcd` を `/opt/porkadot/data-<日時>` に退避し、
 `etcd-server.yaml` と同じメンバー名・peer URL・initial-cluster を使って `/var/lib/etcd` に復元する。
 復元には `/opt/bin/etcdutl snapshot restore` を使う（etcdctl の `snapshot restore` は 3.6 で消えた）。
-revision は `--bump-revision 1000000000 --mark-compacted` で進めて compacted にする（etcd 3.5.10 以上。詳細は [07-addons.md](07-addons.md#リストア)）。
+revision は `--bump-revision <幅> --mark-compacted` で進めて compacted にする（etcd 3.5.10 以上）。
+幅は「1000000000」と「今の revision − snapshot の revision + 1000000000」の大きい方（詳細は [07-addons.md](07-addons.md#リストア)）。
+どのメンバーからも今の revision を読めず `--bump-revision` も無いときは、etcd を止める前にエラーで終了する。
 
 バックアップが見つからない場合はエラーで終了します。
 
