@@ -27,6 +27,19 @@ kubectl delete namespace metallb-system
 
 ## アドオン一覧
 
+### CNI plugins の持ち主
+
+標準の CNI plugins（[containernetworking/plugins](https://github.com/containernetworking/plugins) の `bridge`・`host-local`・`portmap`・`loopback` など）は、CNI のアドオンではなく `porkadot install kubelet` がノードの `/opt/cni/bin` に置きます。版は `kubernetes.networking.cni_version` で決まり、どの CNI を有効にしても同じものが入ります（[04-deploy-flow.md](04-deploy-flow.md)）。containerd は Pod ごとに `loopback` を呼ぶので、CNI が何であってもこれが要ります。
+
+CNI のアドオンの DaemonSet は、自分のバイナリだけを `/opt/cni/bin` に置きます。
+
+| CNI | DaemonSet が `/opt/cni/bin` に置くもの | 使う標準の plugins |
+|-----|-----------------------------|------------------|
+| flannel | `flannel`（init container `install-cni-plugin`） | `bridge`・`host-local`（flannel が委ねる）、`portmap` |
+| cnidaria | なし | `bridge`・`host-local`・`portmap` |
+
+CNI の DaemonSet と `install kubelet` の両方が同じファイルを置くと、版が違うときにどちらが最後に流れたかでノードの版が変わるため、標準の plugins は `install kubelet` だけが置きます。
+
 ### flannel（CNI ネットワーク）
 
 Pod 間のネットワーキングを提供します。
@@ -67,7 +80,7 @@ addons:
 
 | 設定キー | デフォルト | 説明 |
 |------|-----------|------|
-| `image_repository` | `ghcr.io/yuanying/cnidaria-cni` | cnidaria イメージ（init container とデーモンで共通） |
+| `image_repository` | `ghcr.io/yuanying/cnidaria-cni` | cnidaria イメージ |
 | `image_tag` | `v0.1.0` | cnidaria イメージタグ |
 | `network_name` | `cnidaria` | conflist のネットワーク名（`--network-name`）。host-local の IP 割り当ては `/var/lib/cni/networks/<name>` に保存される |
 | `resources.requests.cpu` | `50m` | CPU リクエスト |
@@ -77,6 +90,8 @@ addons:
 Pod CIDR はテンプレートに埋め込みません。cnidaria は各 Node の `spec.podCIDRs`（kube-controller-manager が `kubernetes.networking.pod_subnet` から割り当てたもの）を読みます。デュアルスタックの場合も追加設定は不要です。
 
 コントロールプレーンの taint（`node-role.kubernetes.io/control-plane` と旧名の `node-role.kubernetes.io/master`）は DaemonSet で tolerate しています。
+
+cnidaria は CNI のバイナリを持たず、DaemonSet は `/opt/cni/bin` に何も置きません。conflist が使う `bridge`・`host-local`・`portmap` は `install kubelet` が置いたものを使います（[CNI plugins の持ち主](#cni-plugins-の持ち主)）。
 
 `NodeNetworkPolicy` の CRD は `assets/kubernetes/manifests/crds/cnidaria/crds.yaml` として出力され、インストール時に他のリソースより先に適用されます。
 

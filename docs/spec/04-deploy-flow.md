@@ -94,6 +94,7 @@ assets は、ノードの一時ディレクトリ（`./kube_temp/<group>`）へ�
   - 目標の版の実体がノードに無いときだけダウンロードします。前の版の実体は消さないので、版を戻すときや上げ直すときは symlink を張り替えるだけで済みます。
   - symlink がすでに目標の版を指していれば何もしません。
 - CNI plugins は `/opt/cni/bin` に展開し、版を `/opt/cni/bin/.porkadot-cni-plugins-version` に記録します。記録が `kubernetes.networking.cni_version` と違う（または無い）ときだけ展開し直します。
+  - 標準の CNI plugins（`bridge`・`host-local`・`portmap`・`loopback` など）を置くのはここだけです。CNI のアドオンの DaemonSet は自分のバイナリだけを置きます（[07-addons.md](07-addons.md#cni-plugins-の持ち主)）。
 - `--force` を付けると、すべてをダウンロードし直します。
 
 `install-pkgs.sh` も毎回実行され、次のように振る舞います。

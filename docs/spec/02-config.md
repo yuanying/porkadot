@@ -91,7 +91,7 @@ Kubernetes クラスタ全体の設定です。
 
 | キー | デフォルト | 説明 |
 |------|-----------|------|
-| `cni_version` | `v1.4.1` | CNI プラグインバージョン |
+| `cni_version` | `v1.9.1` | 標準の CNI plugins（containernetworking/plugins）のバージョン。`install kubelet` が `/opt/cni/bin` に置く（[07-addons.md](07-addons.md#cni-plugins-の持ち主)） |
 | `service_subnet` | `10.254.0.0/24` | Service CIDR（デュアルスタック時はカンマ区切り） |
 | `pod_subnet` | `10.244.0.0/16` | Pod CIDR（デュアルスタック時はカンマ区切り） |
 | `dns_domain` | `cluster.local` | クラスタ DNS ドメイン |
@@ -225,7 +225,7 @@ flannel の代わりに使える CNI（opt-in）。使うときは `addons.enabl
 
 | キー | デフォルト | 説明 |
 |------|-----------|------|
-| `image_repository` | `ghcr.io/yuanying/cnidaria-cni` | cnidaria イメージ（init container とデーモンで共通） |
+| `image_repository` | `ghcr.io/yuanying/cnidaria-cni` | cnidaria イメージ |
 | `image_tag` | `v0.1.0` | cnidaria イメージタグ |
 | `network_name` | `cnidaria` | conflist のネットワーク名（`--network-name`）。host-local の IP 割り当ては `/var/lib/cni/networks/<name>` に保存される |
 | `resources.requests.cpu` | `50m` | CPU リクエスト |

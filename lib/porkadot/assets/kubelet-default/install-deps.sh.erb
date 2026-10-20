@@ -24,6 +24,9 @@ echo $architecture
 OPT_DIR=${PORKADOT_OPT_DIR:-/opt}
 BIN_DIR=${OPT_DIR}/bin
 CNI_BIN_DIR=${OPT_DIR}/cni/bin
+# The reference CNI plugins (bridge, host-local, portmap, loopback, ...) are owned by
+# the node, whichever CNI addon is enabled: the CNI DaemonSet only puts its own
+# binary here (flannel puts flannel, cnidaria puts none).
 # The CNI plugins are extracted in place, so their version is kept in a file.
 CNI_VERSION_FILE=${CNI_BIN_DIR}/.porkadot-cni-plugins-version
 

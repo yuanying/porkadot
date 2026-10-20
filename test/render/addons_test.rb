@@ -32,8 +32,8 @@ class PorkadotRenderAddonsTest < Minitest::Test
     render_addons(['cnidaria'])
 
     ds = cnidaria_daemonset
-    images = pod_spec(ds).values_at('initContainers', 'containers').flatten.map { |c| c['image'] }
-    assert_equal ['ghcr.io/yuanying/cnidaria-cni:v0.1.1'] * 2, images
+    images = pod_spec(ds)['containers'].map { |c| c['image'] }
+    assert_equal ['ghcr.io/yuanying/cnidaria-cni:v0.1.1'], images
 
     container = pod_spec(ds)['containers'].first
     assert_includes container['args'], '--network-name=cnidaria'
@@ -50,12 +50,23 @@ class PorkadotRenderAddonsTest < Minitest::Test
     })
 
     ds = cnidaria_daemonset
-    images = pod_spec(ds).values_at('initContainers', 'containers').flatten.map { |c| c['image'] }
-    assert_equal ['registry.example.com/cnidaria-cni:v9.9.9'] * 2, images
+    images = pod_spec(ds)['containers'].map { |c| c['image'] }
+    assert_equal ['registry.example.com/cnidaria-cni:v9.9.9'], images
 
     container = pod_spec(ds)['containers'].first
     assert_includes container['args'], '--network-name=cbr0'
     assert_equal '10m', container['resources']['requests']['cpu']
+  end
+
+  # The reference CNI plugins are put in /opt/cni/bin by install kubelet, so the
+  # DaemonSet must not copy its own and overwrite them.
+  def test_cnidaria_daemonset_leaves_cni_bin_dir_alone
+    render_addons(['cnidaria'])
+
+    spec = pod_spec(cnidaria_daemonset)
+    assert_nil spec['initContainers']
+    host_paths = spec['volumes'].map { |v| v.dig('hostPath', 'path') }.compact
+    refute_includes host_paths, '/opt/cni/bin'
   end
 
   def test_cnidaria_daemonset_tolerates_every_taint
