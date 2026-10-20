@@ -193,8 +193,12 @@ porkadot install bootstrap cleanup [--timeout <秒>]
 全 Kubernetes コンポーネントをインストールします。
 
 ```
-porkadot install kubernetes [all] [--node <node-name>]
+porkadot install kubernetes [all] [--node <node-name>] [--apiserver-timeout <秒>]
 ```
+
+kube-apiserver を先に適用し、DaemonSet `kube-apiserver` の rollout が終わるのを待ってから、kube-controller-manager・kube-scheduler・kube-proxy・アドオンを適用します（[06-assets.md](06-assets.md) の `kubernetes/install.sh`）。
+`--apiserver-timeout`（既定 600 秒）までに rollout が終わらなければ、残りを適用せずにエラーで止まります。kube-apiserver の Pod を確かめてから、もう一度実行します。
+`install bootstrap kubernetes` は待たずに一度に適用します。
 
 #### 個別コンポーネントインストール
 

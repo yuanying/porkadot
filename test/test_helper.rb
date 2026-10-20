@@ -24,6 +24,20 @@ module Porkadot::TestUtils
     path
   end
 
+  # Renders certs and kubernetes once per process, since generating the
+  # certificates is slow, and copies the result into dir. Returns the path
+  # of a config whose assets_dir points into dir.
+  def copy_rendered_kubernetes(dir)
+    @@rendered_kubernetes ||= Dir.mktmpdir.tap do |src|
+      path = write_tmp_config(src)
+      run_cli('render', 'certs', '--config', path)
+      run_cli('render', 'kubernetes', '--config', path)
+      Minitest.after_run { FileUtils.remove_entry(src) }
+    end
+    FileUtils.cp_r(File.join(@@rendered_kubernetes, 'assets'), dir)
+    write_tmp_config(dir)
+  end
+
   def run_cli(*args)
     capture_io do
       Porkadot::Cmd::Cli.start(args)

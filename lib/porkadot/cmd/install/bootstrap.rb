@@ -30,7 +30,8 @@ module Porkadot; module Cmd; module Install; module Bootstrap
       logger.info "Installing bootstrap kubernetes"
       bootstrap = Porkadot::Install::Bootstrap.new(self.config)
       k8s = Porkadot::Install::Kubernetes.new(self.config)
-      k8s.install(bootstrap.host)
+      # The self-hosted apiservers become ready only once the rest is applied.
+      k8s.install(bootstrap.host, wait_apiserver: false)
       ""
     end
 

@@ -242,6 +242,11 @@ porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-ip>
 # 例: porkadot install kubernetes --config ./porkadot.yaml --node 192.168.1.111
 ```
 
+`install kubernetes` は kube-apiserver を先に適用し、DaemonSet の rollout が終わってから残りを適用する
+（新しい kube-scheduler が古い kube-apiserver に張り付いて新しい apiserver の Pod をスケジュールしない、というデッドロックを避けるため）。
+rollout が `--apiserver-timeout`（既定 600 秒）までに終わらないと、残りを適用せずに止まる。
+kube-apiserver の Pod を確かめ、直してからもう一度流す。
+
 **Step 3**: rollout 完了確認
 
 ```bash
