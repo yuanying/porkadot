@@ -108,28 +108,89 @@ module Porkadot; module Install
       File.chmod(0600, path)
     end
 
-    def restore_etcd path: "./backup/etcd.db"
+    # How far a restore moves the revision. The bump has to cover what was
+    # written since the snapshot, which RESTORE_BUMP_REVISION alone does
+    # only for the first restore: after it the revision is already about as
+    # high, and an older snapshot would come back below what clients saw.
+    # Clients watching from a revision etcd has not reached yet get no
+    # error and no events. So the bump covers the current revision too and
+    # keeps RESTORE_BUMP_REVISION as the margin above it.
+    def self.restore_bump_revision current:, snapshot:
+      [RESTORE_BUMP_REVISION, current - snapshot + RESTORE_BUMP_REVISION].max
+    end
+
+    # The highest revision any etcd member answers with, or nil when none
+    # answers. Read before etcd is stopped for a restore. A member lagging
+    # behind is within the margin of restore_bump_revision.
+    def current_etcd_revision
+      options = self.etcd_options
+      revisions = {}
+      lock = Mutex.new
+      on(self.etcd_hosts) do |host|
+        # The etcd client key is readable only by root.
+        as user: 'root' do
+          out = capture(:"/opt/bin/etcdctl", *options, 'endpoint', 'status', '-w', 'json',
+            raise_on_non_zero_exit: false)
+          revision = begin
+            JSON.parse(out).first&.dig('Status', 'header', 'revision')
+          rescue JSON::ParserError
+            nil
+          end
+          lock.synchronize { revisions[host.config.name] = revision }
+        end
+      end
+      logger.info "etcd revisions: " + revisions.sort.map { |k, v| "#{k}=#{v || 'unreadable'}" }.join(', ')
+      return revisions.values.compact.max
+    end
+
+    # current_revision is the one read before etcd was stopped. bump_revision
+    # is used as it is instead, when given.
+    def restore_etcd path: "./backup/etcd.db", current_revision: nil, bump_revision: nil
       require 'date'
       hosts = self.etcd_hosts
+      list = self
 
       etcd_nodes = self.global_config.etcd_nodes
-      bump = []
-      if self.global_config.etcd.restore_bumps_revision?
-        bump = ["--bump-revision", RESTORE_BUMP_REVISION.to_s, "--mark-compacted"]
+      snapshot = "#{KUBE_TEMP}/etcd.db"
+      bumps = self.global_config.etcd.restore_bumps_revision?
+      if bumps
+        unless current_revision || bump_revision
+          raise Porkadot::Error, "The current etcd revision is not known. " \
+            "Give the amount to move the revision by with --bump-revision."
+        end
+      elsif bump_revision
+        raise Porkadot::Error, "etcd.image_tag #{self.global_config.etcd.image_tag} is older than 3.5.10, " \
+          "whose etcdutl has no --bump-revision."
       end
+
       on(hosts) do |host|
-        etcd_node = etcd_nodes[host.config.name]
         execute(:rm, '-rf', KUBE_TEMP, *LEGACY_TEMPS)
         execute(:mkdir, '-p', KUBE_TEMP)
-        upload! path, "#{KUBE_TEMP}/etcd.db"
+        upload! path, snapshot
+      end
 
+      bump = []
+      if bumps
+        unless bump_revision
+          snapshot_revision = self.snapshot_revision(hosts.first, snapshot)
+          bump_revision = self.class.restore_bump_revision(current: current_revision, snapshot: snapshot_revision)
+          logger.info "Restore with --bump-revision #{bump_revision}: current revision #{current_revision}, " \
+            "snapshot revision #{snapshot_revision}, restored revision #{snapshot_revision + bump_revision}"
+        else
+          logger.info "Restore with --bump-revision #{bump_revision} as given"
+        end
+        bump = ["--bump-revision", bump_revision.to_s, "--mark-compacted"]
+      end
+
+      on(hosts) do |host|
+        etcd_node = etcd_nodes[host.config.name]
         as user: 'root' do
           execute(:mkdir, '-p', ETCD_TEMP)
           if test("[ -d #{ETCD_DATA_DIR} ]")
             execute(:mv, ETCD_DATA_DIR, "#{ETCD_TEMP}/data-#{DateTime.now.to_s}")
           end
           # etcdctl 3.6 has no snapshot restore.
-          execute(:"/opt/bin/etcdutl", "snapshot", "restore", "#{KUBE_TEMP}/etcd.db",
+          execute(:"/opt/bin/etcdutl", "snapshot", "restore", snapshot,
             "--data-dir", ETCD_DATA_DIR,
             "--name", etcd_node.member_name,
             "--initial-cluster", etcd_node.initial_cluster.map{|k,v| "#{k}=#{v}"}.join(','),
@@ -137,6 +198,25 @@ module Porkadot; module Install
             *bump)
         end
       end
+    end
+
+    def snapshot_revision host, snapshot
+      out = nil
+      on(host) do
+        as user: 'root' do
+          out = capture(:"/opt/bin/etcdutl", 'snapshot', 'status', snapshot, '-w', 'json',
+            raise_on_non_zero_exit: false)
+        end
+      end
+      revision = begin
+        JSON.parse(out)['revision']
+      rescue JSON::ParserError, TypeError
+        nil
+      end
+      return revision if revision.is_a?(Integer)
+      raise Porkadot::Error, "Could not read the revision of #{snapshot} with etcdutl snapshot status " \
+        "on #{host.hostname}: #{out.inspect}\n" \
+        "etcd is stopped and its data is untouched. porkadot etcd start brings it back."
     end
 
     # Waits until every etcd member answers endpoint health.

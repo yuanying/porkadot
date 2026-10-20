@@ -1,5 +1,6 @@
 require "test_helper"
 require "tmpdir"
+require "json"
 
 class PorkadotInstallEtcdTest < Minitest::Test
   include Porkadot::TestUtils
@@ -7,7 +8,7 @@ class PorkadotInstallEtcdTest < Minitest::Test
   # SSHKit backend that records commands instead of running them over SSH.
   class RecordingBackend < SSHKit::Backend::Abstract
     class << self
-      attr_accessor :commands, :uploads, :downloads, :responder, :curl_status, :etcd_healthy
+      attr_accessor :commands, :uploads, :downloads, :responder, :curl_status, :etcd_healthy, :fails
     end
 
     def upload!(local, remote, _options = {})
@@ -29,6 +30,7 @@ class PorkadotInstallEtcdTest < Minitest::Test
       cmd.exit_status = 0
       cmd.exit_status = self.class.curl_status || 0 if cmd.to_s.include?('curl')
       cmd.exit_status = 1 if cmd.to_s.include?('endpoint health') && self.class.etcd_healthy == false
+      cmd.exit_status = 1 if self.class.fails&.call(host, cmd)
     end
   end
 
@@ -47,13 +49,37 @@ class PorkadotInstallEtcdTest < Minitest::Test
     RecordingBackend.responder = nil
     RecordingBackend.curl_status = nil
     RecordingBackend.etcd_healthy = nil
+    RecordingBackend.fails = nil
   end
 
-  def restore_with_snapshot
+  def restore_with_snapshot **options
+    RecordingBackend.responder ||= revision_responder
+    options = { current_revision: 1000609253 }.merge(options)
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'etcd.db')
       File.write(path, 'snapshot')
-      @kubelets.restore_etcd path: path
+      @kubelets.restore_etcd path: path, **options
+    end
+  end
+
+  # Fake etcdctl endpoint status and etcdutl snapshot status. A member
+  # missing from current does not answer.
+  def revision_responder current: { '192.168.33.111' => 1000609253, '192.168.33.112' => 1000609250 }, snapshot: 1000594230
+    RecordingBackend.fails = lambda do |host, cmd|
+      cmd.to_s.include?('endpoint status') && !current[host.hostname]
+    end
+    lambda do |host, cmd|
+      cmd = cmd.to_s
+      if cmd.include?('endpoint status')
+        rev = current[host.hostname]
+        next '' unless rev
+        JSON.generate([{ 'Endpoint' => 'https://127.0.0.1:2379',
+          'Status' => { 'header' => { 'cluster_id' => 1, 'member_id' => 2, 'revision' => rev, 'raft_term' => 3 } } }])
+      elsif cmd.include?('snapshot status')
+        JSON.generate({ 'hash' => 1, 'revision' => snapshot, 'totalKey' => 10, 'totalSize' => 100, 'version' => '3.6.0' })
+      else
+        ''
+      end
     end
   end
 
@@ -85,11 +111,7 @@ class PorkadotInstallEtcdTest < Minitest::Test
   # --- restore ---
 
   def test_restore_etcd_restores_each_member_into_var_lib_etcd
-    Dir.mktmpdir do |dir|
-      path = File.join(dir, 'etcd.db')
-      File.write(path, 'snapshot')
-      @kubelets.restore_etcd path: path
-    end
+    restore_with_snapshot
 
     initial_cluster = 'node01=https://192.168.33.111:2380,node02=https://192.168.33.112:2380'
     {
@@ -107,11 +129,7 @@ class PorkadotInstallEtcdTest < Minitest::Test
 
   # etcdctl 3.6 has no snapshot restore; etcdutl has it since 3.5.
   def test_restore_etcd_uses_etcdutl
-    Dir.mktmpdir do |dir|
-      path = File.join(dir, 'etcd.db')
-      File.write(path, 'snapshot')
-      @kubelets.restore_etcd path: path
-    end
+    restore_with_snapshot
 
     restore, as_root = find_command('192.168.33.111', 'snapshot restore')
     assert_match %r{ /opt/bin/etcdutl snapshot restore }, restore
@@ -119,11 +137,7 @@ class PorkadotInstallEtcdTest < Minitest::Test
   end
 
   def test_restore_etcd_uses_same_values_as_etcd_server_manifest
-    Dir.mktmpdir do |dir|
-      path = File.join(dir, 'etcd.db')
-      File.write(path, 'snapshot')
-      @kubelets.restore_etcd path: path
-    end
+    restore_with_snapshot
 
     @config.etcd_nodes.each do |name, node|
       hostname = @config.nodes[name].connection.hostname
@@ -135,11 +149,7 @@ class PorkadotInstallEtcdTest < Minitest::Test
   end
 
   def test_restore_etcd_moves_old_data_dir_under_etcd_temp
-    Dir.mktmpdir do |dir|
-      path = File.join(dir, 'etcd.db')
-      File.write(path, 'snapshot')
-      @kubelets.restore_etcd path: path
-    end
+    restore_with_snapshot
 
     mv = commands_for('192.168.33.111').find { |c| c.include?('mv /var/lib/etcd') }
     assert mv, 'old data dir was not moved away'
@@ -150,20 +160,106 @@ class PorkadotInstallEtcdTest < Minitest::Test
   # Without a bump the revision goes back to the snapshot's, and clients
   # watching from a later revision miss everything in between.
   def test_restore_etcd_bumps_and_compacts_the_revision
-    restore_with_snapshot
+    RecordingBackend.responder = revision_responder(snapshot: 5000)
+    restore_with_snapshot current_revision: 4000
 
     restore, = find_command('192.168.33.111', 'snapshot restore')
     assert_includes restore, '--bump-revision 1000000000 --mark-compacted'
   end
 
+  # A second restore to an older snapshot: 1000000000 alone would leave the
+  # revision below the one clients saw after the first restore.
+  def test_restore_etcd_bumps_past_the_current_revision
+    restore_with_snapshot current_revision: 1000609253
+
+    ['192.168.33.111', '192.168.33.112'].each do |host|
+      restore, = find_command(host, 'snapshot restore')
+      assert_includes restore, '--bump-revision 1000015023 --mark-compacted'
+    end
+  end
+
+  def test_restore_bump_revision
+    klass = Porkadot::Install::KubeletList
+    assert_equal 1_000_015_023, klass.restore_bump_revision(current: 1_000_609_253, snapshot: 1_000_594_230)
+    assert_equal 1_000_000_000, klass.restore_bump_revision(current: 5000, snapshot: 5000)
+    assert_equal 1_000_000_000, klass.restore_bump_revision(current: 4000, snapshot: 5000)
+    assert_equal 1_000_001_000, klass.restore_bump_revision(current: 6000, snapshot: 5000)
+    # The restored revision ends above the current one by the margin.
+    assert_equal 1_000_609_253 + 1_000_000_000, 1_000_594_230 + klass.restore_bump_revision(current: 1_000_609_253, snapshot: 1_000_594_230)
+  end
+
+  def test_restore_etcd_reads_snapshot_revision_after_upload_as_root
+    restore_with_snapshot
+
+    cmds = commands_for('192.168.33.111')
+    status, as_root = find_command('192.168.33.111', 'snapshot status')
+    assert_match %r{/opt/bin/etcdutl snapshot status \./kube_temp/kubelet/etcd\.db -w json}, status
+    assert as_root
+    mv = cmds.index { |c| c.include?('mv /var/lib/etcd') }
+    assert_operator cmds.index { |c| c.include?('snapshot status') }, :<, mv
+    assert_equal 2, RecordingBackend.uploads.size
+  end
+
+  def test_restore_etcd_uses_the_given_bump_revision
+    restore_with_snapshot current_revision: nil, bump_revision: 3_000_000_000
+
+    restore, = find_command('192.168.33.111', 'snapshot restore')
+    assert_includes restore, '--bump-revision 3000000000 --mark-compacted'
+  end
+
+  def test_restore_etcd_without_any_revision_raises_before_touching_data
+    error = assert_raises(Porkadot::Error) { restore_with_snapshot current_revision: nil }
+    assert_match(/--bump-revision/, error.message)
+    refute all_commands.any? { |c| c.include?('mv /var/lib/etcd') }
+    refute all_commands.any? { |c| c.include?('snapshot restore') }
+  end
+
+  def test_restore_etcd_with_unreadable_snapshot_revision_raises_before_touching_data
+    RecordingBackend.responder = ->(_, _) { '' }
+    error = assert_raises(Porkadot::Error) { restore_with_snapshot }
+    assert_match(/snapshot status/, error.message)
+    assert_match(/porkadot etcd start/, error.message)
+    refute all_commands.any? { |c| c.include?('mv /var/lib/etcd') }
+  end
+
+  def test_current_etcd_revision_takes_the_highest_member_as_root
+    RecordingBackend.responder = revision_responder
+    assert_equal 1000609253, @kubelets.current_etcd_revision
+
+    ['192.168.33.111', '192.168.33.112'].each do |host|
+      status, as_root = find_command(host, 'endpoint status')
+      assert_includes status, '--endpoints=https://127.0.0.1:2379'
+      assert_includes status, '-w json'
+      assert as_root
+    end
+  end
+
+  def test_current_etcd_revision_skips_members_that_do_not_answer
+    RecordingBackend.responder = revision_responder(current: { '192.168.33.112' => 700 })
+    assert_equal 700, @kubelets.current_etcd_revision
+  end
+
+  def test_current_etcd_revision_is_nil_when_no_member_answers
+    RecordingBackend.responder = revision_responder(current: {})
+    assert_nil @kubelets.current_etcd_revision
+  end
+
   # etcdutl has the two flags since 3.5.10.
   def test_restore_etcd_without_bump_for_older_etcd
     @config.etcd.raw.image_tag = '3.5.9-0'
-    restore_with_snapshot
+    restore_with_snapshot current_revision: nil
 
     restore, = find_command('192.168.33.111', 'snapshot restore')
     refute_includes restore, '--bump-revision'
     refute_includes restore, '--mark-compacted'
+    refute all_commands.any? { |c| c.include?('snapshot status') }
+  end
+
+  def test_restore_etcd_rejects_bump_revision_for_older_etcd
+    @config.etcd.raw.image_tag = '3.5.9-0'
+    error = assert_raises(Porkadot::Error) { restore_with_snapshot bump_revision: 1_000_000_000 }
+    assert_match(/3\.5\.10/, error.message)
+    refute all_commands.any? { |c| c.include?('snapshot restore') }
   end
 
   def test_restore_bumps_revision_follows_image_tag
@@ -276,11 +372,7 @@ class PorkadotInstallEtcdTest < Minitest::Test
   end
 
   def test_etcd_restore_command_restarts_the_control_plane_after_etcd
-    RecordingBackend.responder = control_plane_responder
-    Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'etcd-2026-10-20T00:00:00+00:00.db'), 'snapshot')
-      run_cli('etcd', 'restore', '--config', @config.path, '--path', dir, '--timeout', '30')
-    end
+    run_restore_cli
 
     cmds = all_commands
     restore = cmds.index { |c| c.include?('snapshot restore') }
@@ -291,6 +383,109 @@ class PorkadotInstallEtcdTest < Minitest::Test
     assert_operator restore, :<, start
     assert_operator start, :<, health
     assert_operator health, :<, stop_apiserver
+  end
+
+  # The running etcd is the only place the current revision can be read.
+  def test_etcd_restore_command_reads_the_revision_before_stopping_etcd
+    run_restore_cli
+
+    cmds = all_commands
+    status = cmds.index { |c| c.include?('endpoint status') }
+    stop = cmds.index { |c| c.include?('crictl ps -q --name etcd') }
+    assert status && stop, cmds.inspect
+    assert_operator status, :<, stop
+    assert_includes cmds.find { |c| c.include?('snapshot restore') }, '--bump-revision 1000015023 --mark-compacted'
+  end
+
+  def test_restore_etcd_logs_the_revisions_and_the_bump
+    log = use_string_logger
+    RecordingBackend.responder = revision_responder
+    current = @kubelets.current_etcd_revision
+    restore_with_snapshot current_revision: current
+
+    assert_match(/etcd revisions: 192\.168\.33\.112=1000609250, node01=1000609253/, log.string)
+    assert_match(/--bump-revision 1000015023: current revision 1000609253, snapshot revision 1000594230, restored revision 2000609253/, log.string)
+  end
+
+  def test_current_etcd_revision_logs_members_that_do_not_answer
+    log = use_string_logger
+    RecordingBackend.responder = revision_responder(current: { '192.168.33.112' => 700 })
+    @kubelets.current_etcd_revision
+
+    assert_match(/192\.168\.33\.112=700, node01=unreadable/, log.string)
+  end
+
+  def test_restore_etcd_logs_the_given_bump
+    log = use_string_logger
+    restore_with_snapshot current_revision: nil, bump_revision: 3_000_000_000
+
+    assert_match(/--bump-revision 3000000000 as given/, log.string)
+  end
+
+  def use_string_logger
+    io = StringIO.new
+    @config.instance_variable_set(:@logger, Logger.new(io))
+    @kubelets = Porkadot::Install::KubeletList.new(@config)
+    io
+  end
+
+  def test_etcd_restore_command_stops_before_etcd_when_the_revision_is_unreadable
+    _, err = run_restore_cli(current: {})
+
+    cmds = all_commands
+    assert cmds.any? { |c| c.include?('endpoint status') }, cmds.inspect
+    refute cmds.any? { |c| c.include?('crictl ps -q --name etcd') }, cmds.inspect
+    refute cmds.any? { |c| c.include?('snapshot restore') }
+    assert_match(/etcd is left running/, err)
+    assert_match(/--bump-revision/, err)
+  end
+
+  def test_etcd_restore_command_takes_bump_revision_without_reading_etcd
+    run_restore_cli('--bump-revision', '3000000000', current: {})
+
+    cmds = all_commands
+    refute cmds.any? { |c| c.include?('endpoint status') }
+    refute cmds.any? { |c| c.include?('snapshot status') }
+    assert_includes cmds.find { |c| c.include?('snapshot restore') }, '--bump-revision 3000000000 --mark-compacted'
+  end
+
+  def test_etcd_restore_command_rejects_a_bump_revision_that_is_not_positive
+    _, err = run_restore_cli('--bump-revision', '0')
+
+    assert_match(/--bump-revision must be positive/, err)
+    refute all_commands.any? { |c| c.include?('crictl ps -q --name etcd') }
+  end
+
+  def test_etcd_restore_command_does_not_read_revisions_for_older_etcd
+    Dir.mktmpdir do |dir|
+      config = YAML.load_file(@config.path)
+      config['etcd'] = (config['etcd'] || {}).merge('image_tag' => '3.5.9-0')
+      path = File.join(dir, 'porkadot.yaml')
+      File.write(path, YAML.dump(config))
+      run_restore_cli(config: path)
+    end
+
+    cmds = all_commands
+    refute cmds.any? { |c| c.include?('endpoint status') }
+    refute cmds.any? { |c| c.include?('snapshot status') }
+    refute_includes cmds.find { |c| c.include?('snapshot restore') }, '--bump-revision'
+  end
+
+  # Runs etcd restore with fake revisions and control plane. Returns the
+  # captured stdout and stderr; Porkadot::Error goes to stderr as in main.
+  def run_restore_cli *args, current: nil, config: @config.path
+    revisions = current ? revision_responder(current: current) : revision_responder
+    control_plane = control_plane_responder
+    RecordingBackend.responder = lambda do |host, cmd|
+      c = cmd.to_s
+      (c.include?('endpoint status') || c.include?('snapshot status')) ? revisions.call(host, cmd) : control_plane.call(host, cmd)
+    end
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'etcd-2026-10-20T00:00:00+00:00.db'), 'snapshot')
+      capture_io do
+        Porkadot::Cmd::Cli.main(['etcd', 'restore', '--config', config, '--path', dir, '--timeout', '30', *args])
+      end
+    end
   end
 
   def no_wait kubelets

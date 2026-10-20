@@ -46,17 +46,34 @@ module Porkadot; module Cmd; module Etcd
     option :path, type: :string, default: "./backup", desc: "Directory where etcd backup data is stored."
     option :timeout, type: :numeric, default: Porkadot::Install::KubeletList::DEFAULT_RESTORE_TIMEOUT,
       desc: "Seconds to wait for etcd and for each control plane component after the restore"
+    option :bump_revision, type: :numeric,
+      desc: "How far to move the etcd revision. By default it goes 1000000000 past the current revision, read from the running etcd"
     def restore
-      invoke :stop, [], options
-
       path = Dir.glob(File.join(options[:path], "etcd-*.db")).sort.reverse[0]
       unless path
         return "No backup data found...: #{options[:path]}"
       end
 
-      logger.info "Restore etcd from #{path}"
       kubelets = Porkadot::Install::KubeletList.new(self.config)
-      kubelets.restore_etcd path: path
+      bump_revision = options[:bump_revision]&.to_i
+      if bump_revision && bump_revision <= 0
+        raise Porkadot::Error, "--bump-revision must be positive: #{options[:bump_revision]}"
+      end
+      current_revision = nil
+      # Only the running etcd knows the revision clients have seen.
+      if self.config.etcd.restore_bumps_revision? && !bump_revision
+        current_revision = kubelets.current_etcd_revision
+        unless current_revision
+          raise Porkadot::Error, "Could not read the current revision from any etcd member, and etcd is left running. " \
+            "Give the amount to move the revision by with --bump-revision. It has to be larger than the " \
+            "highest revision any client has seen minus the snapshot's revision (etcdutl snapshot status)."
+        end
+      end
+
+      invoke :stop, [], options
+
+      logger.info "Restore etcd from #{path}"
+      kubelets.restore_etcd path: path, current_revision: current_revision, bump_revision: bump_revision
 
       invoke :start, [], options
 
