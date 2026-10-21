@@ -164,6 +164,8 @@ kube-proxy の設定を `KubeProxyConfiguration` 形式で記述します。
 | `staticPodPath` | `/etc/kubernetes/manifests` |
 | `resolvConf` | `/run/systemd/resolve/resolv.conf` |
 
+`failCgroupV1` は設定しない。Kubernetes 1.35 から kubelet の既定値が `true` になり、cgroup v1 のノードでは kubelet が起動しない。ノードは cgroup v2 で動かす（`stat -fc %T /sys/fs/cgroup` が `cgroup2fs`）。cgroup v1 のまま動かす必要があるときだけ、`config` に `failCgroupV1: false` を書く。
+
 ---
 
 ## `etcd` セクション
