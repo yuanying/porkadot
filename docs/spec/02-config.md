@@ -83,8 +83,8 @@ Kubernetes クラスタ全体の設定です。
 |------|-----------|------|
 | `cluster_name` | `porkadot` | クラスタ名 |
 | `control_plane_endpoint` | — | コントロールプレーンエンドポイント（例: `192.168.23.101:6443`）|
-| `kubernetes_version` | `v1.34.12` | Kubernetes バージョン |
-| `crictl_version` | `v1.34.0` | crictl バージョン |
+| `kubernetes_version` | `v1.35.9` | Kubernetes バージョン |
+| `crictl_version` | `v1.35.0` | crictl バージョン |
 | `image_repository` | `registry.k8s.io` | コンテナイメージリポジトリ |
 
 ### `kubernetes.networking`
@@ -133,7 +133,7 @@ kube-proxy の設定を `KubeProxyConfiguration` 形式で記述します。
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `config` | — | KubeProxyConfiguration オブジェクト |
-| `config.mode` | `iptables` | プロキシモード（`iptables` または `ipvs`） |
+| `config.mode` | `iptables` | プロキシモード（`iptables` または `ipvs`）。`ipvs` は Kubernetes 1.35 で非推奨になった |
 | `config.clusterCIDR` | pod_subnet から自動設定 | Pod CIDR |
 
 デフォルト設定には以下が含まれます（抜粋）:
