@@ -6,6 +6,7 @@
   "dependencyDashboard": true,
   "minimumReleaseAge": "7 days",
   "internalChecksFilter": "strict",
+  "platformAutomerge": false,
   "customManagers": [
     {
       "description": "porkadot keeps the versions it installs in default.yaml, which no manager reads. A comment on the line above each version says where to look it up: `# renovate: datasource=<datasource> depName=<name>`, optionally followed by packageName=, versioning= and extractVersion= in that order. The version is the value of the key on the next line, without its quotes. A version is tracked by writing the comment, not by adding a manager here",
@@ -81,6 +82,17 @@
       "matchManagers": ["kustomize"],
       "matchFileNames": ["hack/metallb/**"],
       "groupName": "metallb"
+    },
+    {
+      "description": "Patch, digest and pinning updates are merged by Renovate itself once the pull request's checks pass. CI runs bundle exec rake test on every pull request, with no paths filter, so every branch Renovate opens is tested before it is merged. platformAutomerge is off so that the merge waits for those checks without relying on the repository's auto-merge setting or branch protection. Minor and major updates only open a pull request. Merged updates reach a release through the weekly release workflow, which tags the next patch version when Renovate's commits are all there is since the latest tag",
+      "matchUpdateTypes": ["patch", "digest", "pin", "pinDigest"],
+      "automerge": true
+    },
+    {
+      "description": "A MetalLB update is not finished by Renovate's pull request: it changes only the ref, and hack/update-metallb.sh has to be run on the branch to render the template and the CRDs. Merged as it is, the ref would name a release that porkadot does not install, and the tests would still pass. So even a patch update waits to be merged by hand",
+      "matchManagers": ["kustomize"],
+      "matchFileNames": ["hack/metallb/**"],
+      "automerge": false
     },
     {
       "description": "Workflows are already read by the github-actions manager. Grouping them keeps a handful of actions from arriving as a handful of pull requests, since they are updated together and reviewed the same way",
