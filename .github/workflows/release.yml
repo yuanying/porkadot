@@ -1,0 +1,58 @@
+# porkadot weekly release
+#
+# Once a week, releases the dependency updates Renovate has merged since the
+# latest vX.Y.Z tag as the next patch version. .github/scripts/weekly_release.rb
+# decides: every commit since the tag, merge commits aside, has to be
+# Renovate's, and they have to change lib/, exe/ or the gemspec. Otherwise
+# nothing is released and the release is left to be made by hand, as before.
+#
+# A release bumps lib/porkadot/version.rb and docs/spec/README.md, commits the
+# bump to master and tags that commit, as the bump pull requests made by hand
+# do. The gem is not pushed to rubygems.org.
+name: Release
+
+on:
+  schedule:
+    # Monday 09:00 JST.
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+# Two runs at once would both try to push the same version.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Pushes the bump commit to master and the tag.
+      contents: write
+    steps:
+      # The whole history and the tags are needed to find the latest tag and
+      # the commits after it.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # The script needs only Ruby's standard library, so no gems are installed.
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+      - name: Bump the version and tag it
+        id: prepare
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ruby .github/scripts/weekly_release.rb
+      # The commit and the tag go in one atomic push, so a push that fails,
+      # for example because master moved on since the checkout, leaves
+      # neither. A push with GITHUB_TOKEN starts no other workflow, so CI does
+      # not run on the bump commit; it changes only the version.
+      - name: Push
+        if: steps.prepare.outputs.release == 'true'
+        env:
+          TAG: ${{ steps.prepare.outputs.tag }}
+        run: git push --atomic origin HEAD:refs/heads/master "refs/tags/${TAG}"
