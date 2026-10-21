@@ -92,7 +92,7 @@ class PorkadotRenderAddonsTest < Minitest::Test
     deploy = YAML.load_stream(File.read(addon_path('coredns/coredns.yaml')))
       .compact.find { |d| d['kind'] == 'Deployment' && d['metadata']['name'] == 'coredns' }
     images = pod_spec(deploy)['containers'].map { |c| c['image'] }
-    assert_equal ['registry.k8s.io/coredns/coredns:v1.13.2'], images
+    assert_equal ['registry.k8s.io/coredns/coredns:v1.14.7'], images
   end
 
   def test_kubelet_serving_cert_approver_uses_pinned_image
