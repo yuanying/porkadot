@@ -112,6 +112,15 @@ class PorkadotConfigsKubeletTest < Minitest::Test
     assert_equal false, node04.kubelet_config['featureGates']['CSIMigration']
   end
 
+  # Since 1.35 the kubelet refuses to start on cgroup v1 unless failCgroupV1
+  # is false. porkadot keeps the kubelet's default, so that a node on cgroup v1
+  # fails at install instead of running on a deprecated setup.
+  def test_kubelet_config_keeps_fail_cgroup_v1_default
+    node = self.mock_config('porkadot.yaml').nodes['node01']
+
+    refute node.kubelet_config.key?('failCgroupV1')
+  end
+
   def test_kubelet_config_registers_taints_only_for_tainted_nodes
     config = self.mock_config('porkadot2.yaml')
     node01 = config.nodes['node01']

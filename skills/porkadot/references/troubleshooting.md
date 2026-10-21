@@ -356,6 +356,7 @@ ssh ubuntu@<bootstrap-node-ip> \
 ### よくある原因
 
 - containerd が起動していない → `systemctl status containerd` で確認
+- ノードが cgroup v1 で起動している → Kubernetes 1.35 以降の kubelet は cgroup v1 では起動しない（`failCgroupV1` の既定値が `true`）。`stat -fc %T /sys/fs/cgroup` が `cgroup2fs` でなければ、カーネルの起動オプション（`systemd.unified_cgroup_hierarchy=0` など）を外して cgroup v2 で起動し直す
 - containerd と kubelet の cgroup driver が食い違っている（kubelet は `systemd`）→ `containerd config dump | grep SystemdCgroup` で runc の値が `true` か確認する。`false` なら `setup-containerd` をやり直す（→「setup-containerd が runc options セクションが無いと言って止まる」）
 - kubelet の設定に誤りがある（apiserver 向き先）
 - CNI（Flannel または cnidaria）が起動していない
