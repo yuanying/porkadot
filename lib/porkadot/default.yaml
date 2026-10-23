@@ -69,14 +69,14 @@ addons:
 etcd:
   image_repository: registry.k8s.io/etcd
   # renovate: datasource=docker depName=registry.k8s.io/etcd
-  image_tag: 3.6.15-0
+  image_tag: 3.7.3-0
   extra_env: []
 
 kubernetes:
   # renovate: datasource=github-releases depName=kubernetes/kubernetes
-  kubernetes_version: v1.36.5
+  kubernetes_version: v1.37.1
   # renovate: datasource=github-releases depName=kubernetes-sigs/cri-tools
-  crictl_version: v1.36.0
+  crictl_version: v1.37.0
   image_repository: registry.k8s.io
 
   networking:
@@ -151,6 +151,7 @@ kubernetes:
       cgroupDriver: systemd
       clusterDNS: []
       clusterDomain: ""
+      containerRuntimeEndpoint: unix:///run/containerd/containerd.sock
       cpuManagerReconcilePeriod: 0s
       evictionPressureTransitionPeriod: 0s
       fileCheckFrequency: 0s
