@@ -23,10 +23,10 @@ addons:
     backend: vxlan
     plugin_image_repository: flannel/flannel-cni-plugin
     # renovate: datasource=docker depName=flannel/flannel-cni-plugin
-    plugin_image_tag: v1.4.1-flannel1
+    plugin_image_tag: v1.9.1-flannel3
     daemon_image_repository: flannel/flannel
     # renovate: datasource=docker depName=flannel/flannel
-    daemon_image_tag: v0.25.1
+    daemon_image_tag: v0.28.10
     resources:
       requests:
         cpu: "100m"
