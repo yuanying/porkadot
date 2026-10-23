@@ -30,6 +30,11 @@ module Porkadot; module Assets
     def [](name)
       self.kubelets[name]
     end
+
+    # The node whose key in porkadot.yaml is name. Raises unless there is one.
+    def fetch name
+      self[name] || raise(Porkadot::NodeError.unknown(name, self.kubelets.keys))
+    end
   end
 
   class KubeletDefault

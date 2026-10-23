@@ -11,7 +11,8 @@ module Porkadot; module Cmd; module Install; module Kubernetes
       def install target=''
         kubelets = Porkadot::Install::KubeletList.new(self.config)
         if node = options[:node]
-          nodes = kubelets[node]
+          # The kubeconfig talks to the kube-apiserver on the node.
+          nodes = kubelets.fetch_master(node)
         else
           nodes = Porkadot::Install::Bootstrap.new(self.config).host
         end

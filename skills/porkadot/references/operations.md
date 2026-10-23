@@ -22,7 +22,8 @@ porkadot <subcommand> [options] --config <config.yaml>
 
 オプション:
 - `--config <path>` — 設定ファイルのパス（デフォルト: ./porkadot.yaml）
-- `--node <ip>` — 対象ノードを絞り込む
+- `--node <node>` — 対象ノードを 1 台に絞り込む。値は `porkadot.yaml` の `nodes` の**キー**（IP がキーでないノードに IP は渡せない）。
+  どのキーにも一致しなければ、何もせずにエラーで止まる（指定できるキーの一覧が出る）。全ノードが対象になるのは `--node` を省いたときだけ
 
 ---
 
@@ -76,7 +77,7 @@ porkadot install bootstrap kubernetes --config ./porkadot.yaml
 porkadot install bootstrap cleanup --config ./porkadot.yaml
 
 # bootstrap ノードの kubelet を VIP に戻す
-porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
+porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node>
 ```
 
 ### Step 5: set-config
@@ -123,7 +124,7 @@ cleanup 後は bootstrap ノードの kubelet が `127.0.0.1` を向いたまま
 `--node` で bootstrap ノードのみ指定して kubelet 設定を VIP に戻す:
 
 ```bash
-porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
+porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node>
 ```
 
 ---
@@ -138,7 +139,7 @@ bootstrap のみ再実行する場合は以下の順で個別実行する:
 porkadot install bootstrap node --config ./porkadot.yaml
 porkadot install bootstrap kubernetes --config ./porkadot.yaml
 porkadot install bootstrap cleanup --config ./porkadot.yaml
-porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
+porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node>
 ```
 
 ---
@@ -238,8 +239,8 @@ porkadot etcd backup --config ./porkadot.yaml
 **Step 2**: コントロールプレーン（kube-apiserver・kube-controller-manager・kube-scheduler・kube-proxy・アドオン）を更新
 
 ```bash
-porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-ip>
-# 例: porkadot install kubernetes --config ./porkadot.yaml --node 192.168.1.111
+porkadot install kubernetes --config ./porkadot.yaml --node <control-plane-node>
+# 例: porkadot install kubernetes --config ./porkadot.yaml --node 192.168.1.111（nodes のキーが IP のノード）
 ```
 
 `install kubernetes` は kube-apiserver を先に適用し、DaemonSet の rollout が終わってから残りを適用する
@@ -260,7 +261,7 @@ kubectl version
 **Step 4**: コントロールプレーンのノードの kubelet（と etcd）を 1 台ずつ更新
 
 ```bash
-porkadot install kubelet --config ./porkadot.yaml --node <control-plane-ip>
+porkadot install kubelet --config ./porkadot.yaml --node <control-plane-node>
 ```
 
 1 台ごとに、Node が Ready で新しい版になったことと、etcd が全メンバー healthy であることを確かめてから次のノードに進む。
@@ -278,6 +279,8 @@ ssh <user>@<control-plane-ip> 'sudo bash -c ". /etc/etcd/etcd.env && /opt/bin/et
 porkadot install kubelet --config ./porkadot.yaml --node <worker>
 kubectl get nodes -o wide
 ```
+
+`<worker>` は `porkadot.yaml` の `nodes` のキー（例: `pablo`）。ノードの IP がキーでなければ IP は渡せない（`Unknown node` で止まる）。
 
 Step 4・5 の `install kubelet` は、kubectl・kubelet・etcdctl・etcdutl・crictl の `/opt/bin/<名前>` を設定の版に張り替える。
 ノードに残っている版はダウンロードせずに使うので、版を戻すときも上げ直すときも `--force` は要らない。
@@ -309,7 +312,7 @@ bootstrap ノードにローカルの kube-apiserver が動いている必要が
 | bootstrap ノードの種別 | 動作 |
 |---|---|
 | コントロールプレーンノード | そのまま動作（localhost に apiserver が動いている） |
-| ワーカーノード（pablo 等） | **`--node <control-plane-ip>` が必須** |
+| ワーカーノード（pablo 等） | **`--node <control-plane-node>` が必須**（コントロールプレーンでないノードを渡すとエラーで止まる） |
 
 ```bash
 # bootstrap ノードがワーカーの場合は --node でコントロールプレーンを指定

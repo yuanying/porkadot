@@ -27,6 +27,15 @@ module Porkadot; module Assets
     def [](name)
       self.nodes[name]
     end
+
+    # The etcd member whose key in porkadot.yaml is name. Raises unless
+    # there is one.
+    def fetch name
+      return self[name] if self[name]
+      nodes = self.global_config.nodes.keys
+      raise Porkadot::NodeError.unknown(name, nodes) unless nodes.include?(name)
+      raise Porkadot::NodeError.not_etcd_member(name, self.nodes.keys)
+    end
   end
 
   class EtcdNode

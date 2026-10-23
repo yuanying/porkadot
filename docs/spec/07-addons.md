@@ -284,7 +284,7 @@ porkadot etcd start --node 192.168.22.111
 
 etcd の停止/起動は `etcd-server.yaml` を `/etc/kubernetes/manifests/` と `/opt/porkadot/` の間で移動することで行われます（kubelet が静的 Pod として管理するため）。
 
-`--node` には `porkadot.yaml` の `nodes` のキーを指定します。そのノードの接続設定（`connection`）で接続し、定義にないノードや etcd メンバーでないノードを指定するとエラーになります。
+`--node` には `porkadot.yaml` の `nodes` のキーを指定します。そのノードの接続設定（`connection`）で接続し、定義にないノードや etcd メンバーでないノードを指定すると、何もせずにエラーになります（[03-cli.md](03-cli.md#--node-オプション)）。
 
 ### etcd 接続設定
 

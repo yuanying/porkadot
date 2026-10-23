@@ -55,35 +55,20 @@ module Porkadot; module Install
     end
 
     def etcd_hosts node
-      kubelets = Porkadot::Install::KubeletList.new(global_config)
-      if node
-        host = kubelets[node]
-        raise Porkadot::Error, "Unknown node: #{node}" unless host
-        raise Porkadot::Error, "Node is not an etcd member: #{node}" unless host.etcd?
-        return [host]
-      end
-
-      kubelets.kubelets.values.select(&:etcd?)
+      Porkadot::Install::KubeletList.new(global_config).etcd_hosts(node)
     end
 
     def kubernetes_host node
-      kubelets = Porkadot::Install::KubeletList.new(global_config)
-      if node
-        host = kubelets[node]
-        raise Porkadot::Error, "Unknown node: #{node}" unless host
-        return host
-      end
+      # The kubeconfig of Install::Kubernetes talks to the kube-apiserver on
+      # the node.
+      return Porkadot::Install::KubeletList.new(global_config).fetch_master(node) if node
 
       Porkadot::Install::Bootstrap.new(global_config).host
     end
 
     def kubelet_hosts node
       kubelets = Porkadot::Install::KubeletList.new(global_config)
-      if node
-        host = kubelets[node]
-        raise Porkadot::Error, "Unknown node: #{node}" unless host
-        return [host]
-      end
+      return [kubelets.fetch(node)] if node
 
       kubelets.kubelets.values
     end

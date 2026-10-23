@@ -14,6 +14,25 @@ exe/porkadot
 |-----------|-----------|------|
 | `--config` | `./porkadot.yaml` | 設定ファイルのパス |
 
+## `--node` オプション
+
+`--node` を持つコマンド（`render kubelet`・`render etcd`・`install kubelet`・`install kubernetes`・`etcd backup`・`etcd start`・`etcd stop`・`rotate-certs`・`setup-containerd`・`setup-node`）は、対象を 1 台に絞ります。
+
+- 値には `porkadot.yaml` の `nodes` の**キー**を指定します。`hostname` や `connection.hostname` の IP は、キーと同じでない限り指定できません。
+- どのキーにも一致しない値を渡すと、何もせずにエラーで終了します（終了コード 1）。全ノードに流れることはありません。全ノードが対象になるのは `--node` を省いたときだけです。
+- コマンドがそのノードで動かせない場合もエラーで終了します（`etcd` と `render etcd` の etcd メンバーでないノード、`install kubernetes` と `rotate-certs kubernetes` のコントロールプレーンでないノード）。
+
+エラーには、渡した値と指定できるノードのキーが出ます。
+
+```
+$ porkadot install kubelet --node 192.168.1.134
+Unknown node: 192.168.1.134
+--node takes a key of nodes in porkadot.yaml: 192.168.1.111, 192.168.1.112, 192.168.1.113, pablo, duchamp, braque, oeilvert, chirico
+$ porkadot install kubernetes --node pablo
+Node is not a control plane node: pablo
+Control plane nodes (k8s.unstable.cloud/master): 192.168.1.111, 192.168.1.112, 192.168.1.113
+```
+
 ---
 
 ## `porkadot all`（デフォルトタスク）
@@ -58,7 +77,7 @@ porkadot render kubelet [--node <node-name>]
 
 | オプション | 説明 |
 |-----------|------|
-| `--node` | 指定したノードのみ生成（省略時は全ノード） |
+| `--node` | 指定したノードのみ生成（省略時は全ノード）。[`--node` オプション](#--node-オプション) |
 
 生成内容:
 - 共通: `install.sh`, `install-deps.sh`, `install-pkgs.sh`, `setup-node.sh`, `setup-containerd.sh`, `ca.crt`
@@ -74,7 +93,7 @@ porkadot render etcd [--node <node-name>]
 
 | オプション | 説明 |
 |-----------|------|
-| `--node` | 指定したノードのみ生成（省略時は全 etcd メンバー） |
+| `--node` | 指定した etcd メンバーのみ生成（省略時は全 etcd メンバー）。[`--node` オプション](#--node-オプション) |
 
 生成内容: `etcd-server.yaml`, `etcd.env`, `install.sh`, `ca.crt`, `etcd.crt`, `etcd.key`
 
@@ -124,7 +143,7 @@ porkadot install kubelet [--node <node-name>] [--force]
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
-| `--node` | — | 指定したノードのみインストール |
+| `--node` | — | 指定したノードのみインストール（省略時は全ノード）。[`--node` オプション](#--node-オプション) |
 | `--force` | `false` | ノードにある版を使わず、kubectl・kubelet・etcdctl・etcdutl・crictl・CNI plugins をすべてダウンロードし直す |
 
 実行内容: `install-deps.sh` → `install-pkgs.sh` → `install.sh` の順に SSH 実行
@@ -211,7 +230,7 @@ porkadot install kubernetes proxy [--node <node-name>]
 
 | オプション | 説明 |
 |-----------|------|
-| `--node` | 指定したノードのみ（省略時はブートストラップノードまたは全コントロールプレーンノード） |
+| `--node` | 適用を実行するノード（省略時はブートストラップノード）。コントロールプレーンのノードを指定する（ノード上の kubeconfig は `127.0.0.1` の kube-apiserver に接続するため）。[`--node` オプション](#--node-オプション) |
 
 ---
 
@@ -266,7 +285,7 @@ porkadot etcd start [--node <node-name>]
 ```
 
 `--node` には `porkadot.yaml` の `nodes` のキーを指定する。そのノードの接続設定（`connection`）で接続する。
-定義にないノードや etcd メンバーでないノードを指定するとエラーになる。stop / backup も同じ。
+定義にないノードや etcd メンバーでないノードを指定すると、何もせずにエラーになる（[`--node` オプション](#--node-オプション)）。stop / backup も同じ。
 
 ### `porkadot etcd stop`
 
@@ -288,7 +307,7 @@ porkadot setup-containerd [--node <node-name>] [--force] [--bootstrap]
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
-| `--node` | — | 指定ノードのみ実行 |
+| `--node` | — | 指定ノードのみ実行（省略時は全ノード）。[`--node` オプション](#--node-オプション) |
 | `--force` | `false` | 強制再セットアップ |
 | `--bootstrap` | `false` | ブートストラップノードのみ実行 |
 
@@ -306,7 +325,7 @@ porkadot setup-node [--node <node-name>] [--force] [--bootstrap]
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
-| `--node` | — | 指定ノードのみ実行 |
+| `--node` | — | 指定ノードのみ実行（省略時は全ノード）。[`--node` オプション](#--node-オプション) |
 | `--force` | `false` | 強制再実行 |
 | `--bootstrap` | `false` | ブートストラップノードのみ実行 |
 
