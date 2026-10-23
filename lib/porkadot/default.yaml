@@ -151,6 +151,7 @@ kubernetes:
       cgroupDriver: systemd
       clusterDNS: []
       clusterDomain: ""
+      containerRuntimeEndpoint: unix:///run/containerd/containerd.sock
       cpuManagerReconcilePeriod: 0s
       evictionPressureTransitionPeriod: 0s
       fileCheckFrequency: 0s

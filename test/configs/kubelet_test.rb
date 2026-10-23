@@ -121,6 +121,14 @@ class PorkadotConfigsKubeletTest < Minitest::Test
     refute node.kubelet_config.key?('failCgroupV1')
   end
 
+  # 1.37 deprecates the kubelet's --container-runtime-endpoint flag in
+  # favour of the config file.
+  def test_kubelet_config_sets_container_runtime_endpoint
+    node = self.mock_config('porkadot.yaml').nodes['node01']
+
+    assert_equal 'unix:///run/containerd/containerd.sock', node.kubelet_config['containerRuntimeEndpoint']
+  end
+
   def test_kubelet_config_registers_taints_only_for_tainted_nodes
     config = self.mock_config('porkadot2.yaml')
     node01 = config.nodes['node01']

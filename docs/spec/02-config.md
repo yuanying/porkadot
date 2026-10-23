@@ -156,6 +156,7 @@ kube-proxy の設定を `KubeProxyConfiguration` 形式で記述します。
 | 設定 | デフォルト |
 |------|-----------|
 | `cgroupDriver` | `systemd` |
+| `containerRuntimeEndpoint` | `unix:///run/containerd/containerd.sock` |
 | `rotateCertificates` | `true` |
 | `serverTLSBootstrap` | `true` |
 | `authentication.anonymous.enabled` | `false` |
@@ -165,6 +166,8 @@ kube-proxy の設定を `KubeProxyConfiguration` 形式で記述します。
 | `resolvConf` | `/run/systemd/resolve/resolv.conf` |
 
 `failCgroupV1` は設定しない。Kubernetes 1.35 から kubelet の既定値が `true` になり、cgroup v1 のノードでは kubelet が起動しない。ノードは cgroup v2 で動かす（`stat -fc %T /sys/fs/cgroup` が `cgroup2fs`）。cgroup v1 のまま動かす必要があるときだけ、`config` に `failCgroupV1: false` を書く。
+
+containerd のソケットは `containerRuntimeEndpoint` で渡す。kubelet の `--container-runtime-endpoint` フラグは Kubernetes 1.37 で非推奨になり、1.38 で削除される見込みなので、`kubelet.service` には書かない。
 
 ---
 
