@@ -22,7 +22,7 @@ module Porkadot; module Cmd; module Render
       logger.info "Generating kubelet related files"
       kubelets = Porkadot::Assets::KubeletList.new(self.config)
       if node = options[:node]
-        kubelets[node].render
+        kubelets.fetch(node).render
       else
         kubelets.render
       end
@@ -35,7 +35,7 @@ module Porkadot; module Cmd; module Render
       logger.info "Generating etcd related files"
       etcds = Porkadot::Assets::EtcdList.new(self.config)
       if node = options[:node]
-        etcds[node].render
+        etcds.fetch(node).render
       else
         etcds.render
       end

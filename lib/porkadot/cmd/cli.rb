@@ -46,7 +46,7 @@ module Porkadot; module Cmd
       kubelets = Porkadot::Install::KubeletList.new(self.config)
       nodes = []
       if node = options[:node]
-        nodes = kubelets[node]
+        nodes = kubelets.fetch(node)
       elsif options[:bootstrap]
         bootstrap = Porkadot::Install::Bootstrap.new(self.config)
         nodes = bootstrap.host
@@ -66,7 +66,7 @@ module Porkadot; module Cmd
       kubelets = Porkadot::Install::KubeletList.new(self.config)
       nodes = []
       if node = options[:node]
-        nodes = kubelets[node]
+        nodes = kubelets.fetch(node)
       elsif options[:bootstrap]
         bootstrap = Porkadot::Install::Bootstrap.new(self.config)
         nodes = bootstrap.host

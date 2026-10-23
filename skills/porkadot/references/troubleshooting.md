@@ -56,7 +56,7 @@ ssh ubuntu@<bootstrap-node-ip> \
 
 ```bash
 porkadot --config ./porkadot.yaml install bootstrap cleanup
-porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node-ip>
+porkadot --config ./porkadot.yaml install kubelet --node <bootstrap-node>
 ```
 
 cleanup が「Bootstrap static Pods were not removed」で止まったら、表示された項目（どのマスターの
@@ -177,7 +177,7 @@ cleanup の前に、「クラスター再起動後に MetalLB が起動しない
 
 ```bash
 porkadot install bootstrap cleanup --config ./porkadot.yaml
-porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node-ip>
+porkadot install kubelet --config ./porkadot.yaml --node <bootstrap-node>
 porkadot set-config --config ./porkadot.yaml
 ```
 

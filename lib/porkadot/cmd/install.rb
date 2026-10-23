@@ -18,7 +18,7 @@ module Porkadot; module Cmd; module Install
       kubelets = Porkadot::Install::KubeletList.new(self.config)
       nodes = []
       if node = options[:node]
-        nodes = kubelets[node]
+        nodes = kubelets.fetch(node)
       else
         nodes = kubelets.kubelets.values
       end

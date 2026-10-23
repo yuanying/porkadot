@@ -360,12 +360,7 @@ module Porkadot; module Install
     # Returns etcd member hosts. When node is given, it is looked up by its
     # name in porkadot.yaml so that the node's connection settings are used.
     def etcd_hosts node=nil
-      if node
-        host = self[node]
-        raise Porkadot::Error, "Unknown node: #{node}" unless host
-        raise Porkadot::Error, "Node is not an etcd member: #{node}" unless host.etcd?
-        return [host]
-      end
+      return [self.fetch_etcd(node)] if node
 
       self.kubelets.values.select(&:etcd?)
     end
@@ -381,6 +376,24 @@ module Porkadot; module Install
 
     def [](name)
       self.kubelets[name]
+    end
+
+    # The node whose key in porkadot.yaml is name. Raises unless there is one.
+    def fetch name
+      self[name] || raise(Porkadot::NodeError.unknown(name, self.kubelets.keys))
+    end
+
+    def fetch_etcd name
+      host = self.fetch(name)
+      return host if host.etcd?
+      raise Porkadot::NodeError.not_etcd_member(name, self.kubelets.select { |_, v| v.etcd? }.keys)
+    end
+
+    # Hosts that run a kube-apiserver, which kubeconfigs on the node talk to.
+    def fetch_master name
+      host = self.fetch(name)
+      return host if host.config.apiserver?
+      raise Porkadot::NodeError.not_control_plane(name, self.kubelets.select { |_, v| v.config.apiserver? }.keys)
     end
   end
 

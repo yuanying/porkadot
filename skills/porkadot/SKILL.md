@@ -36,6 +36,16 @@ CONFIG="<user-specified-path>"
 
 設定ファイルが存在しない場合はエラーとし、ユーザーにパスを確認する。
 
+### `--node` の指定
+
+`--node` には `porkadot.yaml` の `nodes` の**キー**を渡す。IP がキーでないノード（例: キーが `pablo`）に IP を渡してはいけない。
+手順中の `<control-plane-node>`・`<bootstrap-node>`・`<worker>` もすべて `nodes` のキーである。実行前に `nodes` のキーを確かめる。
+
+どのキーにも一致しない値は、何もせずにエラー（`Unknown node: <値>` と指定できるキーの一覧）で止まる。
+`install kubernetes` / `rotate-certs kubernetes` にコントロールプレーンでないノード、
+`etcd` サブコマンド / `render etcd` に etcd メンバーでないノードを渡しても止まる。
+全ノードが対象になるのは `--node` を省いたときだけ。
+
 ### secret と sops
 
 secret（証明書・鍵・kubeconfig 等）は `assets/<group>/` に通常の asset と一緒に出力される。
@@ -69,8 +79,8 @@ secret（証明書・鍵・kubeconfig 等）は `assets/<group>/` に通常の a
 ```
 1. render kubelet / etcd / bootstrap / kubernetes（render 済みの場合は不要）
 2. etcd backup
-3. install kubernetes --node <control-plane-ip>（コントロールプレーンを先に更新）
-4. install kubelet --node <control-plane-ip>（1 台ずつ。etcd マニフェストもここで変わる）
+3. install kubernetes --node <control-plane-node>（コントロールプレーンを先に更新）
+4. install kubelet --node <control-plane-node>（1 台ずつ。etcd マニフェストもここで変わる）
 5. install kubelet --node <worker>（1 台ずつ）
 ```
 
@@ -110,7 +120,7 @@ porkadot install kubelet --config $CONFIG
 porkadot install bootstrap node --config $CONFIG
 porkadot install bootstrap kubernetes --config $CONFIG
 porkadot install bootstrap cleanup --config $CONFIG
-porkadot install kubelet --config $CONFIG --node <bootstrap-node-ip>
+porkadot install kubelet --config $CONFIG --node <bootstrap-node>
 ```
 
 **重要**: bootstrap 完了前に `install kubelet` を全台再実行すると bootstrap ノードの
