@@ -95,6 +95,17 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert_equal ['registry.k8s.io/coredns/coredns:v1.14.7'], images
   end
 
+  # Same as kubeadm's Corefile since 1.32: answers for the cluster domain
+  # are not cached, so that they never lag behind the kubernetes plugin.
+  def test_coredns_cache_skips_cluster_domain
+    render_addons(['coredns'])
+
+    config_map = YAML.load_stream(File.read(addon_path('coredns/coredns.yaml')))
+      .compact.find { |d| d['kind'] == 'ConfigMap' && d['metadata']['name'] == 'coredns' }
+    corefile = config_map['data']['Corefile']
+    assert_match(/^ {4}cache 30 \{\n {8}disable success cluster\.local\n {8}disable denial cluster\.local\n {4}\}\n/, corefile)
+  end
+
   def test_kubelet_serving_cert_approver_uses_pinned_image
     render_addons(['kubelet-serving-cert-approver'])
 

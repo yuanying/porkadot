@@ -83,8 +83,8 @@ Kubernetes クラスタ全体の設定です。
 |------|-----------|------|
 | `cluster_name` | `porkadot` | クラスタ名 |
 | `control_plane_endpoint` | — | コントロールプレーンエンドポイント（例: `192.168.23.101:6443`）|
-| `kubernetes_version` | `v1.36.5` | Kubernetes バージョン |
-| `crictl_version` | `v1.36.0` | crictl バージョン |
+| `kubernetes_version` | `v1.37.1` | Kubernetes バージョン |
+| `crictl_version` | `v1.37.0` | crictl バージョン |
 | `image_repository` | `registry.k8s.io` | コンテナイメージリポジトリ |
 
 ### `kubernetes.networking`
@@ -175,7 +175,7 @@ etcd クラスタの設定です。
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `image_repository` | `registry.k8s.io/etcd` | etcd イメージリポジトリ |
-| `image_tag` | `3.6.15-0` | etcd イメージタグ。etcdctl・etcdutl の版にもなる（`-0` などの接尾辞を除く） |
+| `image_tag` | `3.7.3-0` | etcd イメージタグ。etcdctl・etcdutl の版にもなる（`-0` などの接尾辞を除く） |
 | `extra_env` | `[]` | 追加環境変数（例: ARM64 サポート用） |
 
 追加環境変数の例（ARM64 向け）:
@@ -244,6 +244,8 @@ flannel の代わりに使える CNI（opt-in）。使うときは `addons.enabl
 #### `addons.coredns`
 
 追加設定なし（デフォルト値のみ）。
+
+Corefile の `cache` は、kubeadm と同じく `kubernetes.networking.dns_domain` の答えをキャッシュしない（`disable success` / `disable denial`）。クラスタ内の名前の答えが kubernetes プラグインより古くならないようにするため。
 
 #### `addons.metallb`
 

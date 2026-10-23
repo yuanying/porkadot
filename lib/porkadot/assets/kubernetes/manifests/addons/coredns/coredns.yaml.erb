@@ -82,7 +82,10 @@ data:
         }
         prometheus :9153
         forward . /etc/resolv.conf
-        cache 30
+        cache 30 {
+            disable success <%= k8s.networking.dns_domain %>
+            disable denial <%= k8s.networking.dns_domain %>
+        }
         loop
         reload
         loadbalance
