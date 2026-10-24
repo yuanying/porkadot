@@ -106,6 +106,55 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert_match(/^ {4}cache 30 \{\n {8}disable success cluster\.local\n {8}disable denial cluster\.local\n {4}\}\n/, corefile)
   end
 
+  def test_metallb_uses_v0_16_1_images
+    render_addons(['metallb'])
+
+    images = metallb_docs.select { |d| %w[Deployment DaemonSet].include?(d['kind']) }
+      .flat_map { |d| pod_spec(d)['containers'].map { |c| c['image'] } }
+    assert_equal %w[quay.io/metallb/controller:v0.16.1 quay.io/metallb/speaker:v0.16.1], images.sort
+  end
+
+  # The template and the CRDs are rendered from hack/metallb by
+  # hack/update-metallb.sh. A ref changed without rendering again would name
+  # a release that porkadot does not install.
+  def test_metallb_hack_kustomizations_name_the_rendered_release
+    refs = %w[kustomization.yaml crds/kustomization.yaml].flat_map do |f|
+      YAML.load_file(File.join(ROOT, 'hack', 'metallb', f))['resources']
+        .grep(%r{\Ahttps://github\.com/metallb/metallb/}).map { |r| r[/\?ref=(\S+)\z/, 1] }
+    end
+    assert_equal ['v0.16.1'], refs.uniq
+  end
+
+  # The custom resources a cluster already has must stay readable, and they
+  # must already be stored in the storage version, so that status.storedVersions
+  # does not grow.
+  def test_metallb_crds_keep_served_and_storage_versions
+    render_addons(['metallb'])
+
+    crds = YAML.load_stream(File.read(crd_path('metallb/crds.yaml'))).compact
+      .to_h { |d| [d['metadata']['name'], d['spec']['versions']] }
+    storage = crds.transform_values { |vs| vs.find { |v| v['storage'] }['name'] }
+    served = crds.transform_values { |vs| vs.select { |v| v['served'] }.map { |v| v['name'] } }
+
+    assert_equal 'v1beta1', storage['ipaddresspools.metallb.io']
+    assert_equal 'v1beta1', storage['l2advertisements.metallb.io']
+    assert_equal 'v1beta2', storage['bgppeers.metallb.io']
+    assert_equal %w[v1beta1 v1beta2], served['bgppeers.metallb.io']
+    refute crds.key?('addresspools.metallb.io')
+  end
+
+  # porkadot keeps its own list of interfaces not to announce on. The
+  # upstream list anchors each pattern, and would announce on the node's
+  # porka-dummy01 that holds the cluster DNS address.
+  def test_metallb_does_not_announce_on_porka_dummy
+    render_addons(['metallb'])
+
+    config_map = metallb_docs.find { |d| d['kind'] == 'ConfigMap' && d['metadata']['name'] == 'metallb-excludel2' }
+    patterns = YAML.safe_load(config_map['data']['excludel2.yaml'])['announcedInterfacesToExclude']
+    assert patterns.any? { |p| Regexp.new(p).match?('porka-dummy01') }
+    refute patterns.any? { |p| Regexp.new(p).match?('eth0') }
+  end
+
   def test_kubelet_serving_cert_approver_uses_pinned_image
     render_addons(['kubelet-serving-cert-approver'])
 
@@ -179,6 +228,10 @@ class PorkadotRenderAddonsTest < Minitest::Test
   def cnidaria_daemonset
     YAML.load_stream(File.read(addon_path('cnidaria/cnidaria.yaml')))
       .compact.find { |d| d['kind'] == 'DaemonSet' }
+  end
+
+  def metallb_docs
+    YAML.load_stream(File.read(addon_path('metallb/metallb.yaml'))).compact
   end
 
   def approver_deployment
