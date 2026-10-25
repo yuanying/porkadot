@@ -106,6 +106,38 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert_match(/^ {4}cache 30 \{\n {8}disable success cluster\.local\n {8}disable denial cluster\.local\n {4}\}\n/, corefile)
   end
 
+  # The multi-arch image, so that the Pod may run on the arm64 control plane too.
+  def test_dns_autoscaler_uses_multi_arch_v1_11_0_image
+    render_addons(['coredns'])
+
+    images = pod_spec(dns_autoscaler_deployment)['containers'].map { |c| c['image'] }
+    assert_equal ['registry.k8s.io/cpa/cluster-proportional-autoscaler:v1.11.0'], images
+  end
+
+  def test_dns_autoscaler_scales_coredns_linearly
+    render_addons(['coredns'])
+
+    command = pod_spec(dns_autoscaler_deployment)['containers'].first['command']
+    assert_equal [
+      '/cluster-proportional-autoscaler',
+      '--namespace=kube-system',
+      '--configmap=kube-dns-autoscaler',
+      '--target=Deployment/coredns',
+      '--default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"preventSinglePointFailure":true}}',
+      '--logtostderr=true',
+      '--v=2',
+    ], command
+  end
+
+  # The seccomp annotation is no longer honoured; only the field is.
+  def test_dns_autoscaler_uses_runtime_default_seccomp_profile
+    render_addons(['coredns'])
+
+    deploy = dns_autoscaler_deployment
+    assert_nil deploy.dig('spec', 'template', 'metadata', 'annotations')
+    assert_equal({ 'type' => 'RuntimeDefault' }, pod_spec(deploy)['securityContext']['seccompProfile'])
+  end
+
   def test_metallb_uses_v0_16_1_images
     render_addons(['metallb'])
 
@@ -228,6 +260,11 @@ class PorkadotRenderAddonsTest < Minitest::Test
   def cnidaria_daemonset
     YAML.load_stream(File.read(addon_path('cnidaria/cnidaria.yaml')))
       .compact.find { |d| d['kind'] == 'DaemonSet' }
+  end
+
+  def dns_autoscaler_deployment
+    YAML.load_stream(File.read(addon_path('coredns/dns-horizontal-autoscaler.yaml')))
+      .compact.find { |d| d['kind'] == 'Deployment' }
   end
 
   def metallb_docs
