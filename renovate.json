@@ -42,7 +42,7 @@
         "kubernetes/kubernetes",
         "kubernetes-sigs/cri-tools",
         "registry.k8s.io/etcd",
-        "coredns/coredns"
+        "registry.k8s.io/coredns/coredns"
       ],
       "separateMinorPatch": true
     },
@@ -52,7 +52,7 @@
         "kubernetes/kubernetes",
         "kubernetes-sigs/cri-tools",
         "registry.k8s.io/etcd",
-        "coredns/coredns"
+        "registry.k8s.io/coredns/coredns"
       ],
       "matchUpdateTypes": ["major", "minor"],
       "enabled": false
@@ -73,8 +73,12 @@
       "minimumReleaseAge": "0 days"
     },
     {
-      "description": "registry.k8s.io gives no release time, so the wait would hold these images back for good. etcd is read as an image because its tag ends in a -N suffix, which counts Kubernetes' rebuilds and is missing from the etcd releases. Only etcd patch releases are proposed, and each one goes through the dev cluster before a porkadot release. The DNS autoscaler is let through for the same reason, so a new tag of it is proposed as soon as it appears; it only scales CoreDNS, and a broken release leaves the replicas as they are",
-      "matchPackageNames": ["registry.k8s.io/etcd", "registry.k8s.io/cpa/cluster-proportional-autoscaler"],
+      "description": "registry.k8s.io gives no release time, so the wait would hold these images back for good. etcd is read as an image because its tag ends in a -N suffix, which counts Kubernetes' rebuilds and is missing from the etcd releases. Only etcd patch releases are proposed, and each one goes through the dev cluster before a porkadot release. The DNS autoscaler is let through for the same reason, so a new tag of it is proposed as soon as it appears; it only scales CoreDNS, and a broken release leaves the replicas as they are. CoreDNS is read from registry.k8s.io, the registry it is installed from, rather than from its GitHub releases, because a release reaches registry.k8s.io only after Kubernetes promotes it, some time after the GitHub release. The promotion is a review of its own that comes after the release, so the wait adds little to it. Only CoreDNS patch releases are proposed, and each one goes through the dev cluster before a porkadot release",
+      "matchPackageNames": [
+        "registry.k8s.io/etcd",
+        "registry.k8s.io/cpa/cluster-proportional-autoscaler",
+        "registry.k8s.io/coredns/coredns"
+      ],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
