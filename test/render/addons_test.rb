@@ -106,6 +106,26 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert_match(/^ {4}cache 30 \{\n {8}disable success cluster\.local\n {8}disable denial cluster\.local\n {4}\}\n/, corefile)
   end
 
+  # The seccomp annotation is no longer honoured; only the field is.
+  def test_coredns_uses_runtime_default_seccomp_profile
+    render_addons(['coredns'])
+
+    deploy = coredns_deployment
+    assert_nil deploy.dig('spec', 'template', 'metadata', 'annotations')
+    assert_equal({ 'type' => 'RuntimeDefault' }, pod_spec(deploy)['securityContext']['seccompProfile'])
+  end
+
+  # Port 53 needs only NET_BIND_SERVICE, as in kubeadm's and the addon's manifests.
+  def test_coredns_container_keeps_upstream_security_context
+    render_addons(['coredns'])
+
+    assert_equal({
+      'allowPrivilegeEscalation' => false,
+      'capabilities' => { 'add' => ['NET_BIND_SERVICE'], 'drop' => ['ALL'] },
+      'readOnlyRootFilesystem' => true,
+    }, pod_spec(coredns_deployment)['containers'].first['securityContext'])
+  end
+
   # The multi-arch image, so that the Pod may run on the arm64 control plane too.
   def test_dns_autoscaler_uses_multi_arch_v1_11_0_image
     render_addons(['coredns'])
@@ -260,6 +280,11 @@ class PorkadotRenderAddonsTest < Minitest::Test
   def cnidaria_daemonset
     YAML.load_stream(File.read(addon_path('cnidaria/cnidaria.yaml')))
       .compact.find { |d| d['kind'] == 'DaemonSet' }
+  end
+
+  def coredns_deployment
+    YAML.load_stream(File.read(addon_path('coredns/coredns.yaml')))
+      .compact.find { |d| d['kind'] == 'Deployment' && d['metadata']['name'] == 'coredns' }
   end
 
   def dns_autoscaler_deployment
