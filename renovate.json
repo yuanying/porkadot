@@ -21,14 +21,6 @@
       "matchStrings": ["<%-# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: packageName=(?<packageName>\\S+))?(?: versioning=(?<versioning>\\S+))?(?: extractVersion=(?<extractVersion>\\S+))? -%>\\n\\s*image: [^\\s:]+:(?<currentValue>\\S+)"]
     },
     {
-      "description": "The gem's dependencies are in the gemspec. The bundler manager reads only the Gemfile, which here says just `gemspec`, and Gemfile.lock is not committed, so no other manager reads them. Each line already names the gem and its range, so it is read directly; a comment would only repeat the name. The ranges belong to a library, so a pull request appears only when a release falls outside one",
-      "customType": "regex",
-      "managerFilePatterns": ["/^porkadot\\.gemspec$/"],
-      "matchStrings": ["spec\\.add_(?:development_)?dependency \"(?<depName>[^\"]+)\", \"(?<currentValue>[^\"]+)\""],
-      "datasourceTemplate": "rubygems",
-      "versioningTemplate": "ruby"
-    },
-    {
       "description": "CI installs the tools some tests need by a version set in the workflow's env. The same comment as in default.yaml sits on the line above each one, and the version is the value on the next line",
       "customType": "regex",
       "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
