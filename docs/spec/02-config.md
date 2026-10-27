@@ -4,6 +4,8 @@
 
 `porkadot.yaml`（デフォルトパス）がクラスタ設定ファイルです。ユーザーが記述した値と `lib/porkadot/default.yaml` のデフォルト値が再帰マージされます。
 
+Renovate が更新する版（`default.yaml` で `# renovate:` の注釈が付いた値）は、この文書にデフォルト値を書き写さず「`default.yaml` の値」とします。Renovate は `default.yaml` だけを書き換えるので、書き写した値は更新のたびに古くなります。
+
 ## トップレベルセクション
 
 ```yaml
@@ -83,15 +85,15 @@ Kubernetes クラスタ全体の設定です。
 |------|-----------|------|
 | `cluster_name` | `porkadot` | クラスタ名 |
 | `control_plane_endpoint` | — | コントロールプレーンエンドポイント（例: `192.168.23.101:6443`）|
-| `kubernetes_version` | `v1.37.1` | Kubernetes バージョン |
-| `crictl_version` | `v1.37.0` | crictl バージョン |
+| `kubernetes_version` | `default.yaml` の値 | Kubernetes バージョン |
+| `crictl_version` | `default.yaml` の値 | crictl バージョン |
 | `image_repository` | `registry.k8s.io` | コンテナイメージリポジトリ |
 
 ### `kubernetes.networking`
 
 | キー | デフォルト | 説明 |
 |------|-----------|------|
-| `cni_version` | `v1.9.1` | 標準の CNI plugins（containernetworking/plugins）のバージョン。`install kubelet` が `/opt/cni/bin` に置く（[07-addons.md](07-addons.md#cni-plugins-の持ち主)） |
+| `cni_version` | `default.yaml` の値 | 標準の CNI plugins（containernetworking/plugins）のバージョン。`install kubelet` が `/opt/cni/bin` に置く（[07-addons.md](07-addons.md#cni-plugins-の持ち主)） |
 | `service_subnet` | `10.254.0.0/24` | Service CIDR（デュアルスタック時はカンマ区切り） |
 | `pod_subnet` | `10.244.0.0/16` | Pod CIDR（デュアルスタック時はカンマ区切り） |
 | `dns_domain` | `cluster.local` | クラスタ DNS ドメイン |
@@ -178,7 +180,7 @@ etcd クラスタの設定です。
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `image_repository` | `registry.k8s.io/etcd` | etcd イメージリポジトリ |
-| `image_tag` | `3.7.3-0` | etcd イメージタグ。etcdctl・etcdutl の版にもなる（`-0` などの接尾辞を除く） |
+| `image_tag` | `default.yaml` の値 | etcd イメージタグ。etcdctl・etcdutl の版にもなる（`-0` などの接尾辞を除く） |
 | `extra_env` | `[]` | 追加環境変数（例: ARM64 サポート用） |
 
 追加環境変数の例（ARM64 向け）:
@@ -223,9 +225,9 @@ addons:
 |------|-----------|------|
 | `backend` | `vxlan` | ネットワークバックエンド（`vxlan` または `host-gw`） |
 | `plugin_image_repository` | `flannel/flannel-cni-plugin` | CNI プラグインイメージ |
-| `plugin_image_tag` | `v1.4.1-flannel1` | CNI プラグインイメージタグ |
+| `plugin_image_tag` | `default.yaml` の値 | CNI プラグインイメージタグ |
 | `daemon_image_repository` | `flannel/flannel` | Flannel デーモンイメージ |
-| `daemon_image_tag` | `v0.25.1` | Flannel デーモンイメージタグ |
+| `daemon_image_tag` | `default.yaml` の値 | Flannel デーモンイメージタグ |
 | `resources.requests.cpu` | `100m` | CPU リクエスト |
 | `resources.requests.memory` | `50Mi` | メモリリクエスト |
 | `resources.limits.cpu` | `100m` | CPU リミット |
@@ -238,7 +240,7 @@ flannel の代わりに使える CNI（opt-in）。使うときは `addons.enabl
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `image_repository` | `ghcr.io/yuanying/cnidaria-cni` | cnidaria イメージ |
-| `image_tag` | `v0.1.1` | cnidaria イメージタグ |
+| `image_tag` | `default.yaml` の値 | cnidaria イメージタグ |
 | `network_name` | `cnidaria` | conflist のネットワーク名（`--network-name`）。host-local の IP 割り当ては `/var/lib/cni/networks/<name>` に保存される |
 | `resources.requests.cpu` | `50m` | CPU リクエスト |
 | `resources.requests.memory` | `64Mi` | メモリリクエスト |
@@ -295,7 +297,7 @@ kubelet サービング証明書を自動承認する。
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `image_repository` | `ghcr.io/alex1989hu/kubelet-serving-cert-approver` | approver イメージ |
-| `image_tag` | `0.12.1` | approver イメージタグ（上流のリリース `v0.12.1` に当たる。イメージのタグに `v` は付かない） |
+| `image_tag` | `default.yaml` の値 | approver イメージタグ（上流のリリースの版から先頭の `v` を除いたもの。リリース `v0.12.1` のイメージは `0.12.1`） |
 
 #### `addons.kubelet-rubber-stamp`（非推奨）
 

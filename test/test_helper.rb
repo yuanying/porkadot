@@ -10,6 +10,20 @@ require "fileutils"
 require "yaml"
 
 module Porkadot::TestUtils
+  # The defaults porkadot ships with. Renovate raises the versions in this
+  # file, so tests read them from here rather than writing them again.
+  def default_config
+    YAML.load_file(File.join(ROOT, 'lib', 'porkadot', 'default.yaml'))
+  end
+
+  # The image on the line after a template's Renovate comment for dep_name,
+  # which is the version Renovate raises for an image written in a template.
+  def renovate_tracked_image(template, dep_name)
+    path = File.join(ROOT, 'lib', 'porkadot', 'assets', template)
+    comment = /<%-# renovate: datasource=\S+ depName=#{Regexp.escape(dep_name)}[ \S]* -%>\n\s*image: (\S+)/
+    File.read(path)[comment, 1] or raise "no Renovate comment for #{dep_name} in #{template}"
+  end
+
   def mock_config(file='porkadot.yaml')
     Porkadot::Config.new(File.join(TEST_FIXTURES_DIR, 'config', file))
   end
