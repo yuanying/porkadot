@@ -10,6 +10,8 @@ addons:
   enabled: [flannel, coredns, metallb, kubelet-serving-cert-approver]
 ```
 
+Renovate が更新するイメージのタグは、デフォルト値を書き写さず「`default.yaml` の値」とします（`lib/porkadot/default.yaml` を見てください。理由は [02-config.md](02-config.md#概要)）。
+
 ### アドオンを無効にしたとき
 
 `addons.enabled` からアドオンを外して `render kubernetes` → `install kubernetes` を実行すると、`kubectl apply --prune` がそのアドオンのリソースを削除します（`kubernetes.unstable.cloud/installed-by=porkadot` ラベルが付いていて、prune の対象の種類に含まれるもの。[06-assets.md](06-assets.md) の `kubernetes/install.sh` を参照）。
@@ -48,9 +50,9 @@ Pod 間のネットワーキングを提供します。
 |---------|-----------|------|
 | `backend` | `vxlan` | ネットワークバックエンド（`vxlan` / `host-gw`） |
 | `plugin_image_repository` | `flannel/flannel-cni-plugin` | CNI プラグインイメージ |
-| `plugin_image_tag` | `v1.4.1-flannel1` | CNI プラグインイメージタグ |
+| `plugin_image_tag` | `default.yaml` の値 | CNI プラグインイメージタグ |
 | `daemon_image_repository` | `flannel/flannel` | Flannel デーモンイメージ |
-| `daemon_image_tag` | `v0.25.1` | Flannel デーモンイメージタグ |
+| `daemon_image_tag` | `default.yaml` の値 | Flannel デーモンイメージタグ |
 | `resources.requests.cpu` | `100m` | CPU リクエスト |
 | `resources.requests.memory` | `50Mi` | メモリリクエスト |
 | `resources.limits.cpu` | `100m` | CPU リミット |
@@ -81,7 +83,7 @@ addons:
 | 設定キー | デフォルト | 説明 |
 |------|-----------|------|
 | `image_repository` | `ghcr.io/yuanying/cnidaria-cni` | cnidaria イメージ |
-| `image_tag` | `v0.1.1` | cnidaria イメージタグ |
+| `image_tag` | `default.yaml` の値 | cnidaria イメージタグ |
 | `network_name` | `cnidaria` | conflist のネットワーク名（`--network-name`）。host-local の IP 割り当ては `/var/lib/cni/networks/<name>` に保存される |
 | `resources.requests.cpu` | `50m` | CPU リクエスト |
 | `resources.requests.memory` | `64Mi` | メモリリクエスト |
@@ -153,7 +155,7 @@ kubelet のサービング証明書 CSR を自動承認します。`serverTLSBoo
 | キー | デフォルト | 説明 |
 |------|-----------|------|
 | `image_repository` | `ghcr.io/alex1989hu/kubelet-serving-cert-approver` | approver イメージ |
-| `image_tag` | `0.12.1` | approver イメージタグ（上流のリリース `v0.12.1` に当たる。イメージのタグに `v` は付かない） |
+| `image_tag` | `default.yaml` の値 | approver イメージタグ（上流のリリースの版から先頭の `v` を除いたもの。リリース `v0.12.1` のイメージは `0.12.1`） |
 
 `kubelet-rubber-stamp` の後継として推奨されるアドオンです。
 
