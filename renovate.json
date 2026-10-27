@@ -91,6 +91,11 @@
       "automerge": false
     },
     {
+      "description": "cnidaria is the cluster's CNI and enforces its NetworkPolicies, so a broken release takes down Pod networking on every node. Its updates are tried on the dev cluster first and merged by hand afterwards, so even a patch update only opens a pull request. The wait stays lifted for it as for the user's other images",
+      "matchPackageNames": ["ghcr.io/yuanying/cnidaria-cni"],
+      "automerge": false
+    },
+    {
       "description": "Workflows are already read by the github-actions manager. Grouping them keeps a handful of actions from arriving as a handful of pull requests, since they are updated together and reviewed the same way",
       "matchManagers": ["github-actions"],
       "groupName": "github-actions"
