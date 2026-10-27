@@ -4,6 +4,8 @@ require "fileutils"
 require "yaml"
 
 class PorkadotRenderAddonsTest < Minitest::Test
+  include Porkadot::TestUtils
+
   def setup
     @tmpdir = Dir.mktmpdir
   end
@@ -33,7 +35,8 @@ class PorkadotRenderAddonsTest < Minitest::Test
 
     ds = cnidaria_daemonset
     images = pod_spec(ds)['containers'].map { |c| c['image'] }
-    assert_equal ['ghcr.io/yuanying/cnidaria-cni:v0.1.1'], images
+    tag = default_config.dig('addons', 'cnidaria', 'image_tag')
+    assert_equal ["ghcr.io/yuanying/cnidaria-cni:#{tag}"], images
 
     container = pod_spec(ds)['containers'].first
     assert_includes container['args'], '--network-name=cnidaria'
@@ -92,7 +95,10 @@ class PorkadotRenderAddonsTest < Minitest::Test
     deploy = YAML.load_stream(File.read(addon_path('coredns/coredns.yaml')))
       .compact.find { |d| d['kind'] == 'Deployment' && d['metadata']['name'] == 'coredns' }
     images = pod_spec(deploy)['containers'].map { |c| c['image'] }
-    assert_equal ['registry.k8s.io/coredns/coredns:v1.14.7'], images
+    image = renovate_tracked_image('kubernetes/manifests/addons/coredns/coredns.yaml.erb',
+                                   'registry.k8s.io/coredns/coredns')
+    assert_match %r{\Aregistry\.k8s\.io/coredns/coredns:v\d+\.\d+\.\d+\z}, image
+    assert_equal [image], images
   end
 
   # Same as kubeadm's Corefile since 1.32: answers for the cluster domain
@@ -127,11 +133,14 @@ class PorkadotRenderAddonsTest < Minitest::Test
   end
 
   # The multi-arch image, so that the Pod may run on the arm64 control plane too.
-  def test_dns_autoscaler_uses_multi_arch_v1_11_0_image
+  def test_dns_autoscaler_uses_multi_arch_image
     render_addons(['coredns'])
 
     images = pod_spec(dns_autoscaler_deployment)['containers'].map { |c| c['image'] }
-    assert_equal ['registry.k8s.io/cpa/cluster-proportional-autoscaler:v1.11.0'], images
+    image = renovate_tracked_image('kubernetes/manifests/addons/coredns/dns-horizontal-autoscaler.yaml.erb',
+                                   'registry.k8s.io/cpa/cluster-proportional-autoscaler')
+    assert_match %r{\Aregistry\.k8s\.io/cpa/cluster-proportional-autoscaler:v\d+\.\d+\.\d+\z}, image
+    assert_equal [image], images
   end
 
   def test_dns_autoscaler_scales_coredns_linearly
@@ -211,7 +220,9 @@ class PorkadotRenderAddonsTest < Minitest::Test
     render_addons(['kubelet-serving-cert-approver'])
 
     container = pod_spec(approver_deployment)['containers'].first
-    assert_equal 'ghcr.io/alex1989hu/kubelet-serving-cert-approver:0.12.1', container['image']
+    tag = default_config.dig('addons', 'kubelet-serving-cert-approver', 'image_tag')
+    assert_match(/\A\d+\.\d+\.\d+\z/, tag)
+    assert_equal "ghcr.io/alex1989hu/kubelet-serving-cert-approver:#{tag}", container['image']
     assert_equal 'IfNotPresent', container['imagePullPolicy']
   end
 
