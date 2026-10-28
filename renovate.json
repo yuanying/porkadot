@@ -1,12 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "A version is proposed only once it has been public for two days, so that a release pulled or fixed in its first days never reaches a branch. internalChecksFilter is already strict by default; it is stated so that the wait is read here as holding back the branch and the pull request themselves, not only a status check on them",
-  "extends": ["config:recommended", ":semanticCommitTypeAll(chore)"],
-  "timezone": "Asia/Tokyo",
-  "dependencyDashboard": true,
-  "minimumReleaseAge": "2 days",
-  "internalChecksFilter": "strict",
-  "platformAutomerge": false,
+  "description": "CI runs bundle exec rake test on every pull request, with no paths filter, so every branch Renovate opens is tested before the patch, digest and pinning updates are merged. Merged updates reach a release through the weekly release workflow, which tags the next patch version when Renovate's commits are all there is since the latest tag",
+  "extends": ["github>yuanying/renovate-config", "github>yuanying/renovate-config:automerge-patch"],
   "customManagers": [
     {
       "description": "porkadot keeps the versions it installs in default.yaml, which no manager reads. A comment on the line above each version says where to look it up: `# renovate: datasource=<datasource> depName=<name>`, optionally followed by packageName=, versioning= and extractVersion= in that order. The version is the value of the key on the next line, without its quotes. A version is tracked by writing the comment, not by adding a manager here",
@@ -74,28 +69,10 @@
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
-      "description": "The official ubuntu image is proposed without the two-day wait. Docker Hub gives a tag's last push as its release time, and the official ubuntu tags are pushed again every day or two, so a tag seldom looks two days old and an update would hardly ever be proposed. porkadot does not use the image today; the rule is kept so that this file matches the other repositories and the image is not held back once it is used. The name is matched as it is written, not as Docker Hub resolves it, so each way of writing the image is listed. The pull request's checks still have to pass",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": [
-        "ubuntu",
-        "library/ubuntu",
-        "docker.io/ubuntu",
-        "docker.io/library/ubuntu",
-        "index.docker.io/ubuntu",
-        "index.docker.io/library/ubuntu"
-      ],
-      "minimumReleaseAge": null
-    },
-    {
       "description": "MetalLB's template is rendered from the kustomizations in hack/metallb, which the kustomize manager already reads, so the image tags in the rendered template are not tracked. Both kustomizations name the same release and are updated together. The pull request changes only the ref; run hack/update-metallb.sh on its branch to render the template and the CRDs from the new release",
       "matchManagers": ["kustomize"],
       "matchFileNames": ["hack/metallb/**"],
       "groupName": "metallb"
-    },
-    {
-      "description": "Patch, digest and pinning updates are merged by Renovate itself once the pull request's checks pass. CI runs bundle exec rake test on every pull request, with no paths filter, so every branch Renovate opens is tested before it is merged. platformAutomerge is off so that the merge waits for those checks without relying on the repository's auto-merge setting or branch protection. Minor and major updates only open a pull request. Merged updates reach a release through the weekly release workflow, which tags the next patch version when Renovate's commits are all there is since the latest tag",
-      "matchUpdateTypes": ["patch", "digest", "pin", "pinDigest"],
-      "automerge": true
     },
     {
       "description": "A MetalLB update is not finished by Renovate's pull request: it changes only the ref, and hack/update-metallb.sh has to be run on the branch to render the template and the CRDs. Merged as it is, the ref would name a release that porkadot does not install, and the tests would still pass. So even a patch update waits to be merged by hand",
@@ -107,11 +84,6 @@
       "description": "cnidaria is the cluster's CNI and enforces its NetworkPolicies, so a broken release takes down Pod networking on every node. Its updates are tried on the dev cluster first and merged by hand afterwards, so even a patch update only opens a pull request. The wait stays lifted for it as for the user's other images",
       "matchPackageNames": ["ghcr.io/yuanying/cnidaria-cni"],
       "automerge": false
-    },
-    {
-      "description": "Workflows are already read by the github-actions manager. Grouping them keeps a handful of actions from arriving as a handful of pull requests, since they are updated together and reviewed the same way",
-      "matchManagers": ["github-actions"],
-      "groupName": "github-actions"
     }
   ]
 }
