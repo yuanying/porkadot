@@ -167,12 +167,16 @@ class PorkadotRenderAddonsTest < Minitest::Test
     assert_equal({ 'type' => 'RuntimeDefault' }, pod_spec(deploy)['securityContext']['seccompProfile'])
   end
 
-  def test_metallb_uses_v0_16_1_images
+  def test_metallb_images_match_the_upstream_release
     render_addons(['metallb'])
 
     images = metallb_docs.select { |d| %w[Deployment DaemonSet].include?(d['kind']) }
       .flat_map { |d| pod_spec(d)['containers'].map { |c| c['image'] } }
-    assert_equal %w[quay.io/metallb/controller:v0.16.1 quay.io/metallb/speaker:v0.16.1], images.sort
+    release = YAML.load_file(File.join(ROOT, 'hack', 'metallb', 'kustomization.yaml'))
+      .fetch('resources').grep(%r{\Ahttps://github\.com/metallb/metallb/}).first[/\?ref=(\S+)\z/, 1]
+    assert_match %r{\Av\d+\.\d+\.\d+\z}, release
+    assert_equal ["quay.io/metallb/controller:#{release}",
+                  "quay.io/metallb/speaker:#{release}"], images.sort
   end
 
   # The template and the CRDs are rendered from hack/metallb by
@@ -183,7 +187,9 @@ class PorkadotRenderAddonsTest < Minitest::Test
       YAML.load_file(File.join(ROOT, 'hack', 'metallb', f))['resources']
         .grep(%r{\Ahttps://github\.com/metallb/metallb/}).map { |r| r[/\?ref=(\S+)\z/, 1] }
     end
-    assert_equal ['v0.16.1'], refs.uniq
+    assert_equal 4, refs.length
+    refs.each { |ref| assert_match %r{\Av\d+\.\d+\.\d+\z}, ref }
+    assert_equal 1, refs.uniq.length, 'MetalLB upstream resources must use one release'
   end
 
   # The custom resources a cluster already has must stay readable, and they
