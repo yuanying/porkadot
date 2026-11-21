@@ -69,7 +69,7 @@ addons:
 etcd:
   image_repository: registry.k8s.io/etcd
   # renovate: datasource=docker depName=registry.k8s.io/etcd
-  image_tag: 3.7.3-0
+  image_tag: 3.7.4-0
   extra_env: []
 
 kubernetes:
